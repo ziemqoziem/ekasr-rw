@@ -1,0 +1,30 @@
+{
+  "name": "ekas-rw03",
+  "version": "1.0.0",
+  "description": "E-Kas — Pengelolaan Kas RW 03 Dukuh Pencil, Munggung, Karangdowo (jimpitan, iuran wajib, sewa aset)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "init-db": "node scripts/init-db.js",
+    "impor-warga": "node scripts/init-db.js --warga-saja",
+    "migrasi-saldo": "node scripts/migrasi-saldo.js",
+    "migrasi-ekas": "node scripts/migrasi-ekas.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mysql2": "^3.11.5",
+    "pdfkit": "^0.21.0",
+    "read-excel-file": "^5.8.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "jimpitan",
+    "iuran-warga",
+    "rw03"
+  ],
+  "author": "Pengurus RW 03 Dukuh Pencil",
+  "license": "MIT"
+}

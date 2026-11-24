@@ -1,0 +1,9 @@
+.env
+.token_secret
+node_modules/
+.vscode/
+*.log
+# data warga & dump database (pribadi)
+*.sql
+!schema.sql
+*.xlsx

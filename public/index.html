@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>E-Kas RW 03 Dukuh Pencil</title>
+    <meta name="description" content="E-Kas: pengelolaan kas RW 03 Dukuh Pencil, Munggung, Karangdowo — jimpitan, iuran wajib, dan pemasukan lainnya.">
+    <meta name="theme-color" content="#090d16">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/logo-192.png">
+    <link rel="stylesheet" href="css/app.css?v=%V%">
+</head>
+<body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <header class="topbar" id="topbar">
+        <button class="sb-toggle" id="sbToggle" data-act="sbToggle" aria-label="Tampilkan / sembunyikan menu" aria-controls="sidebar" aria-expanded="true" title="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="brand">
+            <img src="assets/logo-192.png" alt="Logo RW 03" width="44" height="44">
+            <div class="brand-text">
+                <strong id="brandTitle">E-Kas RW 03 Dukuh Pencil</strong>
+                <small id="brandSub">Pengelolaan Kas RW 03 · Munggung, Karangdowo</small>
+            </div>
+        </div>
+        <div class="user-area" id="userArea"></div>
+    </header>
+
+    <div class="shell">
+        <aside class="sidebar" id="sidebar" aria-label="Menu utama">
+            <nav class="sidenav" id="tabs"></nav>
+            <button class="nav-item nav-collapse" data-act="sbMini" title="Ciutkan / lebarkan menu" aria-label="Ciutkan atau lebarkan menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+                <span class="nav-label">Ciutkan menu</span>
+            </button>
+        </aside>
+        <div class="sb-backdrop" id="sbBackdrop" data-act="sbClose" aria-hidden="true"></div>
+
+        <div class="main-col">
+            <main class="page" id="view" aria-live="polite"></main>
+
+            <footer class="site-footer">
+                <b>&copy; 2026 - E-Kas RW 03 DUKUH PENCIL</b>
+                <span>Munggung, Karangdowo &middot; Jimpitan, Iuran Wajib &amp; Pemasukan Lainnya</span>
+            </footer>
+        </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="assertive"></div>
+    <dialog id="dlg"></dialog>
+
+    <script src="js/core.js?v=%V%"></script>
+    <script src="js/views-utama.js?v=%V%"></script>
+    <script src="js/views-kalender.js?v=%V%"></script>
+    <script src="js/views-iuran.js?v=%V%"></script>
+    <script src="js/views-sewa.js?v=%V%"></script>
+    <script src="js/views-kas.js?v=%V%"></script>
+    <script src="js/views-lain.js?v=%V%"></script>
+    <script src="js/charts.js?v=%V%"></script>
+    <script src="js/views-dashboard.js?v=%V%"></script>
+    <script src="js/views-beranda.js?v=%V%"></script>
+    <script src="js/views-pengaturan.js?v=%V%"></script>
+    <script src="js/start.js?v=%V%"></script>
+</body>
+</html>
