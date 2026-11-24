@@ -2224,3 +2224,6 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 /* Kontrol halaman digabung ke bilah simpan setoran */
 .savebar-pg { flex: 1 0 100%; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 2px; }
 .savebar-pg .pager { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+
+/* Bilah simpan setoran diletakkan di atas daftar warga (tidak menempel di bawah layar) */
+.savebar.savebar-atas { position: static; margin: 0 0 14px; bottom: auto; }

@@ -67,9 +67,9 @@
                 </div>
                 <div id="sRingkas" class="row small muted" style="margin-top:8px"></div>
             </div>
+            <div class="savebar savebar-atas" id="sBar"></div>
             <div id="sPg"></div>
-            <div id="sList" class="list"></div>
-            <div class="savebar" id="sBar"></div>`;
+            <div id="sList" class="list"></div>`;
         await loadSetoran();
     };
 
