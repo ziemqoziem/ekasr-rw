@@ -340,37 +340,86 @@
     };
 
     /* ---------- saldo & riwayat satu warga ---------- */
+    const baris = (x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
+        <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`;
+    const tabelRiwayat = (arr, kosong) => (arr.length
+        ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>${arr.map(baris).join('')}</tbody></table></div>`
+        : `<div class="empty">${kosong}</div>`);
+    // Banner status: kurang (merah) / titipan (hijau) / lunas (hijau)
+    const banner = (kurang, lebih, ketKurang, ketLebih, ketLunas) => kurang > 0
+        ? `<div class="rw-status bad"><span class="rw-ic">!</span><div><small>Kekurangan</small><b>${rp(kurang)}</b><em>${ketKurang}</em></div></div>`
+        : lebih > 0
+            ? `<div class="rw-status good"><span class="rw-ic">+</span><div><small>Kelebihan (titipan)</small><b>${rp(lebih)}</b><em>${ketLebih}</em></div></div>`
+            : `<div class="rw-status good"><span class="rw-ic">✓</span><div><small>Status</small><b>Lunas</b><em>${ketLunas}</em></div></div>`;
+    const progres = (terbayar, wajib) => {
+        const pc = wajib > 0 ? Math.min(100, Math.round((terbayar / wajib) * 100)) : (terbayar > 0 ? 100 : 0);
+        return `<div class="rw-prog"><div class="rw-prog-t"><span>Terbayar ${rp(terbayar)}</span><span>dari ${rp(wajib)} · <b>${pc}%</b></span></div><div class="rw-bar ${pc >= 100 ? 'ok' : ''}"><i style="width:${pc}%"></i></div></div>`;
+    };
+
     App.actions.saldoWarga = async (el) => {
         const r = await App.api('/api/saldo?warga_id=' + encodeURIComponent(el.dataset.id));
-        const s = r.saldo;
+        const s = r.saldo, ih = r.iuran_hitung || { aktif: false };
         // Riwayat warga mengabaikan pola setor (harian/mingguan/bulanan): kurang = selisih nyata sampai hari ini
         const kurang = Math.max(0, -s.saldo);
         const hariKurang = r.tarif_harian > 0 ? Math.ceil(kurang / r.tarif_harian) : 0;
-        const status = kurang > 0
-            ? `<div class="cek-total bad">Kurang ${rp(kurang)}</div><p class="small muted">≈ ${hariKurang} hari${s.lama_sisa ? ` · tunggakan lama ${rp(s.lama_sisa)}` : ''}</p>`
-            : s.lebih > 0
-                ? `<div class="cek-total good">Titipan ${rp(s.lebih)}</div><p class="small muted">Menutup ±${s.hari_tertutup} hari ke depan · lunas sampai ${tglPendek(s.lunas_sampai)}</p>`
-                : `<div class="cek-total good">Lunas</div><p class="small muted">${s.tagihan_berjalan > 0 ? `Tagihan berjalan ${rp(s.tagihan_berjalan)}` : 'Lunas sampai hari ini'}</p>`;
-        App.dialog(`
-            <h3>Saldo — ${esc(r.warga.nama)} <span class="small muted">RT ${esc(r.warga.rt)} · ${esc(r.warga.jenis)}</span></h3>
-            ${status}
-            <dl class="mini saldo-dl">
-                <div><dt>Total setoran dihitung</dt><dd>${rp(s.terbayar)}</dd></div>
-                <div><dt>Kewajiban sejak ${tglPendek(r.mulai_hitung)} (${rp(r.tarif_harian)}/hari)</dt><dd>${rp(s.kewajiban_berjalan)}</dd></div>
+        const jimpitan = `
+            ${banner(kurang, s.lebih,
+                `≈ ${hariKurang} hari${s.lama_sisa ? ` · termasuk tunggakan lama ${rp(s.lama_sisa)}` : ''}`,
+                `Menutup ±${s.hari_tertutup} hari ke depan · lunas sampai ${tglPendek(s.lunas_sampai)}`,
+                s.tagihan_berjalan > 0 ? `Tagihan berjalan ${rp(s.tagihan_berjalan)}` : 'Lunas sampai hari ini')}
+            ${progres(s.terbayar, s.kewajiban_berjalan + (s.lama || 0))}
+            <dl class="rw-rumus">
+                <div><dt>Kewajiban sejak ${tglPendek(r.mulai_hitung)} <small>(${rp(r.tarif_harian)}/hari)</small></dt><dd>${rp(s.kewajiban_berjalan)}</dd></div>
                 ${s.lama ? `<div><dt>Tunggakan lama</dt><dd>${rp(s.lama)}</dd></div>` : ''}
-                <div><dt>Saldo</dt><dd class="${s.saldo < 0 ? 'bad' : ''}">${rp(s.saldo)}</dd></div>
+                <div><dt>Total setoran dihitung</dt><dd>− ${rp(s.terbayar)}</dd></div>
+                <div class="hasil ${s.saldo < 0 ? 'bad' : 'good'}"><dt>Saldo</dt><dd>${s.saldo < 0 ? '− ' + rp(-s.saldo) : rp(s.saldo)}</dd></div>
             </dl>
-            <h3 style="margin-top:14px">Riwayat jimpitan <span class="small muted">· ${r.setoran.length} setoran terakhir</span></h3>
-            ${r.setoran.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
-            ${r.setoran.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
-            <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
-            </tbody></table></div>` : '<div class="empty">Belum ada setoran jimpitan.</div>'}
-            <h3 style="margin-top:14px">Riwayat iuran wajib <span class="small muted">· total sah ${rp(r.iuran_total.total)} (${r.iuran_total.jumlah}×)${r.iuran_total.ikut ? '' : ' · bebas iuran kas'}</span></h3>
-            ${r.iuran.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
-            ${r.iuran.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
-            <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
-            </tbody></table></div>` : '<div class="empty">Belum ada pembayaran iuran wajib.</div>'}
-            <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>`);
+            <h4 class="rw-sub">Riwayat setoran <small>${r.setoran.length} terakhir</small></h4>
+            ${tabelRiwayat(r.setoran, 'Belum ada setoran jimpitan.')}`;
+        let iuran;
+        if (!ih.aktif) {
+            iuran = `<div class="empty">Iuran wajib belum diaktifkan di Pengaturan.</div>${tabelRiwayat(r.iuran, 'Belum ada pembayaran iuran wajib.')}`;
+        } else if (ih.bebas) {
+            iuran = `<div class="rw-status good"><span class="rw-ic">✓</span><div><small>Status</small><b>Bebas iuran kas</b><em>Warga ini tidak wajib iuran. Pembayaran sukarela tercatat ${rp(ih.terbayar)}.</em></div></div>
+                <h4 class="rw-sub">Riwayat pembayaran <small>${r.iuran_total.jumlah}× sah</small></h4>${tabelRiwayat(r.iuran, 'Belum ada pembayaran iuran wajib.')}`;
+        } else {
+            const tgk = ih.kurang > 0 ? ` (${ih.periode_kurang} kumpulan sudah lewat, ${rp(ih.kurang)})` : '';
+            iuran = `
+                ${banner(ih.tagihan_berjalan, ih.lebih,
+                    `Termasuk kumpulan berjalan${tgk}`,
+                    `Menutup ±${ih.periode_lebih} kumpulan ke depan (${rp(ih.nominal_sekarang)}/kumpulan)`,
+                    'Semua kumpulan sampai saat ini sudah terbayar')}
+                ${progres(ih.terbayar, ih.kewajiban)}
+                <dl class="rw-rumus">
+                    <div><dt>Kewajiban ${ih.periode.length} kumpulan <small>(${rp(ih.nominal_sekarang)}/kumpulan)</small></dt><dd>${rp(ih.kewajiban)}</dd></div>
+                    <div><dt>Total iuran dibayar</dt><dd>− ${rp(ih.terbayar)}</dd></div>
+                    <div class="hasil ${ih.saldo < 0 ? 'bad' : 'good'}"><dt>Saldo</dt><dd>${ih.saldo < 0 ? '− ' + rp(-ih.saldo) : rp(ih.saldo)}</dd></div>
+                </dl>
+                ${ih.periode.length ? `<h4 class="rw-sub">Status per kumpulan <small>terbayar lebih dulu ke kumpulan tertua</small></h4>
+                <div class="rw-kump">${ih.periode.slice().reverse().map((x) => `<div class="rw-k ${x.status}" title="${esc(tglPendek(x.mulai))} s.d. ${esc(tglPendek(x.akhir))}: ${rp(x.dibayar)} dari ${rp(x.nominal)}">
+                    <b>K${x.no}</b><span>${x.status === 'lunas' ? 'Lunas' : x.status === 'sebagian' ? rp(x.dibayar) + '/' + rp(x.nominal) : 'Belum'}</span></div>`).join('')}</div>` : ''}
+                <h4 class="rw-sub">Riwayat pembayaran <small>${r.iuran_total.jumlah}× sah · ${rp(r.iuran_total.total)}</small></h4>
+                ${tabelRiwayat(r.iuran, 'Belum ada pembayaran iuran wajib.')}`;
+        }
+        const punyaIuran = ih.aktif || r.iuran.length;
+        App.dialog(`
+            <div class="rw-dlg">
+                <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
+                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · pola ${esc(r.warga.jenis)} · #${r.warga.id}</div></div></div>
+                <div class="subtabs rw-tabs">
+                    <button type="button" class="tab active" data-act="riwTab" data-nilai="j">Jimpitan${kurang > 0 ? ' <i class="rw-dot bad"></i>' : ''}</button>
+                    ${punyaIuran ? `<button type="button" class="tab" data-act="riwTab" data-nilai="i">Iuran Wajib${ih.aktif && !ih.bebas && ih.tagihan_berjalan > 0 ? ' <i class="rw-dot bad"></i>' : ''}</button>` : ''}
+                </div>
+                <div class="rw-pane" data-pane="j">${jimpitan}</div>
+                ${punyaIuran ? `<div class="rw-pane" data-pane="i" hidden>${iuran}</div>` : ''}
+                <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>
+            </div>`);
+    };
+    App.actions.riwTab = (el) => {
+        const box = el.closest('.rw-dlg');
+        if (!box) return;
+        box.querySelectorAll('.rw-tabs .tab').forEach((t) => t.classList.toggle('active', t === el));
+        box.querySelectorAll('.rw-pane').forEach((p) => { p.hidden = p.dataset.pane !== el.dataset.nilai; });
     };
 
     /* ================= TUNGGAKAN ================= */

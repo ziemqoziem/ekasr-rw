@@ -2521,3 +2521,45 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 .rk-pola b, .stat .rk-pola b { font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; color: var(--text); line-height: 1.2; }
 .rk-pola .nol b { color: var(--text-muted); font-weight: 500; }
 .rk-c0 .rk-pola { color: #10b981; } .rk-c1 .rk-pola { color: #3b82f6; } .rk-c2 .rk-pola { color: #f59e0b; } .rk-c3 .rk-pola { color: #a855f7; }
+
+/* Dialog riwayat warga (jimpitan + iuran wajib) */
+dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
+.rw-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.rw-head h3 { margin: 0; font-size: 1.15rem; }
+.rw-ava { width: 46px; height: 46px; flex: none; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; color: #fff; background: linear-gradient(135deg, #4f46e5, #0891b2); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35); }
+.rw-tabs { margin-bottom: 14px; }
+.rw-pane[hidden] { display: none; }
+.rw-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+.rw-dot.bad { background: #f43f5e; box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.25); }
+.rw-status { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid; margin-bottom: 12px; }
+.rw-status.bad { background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.4); }
+.rw-status.good { background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05)); border-color: rgba(16, 185, 129, 0.4); }
+.rw-ic { width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; color: #fff; }
+.rw-status.bad .rw-ic { background: #f43f5e; } .rw-status.good .rw-ic { background: #10b981; }
+.rw-status small { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); }
+.rw-status b { display: block; font-size: 1.6rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.rw-status.bad b { color: #f43f5e; } .rw-status.good b { color: #10b981; }
+.rw-status em { display: block; font-style: normal; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+.rw-prog { margin-bottom: 12px; }
+.rw-prog-t { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 5px; }
+.rw-bar { height: 8px; border-radius: 99px; background: rgba(128, 128, 160, 0.2); overflow: hidden; }
+.rw-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #f59e0b, #f43f5e); transition: width 0.5s ease; }
+.rw-bar.ok i { background: linear-gradient(90deg, #10b981, #34d399); }
+.rw-rumus { margin: 0 0 6px; padding: 4px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-2); }
+.rw-rumus > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; font-size: 0.86rem; }
+.rw-rumus > div + div { border-top: 1px solid var(--border); }
+.rw-rumus dt { color: var(--text-muted); } .rw-rumus dt small { opacity: 0.8; }
+.rw-rumus dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rw-rumus .hasil { font-size: 0.95rem; border-top: 2px solid var(--border); }
+.rw-rumus .hasil dt { color: var(--text); font-weight: 800; }
+.rw-rumus .hasil.bad dd { color: #f43f5e; } .rw-rumus .hasil.good dd { color: #10b981; }
+.rw-sub { margin: 16px 0 8px; font-size: 0.95rem; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rw-sub small { font-weight: 500; font-size: 0.74rem; color: var(--text-muted); }
+.rw-kump { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow: auto; }
+.rw-k { display: flex; flex-direction: column; align-items: center; min-width: 64px; padding: 5px 8px; border-radius: 10px; border: 1px solid; font-size: 0.7rem; cursor: default; transition: transform 0.15s; }
+.rw-k:hover { transform: translateY(-2px); }
+.rw-k b { font-size: 0.8rem; }
+.rw-k.lunas { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.45); color: #10b981; }
+.rw-k.sebagian { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.45); color: #f59e0b; }
+.rw-k.belum { background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.45); color: #f43f5e; }
+@media (max-width: 560px) { .rw-status b { font-size: 1.35rem; } .rw-rumus dd { white-space: normal; text-align: right; } }
