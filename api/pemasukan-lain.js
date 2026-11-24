@@ -2,7 +2,8 @@ const db = require('./db');
 const { route, fail, str, int, oneOf, RT_LIST, butuh } = require('./_lib/http');
 const { punya, peranTerbatasRt } = require('./_lib/izin');
 const { catat, newId } = require('./_lib/util');
-const I = require('./_lib/iuran');
+const L = require('./_lib/laporan');
+const { basisAwal } = require('./_lib/kas');
 const P = require('./_lib/periode');
 const { pastikanTerbuka } = require('./_lib/tutupbuku');
 
@@ -33,30 +34,28 @@ module.exports = route({
       const batas = rtBatas(user);
       if (terbatasRt(user) && !batas) throw fail(403, 'Akun pengurus RT belum diatur RT-nya. Hubungi admin.');
       const today = P.todayWIB();
-      const per = q.periode && P.validDate(String(q.periode)) ? I.periodeDari(String(q.periode)) : null;
+      // Filter kumpulan RW (cut off, sama dengan Laporan): K-34 s.d. K; kumpulan ke-1 sejak saldo awal berlaku
+      const daftarPeriode = L.daftarPeriode(today);
       const where = [];
       const params = [];
       if (batas) { where.push('rt = ?'); params.push(batas); }
       else if (q.rt) { where.push('rt = ?'); params.push(oneOf(String(q.rt), 'RT', RT_LIST)); }
-      if (per) { where.push('tanggal BETWEEN ? AND ?'); params.push(per.mulai, per.akhir); }
+      if (q.periode) {
+        const p = L.bacaPeriode(String(q.periode), today);
+        const nomor = daftarPeriode.find((x) => x.tanggal === p.tanggal);
+        let dari = p.mulai;
+        if (nomor && nomor.no === 1) { const basis = await basisAwal(p.akhir < today ? p.akhir : today); if (basis) dari = basis.mulai; }
+        where.push('tanggal BETWEEN ? AND ?');
+        params.push(dari, p.akhir);
+      }
       const r = await db.query(
         `SELECT id, tanggal, created_at, rt, jenis, uraian, nominal, petugas, catatan, status, alasan_batal
          FROM sewa_aset ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
          ORDER BY tanggal DESC, created_at DESC LIMIT 500`, params
       );
-      // Rekap 6 periode kumpulan terakhir (sesuai batas RT)
-      const enam = I.periodeTerakhir(today, 6);
-      const rekap = [];
-      for (const p of enam) {
-        const wh = ["status = 'sah'", 'tanggal BETWEEN ? AND ?'];
-        const pr = [p.mulai, p.akhir];
-        if (batas) { wh.push('rt = ?'); pr.push(batas); }
-        const t = (await db.query(`SELECT COALESCE(SUM(nominal), 0) AS n, COUNT(*) AS c FROM sewa_aset WHERE ${wh.join(' AND ')}`, pr)).rows[0];
-        rekap.push({ mulai: p.mulai, akhir: p.akhir, weton: I.weton(p.mulai), berjalan: p.mulai === I.periodeDari(today).mulai, total: Number(t.n), jumlah: Number(t.c) });
-      }
       return {
         sewa: r.rows.map((x) => ({ ...x, tanggal: String(x.tanggal).slice(0, 10), created_at: x.created_at ? new Date(x.created_at).toISOString() : '' })),
-        rekap, batas_rt: batas, bisa_tulis: punya(user, 'sewa.tulis')
+        daftar_periode: daftarPeriode, batas_rt: batas, bisa_tulis: punya(user, 'sewa.tulis')
       };
     }
   },
