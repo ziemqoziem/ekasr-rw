@@ -2511,8 +2511,13 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bar-satu .pager { flex-wrap: wrap; justify-content: space-between; }
 }
 
-/* Rincian total per pola setor pada kartu rekap */
-.rk-pola { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
-.rk-pola > div { display: flex; justify-content: space-between; gap: 10px; font-size: 0.78rem; }
-.rk-pola span { color: var(--text-muted); }
-.rk-pola b { font-variant-numeric: tabular-nums; font-weight: 700; }
+/* Rincian total per pola setor pada kartu rekap (rapat: label | batang | nominal) */
+.rk-pola { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding: 4px 8px; border-radius: 10px; background: rgba(128, 128, 160, 0.08); border: 1px solid var(--border); }
+.rk-pola > div { display: grid; grid-template-columns: 62px minmax(20px, 1fr) auto; align-items: center; gap: 8px; padding: 3px 0; font-size: 0.74rem; line-height: 1.2; }
+.rk-pola > div + div { border-top: 1px solid var(--border); }
+.rk-pola span { color: var(--text-muted); font-weight: 600; }
+.rk-pola i { display: block; height: 4px; border-radius: 99px; background: rgba(128, 128, 160, 0.2); overflow: hidden; }
+.rk-pola u { display: block; height: 100%; border-radius: 99px; background: currentColor; opacity: 0.85; }
+.rk-pola b, .stat .rk-pola b { font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; color: var(--text); line-height: 1.2; }
+.rk-pola .nol b { color: var(--text-muted); font-weight: 500; }
+.rk-c0 .rk-pola { color: #10b981; } .rk-c1 .rk-pola { color: #3b82f6; } .rk-c2 .rk-pola { color: #f59e0b; } .rk-c3 .rk-pola { color: #a855f7; }

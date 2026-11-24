@@ -290,7 +290,11 @@
         gambarRekap();
     }
 
-    const polaHtml = (p) => `<div class="rk-pola">${[['harian', 'Harian'], ['mingguan', 'Mingguan'], ['bulanan', 'Bulanan']].map(([k, l]) => `<div><span>${l}</span><b>${rp((p || {})[k] || 0)}</b></div>`).join('')}</div>`;
+    const polaHtml = (p) => {
+        p = p || {};
+        const tot = (p.harian || 0) + (p.mingguan || 0) + (p.bulanan || 0);
+        return `<div class="rk-pola">${[['harian', 'Harian'], ['mingguan', 'Mingguan'], ['bulanan', 'Bulanan']].map(([k, l]) => { const v = p[k] || 0; const pc = tot ? Math.round((v / tot) * 100) : 0; return `<div class="${v ? '' : 'nol'}"><span>${l}</span><i><u style="width:${pc}%"></u></i><b>${rp(v)}</b></div>`; }).join('')}</div>`;
+    };
 
     function gambarRekap() {
         const r = RK.data;
