@@ -123,7 +123,10 @@ function buatPdf(L, ttd, stream) {
     };
     blokKas('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)}\nLainnya ${rp(k.kas_rw.lainnya)}`);
     blokKas('KAS JIMPITAN', k.kas_jimpitan, '');
-    catatan(`Total saldo akhir kas: ${rp(k.saldo_akhir)} (Kas Iuran RW + Kas Jimpitan).`);
+    const a = k.kas_rw, b = k.kas_jimpitan;
+    blokKas('TOTAL KAS', { awal: a.awal + b.awal, masuk: a.masuk + b.masuk, keluar: a.keluar + b.keluar, akhir: a.akhir + b.akhir }, `Jimpitan ${rp(b.masuk)}
+Iuran RW ${rp(a.masuk)}`);
+    catatan('Total Kas = Kas Iuran RW + Kas Jimpitan. Pengeluaran tanpa label dana dibebankan ke Kas Iuran RW.');
   }
 
   /* ---------- Pemasukan per RT ---------- */

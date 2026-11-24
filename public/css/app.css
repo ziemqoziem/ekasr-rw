@@ -2210,3 +2210,6 @@ p .sel-min, p .sel-plus { padding: 0 6px; font-size: inherit; }
 .kas-card.akhir.neg b { color: #f43f5e; }
 @media (max-width: 860px) { .kas-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 420px) { .kas-grid { grid-template-columns: 1fr; } }
+
+.kas-total { --kc: 245, 158, 11; }
+.kas-total header b { color: #fbbf24; }

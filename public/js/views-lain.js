@@ -62,9 +62,11 @@
                         <div class="kas-card out"><small>Total pengeluaran</small><b>${rp(kas.keluar)}</b></div>
                         <div class="kas-card akhir${kas.akhir < 0 ? ' neg' : ''}"><small>Saldo akhir</small><b>${rp(kas.akhir)}</b><span class="kas-sub">Cut off ${App.tglId(p.sampai)}</span></div>
                     </div></section>`;
-                return blok('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)} · Lainnya ${rp(k.kas_rw.lainnya)}`, 'kas-rw') + blok('KAS JIMPITAN', k.kas_jimpitan, '', 'kas-jimpitan');
+                const tot = { awal: k.kas_rw.awal + k.kas_jimpitan.awal, masuk: k.kas_rw.masuk + k.kas_jimpitan.masuk, keluar: k.kas_rw.keluar + k.kas_jimpitan.keluar, akhir: k.kas_rw.akhir + k.kas_jimpitan.akhir };
+                return blok('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)} · Lainnya ${rp(k.kas_rw.lainnya)}`, 'kas-rw') + blok('KAS JIMPITAN', k.kas_jimpitan, '', 'kas-jimpitan')
+                    + blok('TOTAL KAS', tot, `Jimpitan ${rp(k.kas_jimpitan.masuk)} · Iuran RW ${rp(k.kas_rw.masuk)}`, 'kas-total');
             })()}
-            <p class="small muted" style="margin:-4px 0 14px">Total saldo akhir kas <b>${rp(k.saldo_akhir)}</b> (Kas Iuran RW + Kas Jimpitan). Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}; yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk saldo periode sebelumnya. Pengeluaran tanpa label dana dibebankan ke Kas Iuran RW.</p>` : ''}
+            <p class="small muted" style="margin:-4px 0 14px">Total Kas = Kas Iuran RW + Kas Jimpitan. Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}; yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk saldo periode sebelumnya. Pengeluaran tanpa label dana dibebankan ke Kas Iuran RW.</p>` : ''}
             <h3 class="sec-title">Pemasukan per RT</h3>
             ${(() => {
                 const rts = [...new Set([...L.jimpitan_rt.map((x) => x.rt), ...L.iuran_rt.map((x) => x.rt)])].sort();
