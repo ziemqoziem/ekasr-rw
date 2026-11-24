@@ -158,7 +158,7 @@ Iuran ${rp(i.total)} (${i.jumlah} pembayaran)` };
     const ket = [];
     if (sj) ket.push(`Jimpitan per cut off ${tgl(L.periode.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}).`);
     if (si) ket.push(`Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar.`);
-    catatan(`${ket.join(' ')} Tunggakan = kewajiban - setoran. Nilai dalam Rupiah; hanya warga yang masih memiliki tunggakan.`);
+    catatan(`${ket.join(' ')} Kewajiban dan setoran bersifat kumulatif sejak penagihan dimulai sampai cut off (bukan hanya kumpulan ini). Tunggakan = kewajiban - setoran. Nilai dalam Rupiah; hanya warga yang masih memiliki tunggakan.`);
     const n = (v) => Number(v || 0).toLocaleString('id-ID');
     tabel([{ k: (b) => `${b.nama} (RT ${b.rt})`, t: 'Nama (RT)', w: 2.6 },
       { k: (b) => n(b.iuran_kewajiban), t: 'Kewajiban Iuran', w: 1, ...kanan }, { k: (b) => n(b.iuran_setor), t: 'Setoran Iuran', w: 1, ...kanan }, { k: (b) => n(b.iuran_kurang), t: 'Tunggakan Iuran', w: 1, ...kanan },
