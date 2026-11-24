@@ -447,14 +447,16 @@
         App.stTunggakan.data = r;
         const s = r.ringkasan;
         $('#tInfo').textContent = `Kewajiban Rp ${Number(r.tarif_harian).toLocaleString('id-ID')}/hari sejak ${tglPendek(r.mulai_hitung)}. Tunggakan dihitung pada jatuh tempo pola warga (harian: kemarin, mingguan: Minggu terakhir, bulanan: akhir bulan).`;
+        const hit = (j) => r.tunggakan.filter((x) => x.jenis === j).reduce((a, x) => a + x.kurang, 0);
         $('#tOut').innerHTML = `
-            <div class="kpi-grid n4" style="margin-bottom:14px">
-                <div class="kpi bad"><div class="kpi-label">Total tunggakan</div><div class="kpi-value">${rp(s.total)}</div><div class="kpi-sub">${s.warga_menunggak} warga</div></div>
-                <div class="kpi"><div class="kpi-label">Tunggakan berjalan</div><div class="kpi-value">${rp(s.total_rutin)}</div></div>
-                <div class="kpi"><div class="kpi-label">Tunggakan lama</div><div class="kpi-value">${rp(s.total_lama)}</div></div>
-                <div class="kpi good"><div class="kpi-label">Titipan warga</div><div class="kpi-value">${rp(s.titipan)}</div><div class="kpi-sub">${s.warga_titipan} warga</div></div>
+            <div class="rk-baris" style="margin-bottom:14px">
+                <div class="stat rk-c0" style="--c:#f43f5e"><small>Total tunggakan</small><b style="color:#f43f5e">${rp(s.total)}</b><span class="small muted" style="display:block;margin-top:4px">${s.warga_menunggak} warga menunggak</span>
+                    <div class="rk-pola">${['harian', 'mingguan', 'bulanan'].map((j) => `<div><span>${j[0].toUpperCase() + j.slice(1)}</span><i><u style="width:${s.total ? Math.round((hit(j) / s.total) * 100) : 0}%"></u></i><b>${rp(hit(j))}</b></div>`).join('')}</div></div>
+                <div class="stat rk-c2"><small>Tunggakan berjalan</small><b>${rp(s.total_rutin)}</b></div>
+                <div class="stat rk-c3"><small>Tunggakan lama</small><b>${rp(s.total_lama)}</b></div>
+                <div class="stat rk-c1"><small>Titipan warga</small><b style="color:#10b981">${rp(s.titipan)}</b><span class="small muted" style="display:block;margin-top:4px">${s.warga_titipan} warga</span></div>
             </div>
-            <div id="tPg"></div><div class="list" id="tList"></div>`;
+            <div id="tPg"></div><div id="tList"></div>`;
         App.pgReset('tunggakan');
         App.pgRedraw.tunggakan = tampilTunggakan;
         tampilTunggakan();
@@ -462,38 +464,26 @@
 
     function tampilTunggakan() {
         const arr = (App.stTunggakan.data || { tunggakan: [] }).tunggakan;
-        const pg = App.paginate('tunggakan', arr);
-        $('#tList').innerHTML = arr.length ? pg.items.map(kartuTunggakan).join('') : '<div class="card empty">Tidak ada tunggakan. 🎉</div>';
-        $('#tPg').innerHTML = pg.bar;
+        const pg = App.paginate('tunggakan', arr, { selalu: true });
+        $('#tPg').innerHTML = `<div class="card bar-satu"><div class="bs-filter muted small">${arr.length} warga menunggak · urut kekurangan terbesar</div><div class="bs-pager">${pg.bar}</div></div>`;
+        $('#tList').innerHTML = arr.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Nama</th><th>RT</th><th>Pola</th><th>Jatuh tempo</th><th class="r">Berjalan</th><th class="r">Lama</th><th class="r">Kurang</th><th></th></tr></thead><tbody>
+            ${pg.items.map(barisTunggakan).join('')}</tbody><tfoot><tr><td colspan="6"><b>Total halaman ini</b></td><td class="r num"><b style="color:#f43f5e">${rp(pg.items.reduce((a, x) => a + x.kurang, 0))}</b></td><td></td></tr></tfoot></table></div></div>`
+            : '<div class="card empty">Tidak ada tunggakan. 🎉</div>';
     }
 
-    function kartuTunggakan(t) {
+    function barisTunggakan(t) {
         const hp = String(t.no_hp || '').replace(/\D/g, '');
         const wa = hp ? (hp.startsWith('0') ? '62' + hp.slice(1) : hp) : '';
         const pesan = `Assalamu'alaikum, Bapak/Ibu ${t.nama}. Kami dari pengurus RW 03 Dukuh Pencil mengingatkan jimpitan/iuran yang masih kurang sebesar ${rp(t.kurang)}. Terima kasih atas perhatiannya.`;
-        return `<div class="card" style="margin:0">
-            <div class="row between">
-                <div>
-                    <div class="name" style="font-weight:700;font-size:0.95rem">${esc(t.nama)}</div>
-                    <div class="meta small muted" style="margin-top:4px">
-                        <span class="badge">RT ${esc(t.rt)}</span> ${jenisBadge(t.jenis)} 
-                        <span>Setara ≈ ${t.hari_kurang} hari</span> · <span>Jatuh tempo: ${tglPendek(t.jatuh_tempo).slice(0, 5)}</span>
-                    </div>
-                </div>
-                <div class="right">
-                    <b class="num" style="color:var(--red);font-size:1.15rem;font-weight:800">${rp(t.kurang)}</b>
-                </div>
-            </div>
-            <div class="row small" style="margin-top:10px;gap:14px;border-top:1px solid var(--border);padding-top:8px">
-                ${t.berjalan_kurang ? `<span>Kewajiban berjalan: <b>${rp(t.berjalan_kurang)}</b></span>` : ''}
-                ${t.lama_sisa ? `<span>Tunggakan lama: <b>${rp(t.lama_sisa)}</b></span>` : ''}
-                ${t.tagihan_berjalan > t.kurang ? `<span class="muted">Total tagihan berjalan: ${rp(t.tagihan_berjalan)}</span>` : ''}
-            </div>
-            <div class="row" style="margin-top:12px">
+        return `<tr>
+            <td style="white-space:normal;min-width:150px"><b>${esc(t.nama)}</b><div class="small muted">≈ ${t.hari_kurang} hari</div></td>
+            <td>${esc(t.rt)}</td><td>${jenisBadge(t.jenis)}</td><td style="white-space:nowrap">${tglPendek(t.jatuh_tempo).slice(0, 5)}</td>
+            <td class="r num">${t.berjalan_kurang ? rp(t.berjalan_kurang) : '-'}</td><td class="r num">${t.lama_sisa ? rp(t.lama_sisa) : '-'}</td>
+            <td class="r num"><b style="color:#f43f5e">${rp(t.kurang)}</b></td>
+            <td class="r" style="white-space:nowrap">
                 ${App.has('jimpitan.tulis') ? `<button class="btn sm primary" data-act="bayarKurang" data-w="${t.id}" data-nama="${esc(t.nama)}" data-kurang="${t.kurang}">Bayar</button>` : ''}
-                <button class="btn sm ghost" data-act="saldoWarga" data-id="${t.id}" data-nama="${esc(t.nama)}">Lihat Saldo</button>
-                ${wa ? `<a class="btn sm" style="color:var(--green);border-color:var(--green-border);background:var(--green-bg)" target="_blank" rel="noopener noreferrer" href="https://wa.me/${wa}?text=${encodeURIComponent(pesan)}">Kirim WhatsApp</a>` : ''}
-            </div></div>`;
+                <button class="btn sm ghost" data-act="saldoWarga" data-id="${t.id}" data-nama="${esc(t.nama)}">Riwayat</button>
+                ${wa ? `<a class="btn sm" style="color:var(--green);border-color:var(--green-border);background:var(--green-bg)" target="_blank" rel="noopener noreferrer" href="https://wa.me/${wa}?text=${encodeURIComponent(pesan)}">WA</a>` : ''}</td></tr>`;
     }
 
     App.changes.tunggakanFilter = async () => {
