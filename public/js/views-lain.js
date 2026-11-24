@@ -64,7 +64,8 @@
                 <div class="rk-card rk-out"><span class="rk-lbl">Total Pengeluaran</span><b class="rk-val">${rp(k.keluar)}</b></div>
                 <div class="rk-card rk-akhir ${k.saldo_akhir < 0 ? 'neg' : ''}"><span class="rk-lbl">Saldo Akhir Kas</span><b class="rk-val">${rp(k.saldo_akhir)}</b>
                     <span class="rk-sub">Cut off ${App.tglId(p.sampai)}</span></div>
-            </div>` : ''}
+            </div>
+            <p class="small muted" style="margin:-6px 0 14px">Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}. Yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk <b>Saldo Awal</b> dan tidak dihitung lagi sebagai pemasukan.</p>` : ''}
             <h3 class="sec-title">Pemasukan per RT</h3>
             ${(() => {
                 const rts = [...new Set([...L.jimpitan_rt.map((x) => x.rt), ...L.iuran_rt.map((x) => x.rt)])].sort();
