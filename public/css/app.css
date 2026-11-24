@@ -2402,3 +2402,45 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 .bl-rincian .total span { color: var(--text); font-weight: 800; }
 .bl-rincian .total b { font-size: 1.25rem; }
 @media (max-width: 860px) { .bk-lite { grid-template-columns: 1fr; gap: 20px; padding: 20px 20px 20px 24px; } }
+
+/* ==========================================================================
+   MOBILE FLEKSIBEL (v3): merapikan komponen yang ditambahkan belakangan
+   ========================================================================== */
+@media (max-width: 860px) {
+  .savebar-atas > .row:not(:last-child) { flex-wrap: wrap; justify-content: flex-start; }
+}
+@media (max-width: 680px) {
+  /* Bilah atas (setoran & iuran): tombol berjajar sama lebar */
+  .savebar.savebar-atas { padding: 10px 12px; margin-inline: 0; }
+  .savebar-atas > .row:last-child { justify-content: stretch; }
+  .savebar-atas > .row:last-child .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; font-size: 0.78rem; padding-left: 6px; padding-right: 6px; }
+
+  /* Kartu warga setoran: kotak centang + nama di atas, nominal & tombol penuh di bawah */
+  #sList .item { flex-wrap: wrap; align-items: center; padding: 10px 12px; gap: 8px 10px; }
+  #sList .item > .grow { flex: 1 1 0; min-width: 0; }
+  #sList .nominal-box { flex: 1 1 100%; width: 100%; }
+  #sList .nominal-box input { width: 100%; min-height: 44px; font-size: 16px; }
+  #sList .nominal-box .btn { min-height: 40px; }
+
+  /* Daftar umum (pemasukan lainnya, pengeluaran, dll.): jumlah & tombol turun ke baris bawah bila sempit */
+  .item { flex-wrap: wrap; }
+  .item > .grow { flex: 1 1 100%; }
+  .item > b.num { margin-left: auto; }
+
+  /* Tabel riwayat / rekap tetap bisa digeser, kolom tidak terpotong */
+  .tbl-card .tbl-wrap, .bk-periode .tbl-wrap { overflow-x: auto; }
+  .tbl-card table { min-width: 460px; }
+
+  /* Beranda */
+  .home-hero { padding: 18px 16px; }
+  .bk-lite { padding: 18px 16px 18px 20px; }
+  .bl-bulan > div { flex: 1 1 100%; }
+  .bk-kantong { padding: 14px; }
+  .bk-ring span { flex: 1 1 100%; text-align: center; }
+  .sec-title { font-size: 1rem; margin-top: 20px; }
+}
+@media (max-width: 380px) {
+  .bl-saldo { font-size: 1.8rem; }
+  .bk-k-val { font-size: 1.3rem; }
+  .subtabs .tab { padding: 6px 11px; }
+}
