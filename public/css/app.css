@@ -2070,3 +2070,22 @@ body > * { min-width: 0; max-width: 100%; }
   .tbl-iuran:not(:has(.c-cek)) .c-nama { left: 0; }
 }
 @media (max-width: 860px) { .tbl-iuran .c-riw { display: none; } }
+
+/* Tabel iuran satu frame (tanpa scroll horizontal pada layar normal) */
+.tbl-satu { overflow-x: auto; }
+.tbl-iuran { table-layout: fixed; }
+.tbl-iuran th.c-cek, .tbl-iuran td.c-cek { width: 40px; padding-left: 6px; padding-right: 2px; }
+.tbl-iuran th.c-per, .tbl-iuran td.c-per { width: 34px; min-width: 0; padding: 8px 1px; }
+.tbl-iuran th.c-sum, .tbl-iuran td.c-sum { width: 100px; }
+.tbl-iuran th.c-nom, .tbl-iuran td.c-nom { width: 140px; }
+.tbl-iuran .c-nom input { width: 100%; max-width: 128px; }
+.tbl-iuran .c-nama { white-space: normal; position: static !important; background: transparent !important; overflow-wrap: anywhere; }
+.tbl-iuran .c-cek { position: static !important; background: transparent !important; }
+.tbl-iuran td.c-nom .btn { padding-left: 8px; padding-right: 8px; }
+.rw { width: 22px; height: 22px; }
+@media (max-width: 600px) {
+  .tbl-iuran th.c-sum, .tbl-iuran td.c-sum { width: 82px; font-size: 0.74rem; }
+  .tbl-iuran th.c-nom, .tbl-iuran td.c-nom { width: 104px; }
+  .tbl-iuran .c-nom input { max-width: 96px; }
+  .tbl-iuran th.c-per, .tbl-iuran td.c-per { width: 30px; }
+}

@@ -70,32 +70,38 @@
         // Sudah setor = lunas untuk kumpulan terpilih ATAU ada setoran bertanggal di periode itu → kotak tercentang & terkunci
         const bisaPilih = rows.filter((w) => !sudahSetor(w) && w.saran > 0);
         const semuaDipilih = bisaPilih.length > 0 && bisaPilih.every((w) => IS.nominal.has(w.id));
-        const kolom = r.kolom || [];
-        const pendek = (t) => `${t.slice(8, 10)}/${t.slice(5, 7)}`;
+        const kolomSemua = r.kolom || [];
+        // Muat dalam satu frame: jumlah kolom kumpulan menyesuaikan lebar layar (selalu memuat kumpulan terpilih)
+        const lebar = ($('#iList') && $('#iList').clientWidth) || window.innerWidth;
+        const tetap = (tulis ? 40 : 0) + 150 + 100 + (tulis ? 140 : 0);
+        const maxK = Math.max(lebar < 600 ? 2 : 3, Math.floor((lebar - tetap) / 34));
+        const nK = Math.min(kolomSemua.length, maxK);
+        const iSel = Math.max(0, kolomSemua.findIndex((k) => k.terpilih));
+        const mulaiK = Math.max(0, Math.min(kolomSemua.length - nK, iSel));  // jendela kolom terbaru; bila kumpulan terpilih lebih lama, mulai dari kumpulan itu
+        const kolom = kolomSemua.slice(mulaiK, mulaiK + nK);
+        const riw = (w) => w.riwayat.slice(mulaiK, mulaiK + nK);
+        IS.nK = nK;
         const SIM = { lunas: '✓', sebagian: '◐', belum: '✕', luar: '–' };
         const baris = pg.items.map((w) => {
             const kunci = sudahSetor(w);
             const dipilih = IS.nominal.has(w.id);
-            const info = w.kurang > 0 ? `<span class="badge red">Tunggakan ${rp(w.kurang)} (${w.periode_kurang} periode)</span>`
-                : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '<span class="badge green">Tidak ada</span>';
-            const sel = (k) => (k.terpilih ? ' sel' : '');
-            const sel_ = w.riwayat.map((h, i) => `<td class="c-per${sel(kolom[i] || {})}"><span class="rw rw-${h.status}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
+            const sel_ = riw(w).map((h, i) => `<td class="c-per${kolom[i] && kolom[i].terpilih ? ' sel' : ''}"><span class="rw rw-${h.status}" title="K${kolom[i] ? kolom[i].no : ''} · ${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
                 ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">`
-                : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : ''}</td>`;
+                : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : '<span class="muted small">centang untuk setor</span>'}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
                 ${sel_}
-                <td class="r num"><button class="link-setor" data-act="iuranRiwayatSetor" data-id="${w.id}" title="Lihat / batalkan setoran">${rp(w.total_setor)}</button></td>
-                <td>${info}</td>${nom}</tr>`;
+                <td class="r num c-sum"><button class="link-setor" data-act="iuranRiwayatSetor" data-id="${w.id}" title="Lihat / batalkan setoran">${rp(w.total_setor)}</button></td>${nom}</tr>`;
         }).join('');
-        const kepalaPer = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no}, ${esc(tgl(k.mulai))}">${pendek(k.mulai)}<small>K${k.no}</small></th>`).join('');
-        $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-iuran"><thead><tr>
+        const kepalaPer = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no} · ${esc(tgl(k.mulai))}">K${k.no}</th>`).join('');
+        const ketK = nK < kolomSemua.length ? ` Layar sempit: menampilkan K${kolom[0].no}–K${kolom[kolom.length - 1].no} dari ${kolomSemua.length} kumpulan.` : '';
+        $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap tbl-satu"><table class="tbl-iuran"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
-            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r">Sudah disetor</th><th>Tunggakan / titipan</th>${tulis ? '<th class="c-nom r">Nominal</th>' : ''}</tr></thead>
+            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Sudah disetor</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
-            <p class="small muted" style="padding:8px 14px 12px">✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom bertanda warna = kumpulan yang dipilih. Klik angka “Sudah disetor” untuk melihat atau membatalkan setoran.</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            <p class="small muted" style="padding:8px 14px 12px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan terpilih. Klik angka “Sudah disetor” untuk melihat atau membatalkan setoran.${ketK}</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
         barSimpan();
     }
 
@@ -117,6 +123,11 @@
             </div>`;
     }
 
+    let iuranUkuran = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(iuranUkuran);
+        iuranUkuran = setTimeout(() => { if (IS.data && $('#iList') && $('#iList').querySelector('.tbl-iuran')) tampil(); }, 200);
+    });
     App.changes.iuranFilter = async () => {
         IS.periode = $('#iPer').value; if (!App.rtKunci()) IS.rt = $('#iRt').value; IS.status = $('#iSt').value;
         await muat();
