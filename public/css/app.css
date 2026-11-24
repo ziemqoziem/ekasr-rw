@@ -2049,3 +2049,24 @@ body > * { min-width: 0; max-width: 100%; }
 .tbl-iuran .c-nom { width: 150px; text-align: right; }
 .tbl-iuran .c-nom input { width: 120px; min-height: 36px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (max-width: 860px) { .tbl-iuran .c-riw { display: none; } .tbl-iuran { font-size: 0.82rem; } }
+
+/* Matriks riwayat per kumpulan */
+.tbl-iuran .c-per { text-align: center; padding: 8px 4px; min-width: 46px; }
+.tbl-iuran th.c-per { font-size: 0.72rem; line-height: 1.15; }
+.tbl-iuran th.c-per small { display: block; font-size: 0.6rem; opacity: 0.7; font-weight: 500; }
+.tbl-iuran .c-per.sel { background: rgba(99, 102, 241, 0.14); }
+.rw { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 0.8rem; font-weight: 700; }
+.rw-lunas { background: var(--green-bg); color: var(--green); }
+.rw-sebagian { background: var(--amber-bg); color: var(--amber); }
+.rw-belum { background: var(--red-bg); color: var(--red); }
+.rw-luar { color: var(--text-muted); opacity: 0.5; }
+.link-setor { background: none; border: 0; color: var(--text); font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; text-decoration: underline dotted; padding: 2px 4px; }
+.link-setor:hover { color: var(--primary); }
+.tbl-iuran .c-nama { white-space: nowrap; }
+@media (min-width: 861px) {
+  .tbl-iuran .c-cek, .tbl-iuran .c-nama { position: sticky; background: var(--panel-solid); z-index: 1; }
+  .tbl-iuran .c-cek { left: 0; }
+  .tbl-iuran .c-cek + .c-nama { left: 46px; }
+  .tbl-iuran:not(:has(.c-cek)) .c-nama { left: 0; }
+}
+@media (max-width: 860px) { .tbl-iuran .c-riw { display: none; } }

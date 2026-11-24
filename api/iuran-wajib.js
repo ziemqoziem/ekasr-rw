@@ -57,8 +57,16 @@ module.exports = route({
       );
       const pb = new Map();
       for (const x of bayarPeriode.rows) { if (!pb.has(x.warga_id)) pb.set(x.warga_id, []); pb.get(x.warga_id).push({ id: x.id, nominal: x.nominal }); }
-      // Riwayat = 6 periode yang berakhir pada periode TERPILIH (bukan hari ini), tanpa periode sebelum penagihan dimulai
-      const enam = I.periodeTerakhir(periode.mulai, 6).filter((e) => !awalTagih || e.mulai >= awalTagih);
+      // Riwayat = semua kumpulan sejak penagihan dimulai sampai kumpulan berjalan (satu kolom per kumpulan)
+      const enam = [];
+      for (let p = sekarang; enam.length < 60; p = I.periodeSebelum(p)) {
+        if (awalTagih && p.mulai < awalTagih) break;
+        enam.unshift({ mulai: p.mulai, akhir: p.akhir });
+        if (!awalTagih && enam.length >= 6) break;
+      }
+      const semuaSetor = await db.query("SELECT warga_id, id, tanggal, nominal FROM iuran_wajib WHERE status = 'sah' ORDER BY tanggal, created_at");
+      const sm = new Map();
+      for (const x of semuaSetor.rows) { if (!sm.has(x.warga_id)) sm.set(x.warga_id, []); sm.get(x.warga_id).push({ id: x.id, tanggal: String(x.tanggal).slice(0, 10), nominal: x.nominal }); }
 
       const cnt = { lunas: 0, sebagian: 0, belum: 0, luar: 0 };
       let totalKurang = 0, masukPeriode = 0;
@@ -75,12 +83,14 @@ module.exports = route({
         return {
           id: w.id, nama: w.nama, rt: w.rt, jenis: w.jenis, no_hp: w.no_hp, status, nominal: p ? p.nominal : 0,
           dibayar_periode: p ? p.dibayar : 0, ...ringkasWarga(s), saran: s && s.tagihan_berjalan > 0 ? s.tagihan_berjalan : nominalPeriode,
-          setoran: list, total_diterima: totalP, riwayat
+          setoran: list, total_diterima: totalP, riwayat,
+          total_setor: s ? s.terbayar : 0, setoran_semua: sm.get(w.id) || []
         };
       });
       return {
         aktif: true, periode: info, periode_daftar: daftarPeriode, nominal: nominalPeriode, nominal_sekarang: ctx.nominalNow,
         ringkasan: { total_warga: rows.length, ...cnt, total_masuk: masukPeriode, total_kurang: totalKurang },
+        kolom: enam.map((e, i) => ({ mulai: e.mulai, akhir: e.akhir, no: i + 1, terpilih: e.mulai === periode.mulai })),
         warga: rows
       };
     }

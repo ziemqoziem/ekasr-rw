@@ -67,32 +67,35 @@
         const pg = App.paginate('iuran', rows);
         $('#iPg').innerHTML = pg.bar;
         const tulis = App.has('iuran.tulis');
-        // Sudah setor = lunas untuk kumpulan ini ATAU ada setoran bertanggal di dalam periode ini → kotak tercentang & terkunci
+        // Sudah setor = lunas untuk kumpulan terpilih ATAU ada setoran bertanggal di periode itu → kotak tercentang & terkunci
         const bisaPilih = rows.filter((w) => !sudahSetor(w) && w.saran > 0);
         const semuaDipilih = bisaPilih.length > 0 && bisaPilih.every((w) => IS.nominal.has(w.id));
+        const kolom = r.kolom || [];
+        const pendek = (t) => `${t.slice(8, 10)}/${t.slice(5, 7)}`;
+        const SIM = { lunas: '✓', sebagian: '◐', belum: '✕', luar: '–' };
         const baris = pg.items.map((w) => {
             const kunci = sudahSetor(w);
             const dipilih = IS.nominal.has(w.id);
-            const chips = w.setoran.map((x) => `<span class="chip ok-chip">${rp(x.nominal)}${tulis ? ` <button class="chip-x" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}" aria-label="Batalkan">✕</button>` : ''}</span>`).join('');
-            const sisa = w.status === 'sebagian' ? ` ${rp(w.dibayar_periode)} / ${rp(w.nominal)}` : '';
             const info = w.kurang > 0 ? `<span class="badge red">Tunggakan ${rp(w.kurang)} (${w.periode_kurang} periode)</span>`
-                : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '<span class="muted">-</span>';
-            const mini = w.riwayat.map((h) => `<i class="cal-dot cal-${WARNA[h.status]}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}"></i>`).join('');
+                : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '<span class="badge green">Tidak ada</span>';
+            const sel = (k) => (k.terpilih ? ' sel' : '');
+            const sel_ = w.riwayat.map((h, i) => `<td class="c-per${sel(kolom[i] || {})}"><span class="rw rw-${h.status}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
                 ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">`
                 : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : ''}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
-                <td><span class="badge st-badge st-${w.status}">${esc(LABEL[w.status])}${esc(sisa)}</span></td>
-                <td class="c-set">${chips || '<span class="muted">-</span>'}</td>
-                <td>${info}</td>
-                <td class="c-riw"><span class="mini-hist" title="Riwayat sampai kumpulan terpilih (maks. 6, lama → baru)">${mini}</span></td>${nom}</tr>`;
+                ${sel_}
+                <td class="r num"><button class="link-setor" data-act="iuranRiwayatSetor" data-id="${w.id}" title="Lihat / batalkan setoran">${rp(w.total_setor)}</button></td>
+                <td>${info}</td>${nom}</tr>`;
         }).join('');
+        const kepalaPer = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no}, ${esc(tgl(k.mulai))}">${pendek(k.mulai)}<small>K${k.no}</small></th>`).join('');
         $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-iuran"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
-            <th>Nama (RT)</th><th>Status</th><th>Setoran periode ini</th><th>Tunggakan / titipan</th><th class="c-riw">Riwayat</th>${tulis ? '<th class="c-nom r">Nominal</th>' : ''}</tr></thead>
-            <tbody>${baris}</tbody></table></div></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r">Sudah disetor</th><th>Tunggakan / titipan</th>${tulis ? '<th class="c-nom r">Nominal</th>' : ''}</tr></thead>
+            <tbody>${baris}</tbody></table></div>
+            <p class="small muted" style="padding:8px 14px 12px">✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom bertanda warna = kumpulan yang dipilih. Klik angka “Sudah disetor” untuk melihat atau membatalkan setoran.</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
         barSimpan();
     }
 
@@ -158,6 +161,19 @@
         const v = Math.floor(Number(inp.value));
         if (v > 0) IS.nominal.set(id, v); else IS.nominal.delete(id);
         barSimpan();
+    };
+    App.actions.iuranRiwayatSetor = (el) => {
+        const w = IS.data.warga.find((x) => x.id === Number(el.dataset.id));
+        if (!w) return;
+        const tulis = App.has('iuran.tulis');
+        const baris = w.setoran_semua.map((x) => `<tr><td>${esc(tgl(x.tanggal))}</td><td class="r num">${rp(x.nominal)}</td>
+            ${tulis ? `<td class="r"><button class="btn sm danger" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}">Batalkan</button></td>` : ''}</tr>`).join('');
+        App.dialog(`
+            <h3>Setoran iuran — ${esc(w.nama)} (RT ${esc(w.rt)})</h3>
+            <p class="small muted" style="margin-bottom:10px">Total disetor <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
+            <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
+            ${baris || `<tr><td colspan="3" class="muted">Belum ada setoran.</td></tr>`}</tbody></table></div>
+            <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Tutup</button></div>`);
     };
     App.actions.iuranIsiSemua = () => {
         for (const w of IS.data.warga) if (!sudahSetor(w) && w.saran > 0) IS.nominal.set(w.id, w.saran);
