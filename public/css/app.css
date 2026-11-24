@@ -2022,3 +2022,8 @@ body > * { min-width: 0; max-width: 100%; }
 .tbl-fit th, .tbl-fit td { padding: 7px 6px; white-space: normal; word-break: break-word; vertical-align: top; }
 .tbl-fit th { font-size: 0.68rem; line-height: 1.25; }
 .tbl-fit th:first-child, .tbl-fit td:first-child { width: 22%; }
+
+/* Setoran iuran dengan kotak centang */
+.cek-setor { display: flex; align-items: center; justify-content: center; flex: none; width: 44px; align-self: stretch; margin: -4px 0 -4px -6px; cursor: pointer; }
+.cek-setor input[type="checkbox"] { width: 22px; height: 22px; }
+.item.dipilih { border-color: var(--green-border); background: var(--green-bg); }

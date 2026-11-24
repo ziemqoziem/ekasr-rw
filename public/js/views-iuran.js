@@ -73,16 +73,16 @@
             const info = w.kurang > 0 ? `<span class="badge red">Tunggakan ${rp(w.kurang)} (${w.periode_kurang} periode)</span>`
                 : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '';
             const mini = w.riwayat.map((h) => `<i class="cal-dot cal-${WARNA[h.status]}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}"></i>`).join('');
-            return `<div class="item st-${w.status}" data-row="${w.id}">
+            const dipilih = IS.nominal.has(w.id);
+            return `<div class="item st-${w.status}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
+                ${tulis ? `<label class="cek-setor" title="Centang untuk mencatat setoran iuran"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${dipilih ? 'checked' : ''}></label>` : ''}
                 <div class="grow">
                     <div class="name">${esc(w.nama)} <span class="badge st-badge st-${w.status}">${esc(LABEL[w.status])}${esc(sisa)}</span></div>
                     <div class="meta"><span class="badge">RT ${esc(w.rt)}</span> ${info} <span class="mini-hist" title="6 periode terakhir (lama → baru)">${mini}</span></div>
                     ${chips ? `<div class="chips" style="margin-top:6px">${chips}</div>` : ''}
                 </div>
-                ${tulis ? `<div class="nominal-box">
+                ${tulis ? `<div class="nominal-box${dipilih ? '' : ' hidden'}">
                     <input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">
-                    <button class="btn sm" data-act="iuranSaran" data-id="${w.id}" title="Isi saran">${w.saran ? '+' + (App.charts ? App.charts.compact(w.saran) : w.saran) : '—'}</button>
-                    <button class="btn sm primary" data-act="iuranSetor" data-id="${w.id}">Bayar</button>
                 </div>` : ''}
             </div>`;
         }).join('') : '<div class="card empty">Tidak ada warga yang cocok.</div>';
@@ -98,10 +98,10 @@
         for (const v of IS.nominal.values()) if (v > 0) { n += 1; total += v; }
         const belum = IS.data.warga.filter((w) => w.status !== 'lunas' && w.saran > 0).length;
         bar.innerHTML = `
-            <div class="row" style="gap:8px"><span class="badge blue"><b>${n}</b> warga dipilih</span>
+            <div class="row" style="gap:8px"><span class="badge blue"><b>${n}</b> warga dicentang</span>
                 <span style="font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums">${rp(total)}</span></div>
             <div class="row">
-                <button class="btn sm" data-act="iuranIsiSemua" ${belum ? '' : 'disabled'}>Isi saran (${belum})</button>
+                <button class="btn sm" data-act="iuranIsiSemua" ${belum ? '' : 'disabled'}>Centang semua belum lunas (${belum})</button>
                 <button class="btn sm ghost" data-act="iuranReset" ${n ? '' : 'disabled'}>Reset</button>
                 <button class="btn primary" data-act="iuranSimpan" ${n ? '' : 'disabled'}>Simpan</button>
             </div>`;
@@ -113,17 +113,34 @@
     };
     App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
     App.changes.iuranCari = () => { IS.q = $('#iCari').value; App.pgReset('iuran'); tampil(); };
-    App.changes.iuranNominal = (inp) => {
-        const v = Math.floor(Number(inp.value));
-        if (v > 0) IS.nominal.set(Number(inp.dataset.id), v); else IS.nominal.delete(Number(inp.dataset.id));
+    // Centang = catat setoran sebesar tagihan/saran; nominal masih bisa diubah di kolom yang muncul
+    App.changes.iuranCek = (cb) => {
+        const id = Number(cb.dataset.id);
+        const w = IS.data.warga.find((x) => x.id === id);
+        if (!w) return;
+        const row = cb.closest('.item');
+        const box = row ? row.querySelector('.nominal-box') : null;
+        const inp = box ? box.querySelector('input') : null;
+        if (cb.checked) {
+            if (!(w.saran > 0)) { cb.checked = false; App.toast('Nominal iuran belum diatur.', 'err'); return; }
+            IS.nominal.set(id, w.saran);
+            if (inp) inp.value = w.saran;
+        } else {
+            IS.nominal.delete(id);
+            if (inp) inp.value = '';
+        }
+        if (box) box.classList.toggle('hidden', !cb.checked);
+        if (row) row.classList.toggle('dipilih', cb.checked);
         barSimpan();
     };
-    App.actions.iuranSaran = (el) => {
-        const w = IS.data.warga.find((x) => x.id === Number(el.dataset.id));
-        if (!w || !w.saran) return;
-        IS.nominal.set(w.id, w.saran);
-        const inp = $(`input[data-input="iuranNominal"][data-id="${w.id}"]`);
-        if (inp) inp.value = w.saran;
+    App.changes.iuranNominal = (inp) => {
+        const id = Number(inp.dataset.id);
+        const v = Math.floor(Number(inp.value));
+        if (v > 0) IS.nominal.set(id, v); else IS.nominal.delete(id);
+        const row = inp.closest('.item');
+        const cb = row ? row.querySelector('input[type="checkbox"]') : null;
+        if (cb) cb.checked = v > 0;
+        if (row) row.classList.toggle('dipilih', v > 0);
         barSimpan();
     };
     App.actions.iuranIsiSemua = () => {
@@ -150,14 +167,6 @@
         if (lain.length) App.toast(lain.slice(0, 3).map((g) => `${nama.get(Number(g.warga_id)) || g.warga_id}: ${g.alasan}`).join(' | '), 'err');
         await muat();
     }
-    App.actions.iuranSetor = async (el) => {
-        const id = Number(el.dataset.id);
-        const w = IS.data.warga.find((x) => x.id === id);
-        const nom = IS.nominal.get(id) || (w && w.saran) || 0;
-        if (!(nom > 0)) { App.toast('Isi nominal terlebih dahulu.', 'err'); return; }
-        el.disabled = true;
-        try { await simpan([{ warga_id: id, nominal: nom }]); } finally { el.disabled = false; }
-    };
     App.actions.iuranSimpan = async (btn) => {
         const items = [...IS.nominal.entries()].filter(([, v]) => v > 0).map(([id, v]) => ({ warga_id: id, nominal: v }));
         if (!items.length) return;
