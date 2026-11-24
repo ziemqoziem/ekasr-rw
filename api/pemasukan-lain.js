@@ -6,8 +6,17 @@ const I = require('./_lib/iuran');
 const P = require('./_lib/periode');
 const { pastikanTerbuka } = require('./_lib/tutupbuku');
 
+// Jenis pemasukan lainnya
+const JENIS = ['hasil_sewa', 'donasi', 'lainnya'];
+// Kolom `jenis` ditambahkan otomatis bila belum ada (tanpa perlu menjalankan migrasi manual)
+let kolomSiap = null;
+const pastikanKolom = () => kolomSiap || (kolomSiap = (async () => {
+  const r = await db.query("SELECT 1 AS ada FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sewa_aset' AND COLUMN_NAME = 'jenis'");
+  if (!r.rows.length) await db.query("ALTER TABLE sewa_aset ADD COLUMN jenis ENUM('hasil_sewa','donasi','lainnya') NOT NULL DEFAULT 'hasil_sewa' AFTER rt");
+})().catch((e) => { kolomSiap = null; throw e; }));
+
 /**
- * Pendapatan sewa aset: hanya PENERIMAAN (tanpa data penyewa/piutang).
+ * Pemasukan lainnya (hasil sewa, donasi, lainnya): hanya PENERIMAAN (tanpa data penyewa/pemberi).
  * Pengurus RT: hanya RT-nya. Bendahara RW: semua RT (dan RW umum). Admin: hanya melihat.
  * Laporan dikelompokkan per periode kumpulan (Selasa Kliwon).
  */
@@ -19,6 +28,7 @@ module.exports = route({
   GET: {
     auth: butuh('sewa.lihat'),
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const q = req.query || {};
       const batas = rtBatas(user);
       if (terbatasRt(user) && !batas) throw fail(403, 'Akun pengurus RT belum diatur RT-nya. Hubungi admin.');
@@ -30,7 +40,7 @@ module.exports = route({
       else if (q.rt) { where.push('rt = ?'); params.push(oneOf(String(q.rt), 'RT', RT_LIST)); }
       if (per) { where.push('tanggal BETWEEN ? AND ?'); params.push(per.mulai, per.akhir); }
       const r = await db.query(
-        `SELECT id, tanggal, rt, uraian, nominal, metode, petugas, catatan, status, alasan_batal
+        `SELECT id, tanggal, rt, jenis, uraian, nominal, petugas, catatan, status, alasan_batal
          FROM sewa_aset ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
          ORDER BY tanggal DESC, created_at DESC LIMIT 500`, params
       );
@@ -55,6 +65,7 @@ module.exports = route({
     auth: butuh('sewa.tulis'),
     status: 201,
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const b = req.body || {};
       const today = P.todayWIB();
       const tanggal = b.tanggal ? String(b.tanggal) : today;
@@ -63,7 +74,7 @@ module.exports = route({
       const uraian = str(b.uraian, 'Uraian', { min: 3, max: 200, required: true });
       const nominal = int(b.nominal, 'Nominal', { min: 1, max: 1000000000 });
       const catatan = str(b.catatan, 'Catatan', { max: 255 }) || null;
-      const metode = ['tunai', 'transfer'].includes(b.metode) ? b.metode : 'tunai';
+      const jenis = oneOf(String(b.jenis || 'lainnya'), 'Jenis', JENIS);
       let rt;
       if (terbatasRt(user)) {
         if (!user.rt) throw fail(403, 'Akun pengurus RT belum diatur RT-nya. Hubungi admin.');
@@ -74,10 +85,10 @@ module.exports = route({
       await pastikanTerbuka(tanggal);
       const id = newId('SWA');
       await db.query(
-        'INSERT INTO sewa_aset (id, tanggal, rt, uraian, nominal, metode, petugas, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, tanggal, rt, uraian, nominal, metode, user.username, catatan]
+        'INSERT INTO sewa_aset (id, tanggal, rt, jenis, uraian, nominal, petugas, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, tanggal, rt, jenis, uraian, nominal, user.username, catatan]
       );
-      await catat(user, 'SEWA_ASET', `Penerimaan sewa "${uraian}"${rt ? ' RT ' + rt : ''} Rp ${nominal} tanggal ${tanggal} (${id}).`, req);
+      await catat(user, 'SEWA_ASET', `Pemasukan lainnya (${jenis}) "${uraian}"${rt ? ' RT ' + rt : ''} Rp ${nominal} tanggal ${tanggal} (${id}).`, req);
       return { id };
     }
   },
@@ -94,7 +105,7 @@ module.exports = route({
       if (terbatasRt(user) && s.rt !== user.rt) throw fail(403, 'Anda hanya dapat mengelola data RT Anda sendiri.');
       await pastikanTerbuka(s.tanggal);
       await db.query("UPDATE sewa_aset SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
-      await catat(user, 'BATAL_SEWA_ASET', `Membatalkan penerimaan sewa ${id} ("${s.uraian}", Rp ${s.nominal}): ${alasan}`, req);
+      await catat(user, 'BATAL_SEWA_ASET', `Membatalkan pemasukan lainnya ${id} ("${s.uraian}", Rp ${s.nominal}): ${alasan}`, req);
       return { id };
     }
   }

@@ -197,7 +197,7 @@
         const G1 = 'Pencatatan', G2 = 'Pantau & Laporan', G3 = 'Data & Sistem';
         if (ada('jimpitan.lihat')) t.push({ id: 'setoran', label: 'Setor Jimpitan', icon: 'cash', group: G1 });
         if (ada('iuran.lihat')) t.push({ id: 'iuran', label: 'Iuran Wajib', icon: 'wallet', group: G1 });
-        if (ada('sewa.lihat')) t.push({ id: 'sewa', label: 'Pemasukan Lainnya', icon: 'tag', group: G1 });
+        if (ada('sewa.lihat')) t.push({ id: 'pemasukanlain', label: 'Pemasukan Lainnya', icon: 'tag', group: G1 });
         if (ada('pengeluaran.lihat')) t.push({ id: 'pengeluaran', label: 'Pengeluaran', icon: 'out', group: G1 });
         if (ada('jimpitan.lihat')) {
             t.push({ id: 'kalender', label: 'Kalender', icon: 'cal', group: G2 });
@@ -350,7 +350,7 @@
             App.toast(`Selamat datang, ${r.user.nama}.`);
             const iz = (i) => (r.user.izin || []).includes(i);
             App.tab = iz('dashboard.lihat') ? (iz('jimpitan.tulis') ? 'setoran' : 'beranda')
-                : iz('jimpitan.tulis') ? 'setoran' : iz('iuran.lihat') ? 'iuran' : iz('sewa.lihat') ? 'sewa' : 'beranda';
+                : iz('jimpitan.tulis') ? 'setoran' : iz('iuran.lihat') ? 'iuran' : iz('sewa.lihat') ? 'pemasukanlain' : 'beranda';
             App.render();
         } catch (e) {
             App.fail(e);
@@ -413,7 +413,7 @@
     /* ---------- mulai ---------- */
     App.start = async function () {
         const hash = location.hash.replace('#', '');
-        if (hash) App.tab = hash;
+        if (hash) App.tab = hash === 'sewa' ? 'pemasukanlain' : hash;
         App.token = store('get', 'jimpitan_token');
         if (App.token) {
             try {

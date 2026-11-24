@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS sewa_aset (
   id VARCHAR(40) PRIMARY KEY,
   tanggal DATE NOT NULL,
   rt CHAR(3) NULL,
+  jenis ENUM('hasil_sewa','donasi','lainnya') NOT NULL DEFAULT 'hasil_sewa',
   uraian VARCHAR(200) NOT NULL,
   nominal INT NOT NULL,
   metode ENUM('tunai','transfer') NOT NULL DEFAULT 'tunai',
