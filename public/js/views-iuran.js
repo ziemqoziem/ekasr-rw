@@ -30,9 +30,9 @@
                     ${App.has('iuran.tulis') ? `<div><label class="f" for="iTgl">Tanggal diterima</label><input type="date" id="iTgl" value="${esc(IS.tanggal)}" max="${App.today()}" data-change="iuranTgl"></div>` : ''}
                 </div>
             </div>
+            <div class="savebar savebar-atas" id="iBar"></div>
             <div id="iPg"></div>
             <div id="iList" class="list"></div>
-            <div class="savebar" id="iBar"></div>
             </div>
             <div id="iRekap" ${IS.tab === 'rekap' ? '' : 'hidden'}></div>`;
         if (IS.tab === 'rekap') await muatRekap(); else await muat();
@@ -83,8 +83,9 @@
         const cari = ($('#iCari').value || '').trim().toLowerCase();
         const rows = r.warga.filter((w) => (!cari || w.nama.toLowerCase().includes(cari)) && (!IS.status || w.status === IS.status));
         const pg = App.paginate('iuran', rows);
-        $('#iPg').innerHTML = pg.bar;
+        IS.pgHtml = pg.bar;   // kontrol halaman digabung ke bilah simpan (bagi yang boleh mencatat)
         const tulis = App.has('iuran.tulis');
+        $('#iPg').innerHTML = tulis ? '' : pg.bar;
         // Sudah setor = lunas untuk kumpulan terpilih ATAU ada setoran bertanggal di periode itu → kotak tercentang & terkunci
         const bisaPilih = rows.filter((w) => !sudahSetor(w) && w.saran > 0);
         const semuaDipilih = bisaPilih.length > 0 && bisaPilih.every((w) => IS.nominal.has(w.id));
@@ -159,6 +160,7 @@
         for (const v of IS.nominal.values()) if (v > 0) { n += 1; total += v; }
         const belum = IS.data.warga.filter((w) => !sudahSetor(w) && w.saran > 0).length;
         bar.innerHTML = `
+            ${IS.pgHtml ? `<div class="savebar-pg">${IS.pgHtml}</div>` : ''}
             <div class="row" style="gap:8px"><span class="badge blue"><b>${n}</b> warga dicentang</span>
                 <span style="font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums">${rp(total)}</span></div>
             <div class="row">
