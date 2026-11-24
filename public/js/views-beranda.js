@@ -60,14 +60,14 @@
 
         /* ---- 2) Kas per kumpulan RW (cut off): saldo awal + pemasukan − pengeluaran = saldo akhir ---- */
         const periodeRows = k.per_periode.slice().reverse().map((p) => `
-            <tr class="${p.berjalan ? 'jalan' : ''}"><td data-l="Kumpulan"><b>Kumpulan ke-${p.no}</b><div class="small muted">${tgl(p.tanggal)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</div></td>
-            <td class="r num" data-l="Saldo awal">${rp(p.saldo_awal)}</td>
+            <tr class="${p.berjalan ? 'jalan' : ''}"><td data-l="Kumpulan"><div class="kn-box"><span class="kn">${p.no}</span><div><b>Kumpulan ke-${p.no}</b><div class="small muted">${tgl(p.tanggal)}${p.berjalan ? ' <span class="kn-jalan">berjalan</span>' : ''}</div></div></div></td>
+            <td class="r num" data-l="Saldo periode sebelumnya">${rp(p.saldo_awal)}</td>
             <td class="r num in" data-l="Jimpitan">${rp(p.jimpitan)}</td><td class="r num in" data-l="Iuran">${rp(p.iuran)}</td><td class="r num in" data-l="Lainnya">${rp(p.sewa)}</td>
             <td class="r num out" data-l="Keluar">${rp(p.keluar)}</td><td class="r num sa" data-l="Saldo akhir"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
         const tabelPeriode = `<section class="card bk-periode bk-modern">
-            <div class="tbl-wrap"><table class="tbl-kas"><thead><tr><th>Kumpulan</th><th class="r">Saldo awal</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead>
+            <div class="tbl-wrap"><table class="tbl-kas"><thead><tr><th>Kumpulan</th><th class="r">Saldo periode sebelumnya</th><th class="r h-in">Jimpitan</th><th class="r h-in">Iuran</th><th class="r h-in">Lainnya</th><th class="r h-out">Keluar</th><th class="r h-akhir">Saldo akhir</th></tr></thead>
             <tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
-            <p class="small muted" style="margin-top:10px">Saldo awal + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
+            <p class="small muted" style="margin-top:10px">Saldo periode sebelumnya + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
 
         /* ---- 3) Pemasukan & pengeluaran 12 bulan ---- */
         const masuk12 = k.tren.reduce((a, t) => a + t.jimpitan + t.iuran + t.sewa, 0);
