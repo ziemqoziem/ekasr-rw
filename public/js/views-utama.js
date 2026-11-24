@@ -351,11 +351,16 @@
                 ${s.lama ? `<div><dt>Tunggakan lama</dt><dd>${rp(s.lama)}</dd></div>` : ''}
                 <div><dt>Saldo</dt><dd class="${s.saldo < 0 ? 'bad' : ''}">${rp(s.saldo)}</dd></div>
             </dl>
-            <h3 style="margin-top:14px">Setoran terakhir</h3>
-            ${r.setoran.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Metode</th><th>Status</th></tr></thead><tbody>
-            ${r.setoran.map((x) => `<tr><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.metode)}</td>
-            <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal</span>`}</td></tr>`).join('')}
-            </tbody></table></div>` : '<div class="empty">Belum ada setoran.</div>'}
+            <h3 style="margin-top:14px">Riwayat jimpitan <span class="small muted">· ${r.setoran.length} setoran terakhir</span></h3>
+            ${r.setoran.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
+            ${r.setoran.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
+            <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
+            </tbody></table></div>` : '<div class="empty">Belum ada setoran jimpitan.</div>'}
+            <h3 style="margin-top:14px">Riwayat iuran wajib <span class="small muted">· total sah ${rp(r.iuran_total.total)} (${r.iuran_total.jumlah}×)${r.iuran_total.ikut ? '' : ' · bebas iuran kas'}</span></h3>
+            ${r.iuran.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
+            ${r.iuran.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
+            <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
+            </tbody></table></div>` : '<div class="empty">Belum ada pembayaran iuran wajib.</div>'}
             <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>`);
     };
 
@@ -491,17 +496,15 @@
                         <option value="" ${WS.iuran === '' ? 'selected' : ''}>Semua</option><option value="1" ${WS.iuran === '1' ? 'selected' : ''}>Wajib iuran kas</option><option value="0" ${WS.iuran === '0' ? 'selected' : ''}>Bebas iuran kas</option></select></div>
                     <div><label class="f" for="wQ">Cari nama</label><input id="wQ" value="${esc(WS.q)}" maxlength="60" placeholder="Ketik nama…" data-change="wargaFilter"></div>
                 </div>
-                <div id="wInfo" class="small muted"></div>
             </div>
-            <div id="wPg"></div><div id="wList" class="list"></div>`;
+            <div id="wKartu"></div>
+            <div id="wPg"></div><div id="wList"></div>`;
         await loadWarga();
     };
 
     async function loadWarga() {
         const r = await App.api('/api/warga?' + qs({ rt: WS.rt, jenis: WS.jenis, aktif: WS.aktif, ikut_iuran: WS.iuran, q: WS.q }));
         WS.list = r.warga;
-        const kelola = App.has('warga.kelola');
-        $('#wInfo').textContent = `${r.warga.length} warga`;
         App.pgReset('warga');
         App.pgRedraw.warga = tampilWarga;
         tampilWarga();
@@ -509,18 +512,27 @@
 
     function tampilWarga() {
         const kelola = App.has('warga.kelola');
-        const pg = App.paginate('warga', WS.list);
-        $('#wPg').innerHTML = pg.bar;
-        $('#wList').innerHTML = WS.list.length ? pg.items.map((w) => `
-            <div class="item ${w.aktif ? '' : ''}" style="${w.aktif ? '' : 'opacity:.6'}">
-                <div class="grow"><div class="name">#${w.id} ${esc(w.nama)}</div>
-                <div class="meta">RT ${esc(w.rt)} · ${jenisBadge(w.jenis)}${w.no_hp ? ' · ' + esc(w.no_hp) : ''}${w.aktif ? '' : ' · <span class="badge red">nonaktif</span>'}
-                    ${w.ikut_jimpitan ? '' : ` · <span class="badge amber">${w.jimpitan_berhenti ? 'Jimpitan s.d. ' + App.tglId(w.jimpitan_berhenti) : 'Bebas jimpitan'}</span>`}
-                    ${w.ikut_iuran ? '' : ` · <span class="badge amber">${w.iuran_berhenti ? 'Iuran kas s.d. ' + App.tglId(w.iuran_berhenti) : 'Bebas iuran kas'}</span>`}</div></div>
-                <div class="row">
+        const pg = App.paginate('warga', WS.list, { selalu: true });
+        const L = WS.list;
+        const aktif = L.filter((w) => w.aktif).length;
+        const bebasJ = L.filter((w) => !w.ikut_jimpitan).length;
+        const bebasI = L.filter((w) => !w.ikut_iuran).length;
+        $('#wKartu').innerHTML = `<div class="rk-baris" style="margin-bottom:14px">
+            <div class="stat rk-c0"><small>Total warga</small><b>${L.length}</b></div>
+            <div class="stat rk-c1"><small>Aktif</small><b>${aktif}</b><span class="small muted" style="display:block;margin-top:4px">${L.length - aktif} nonaktif</span></div>
+            <div class="stat rk-c2"><small>Bebas jimpitan</small><b>${bebasJ}</b></div>
+            <div class="stat rk-c3"><small>Bebas iuran kas</small><b>${bebasI}</b></div></div>`;
+        $('#wPg').innerHTML = `<div class="card bar-satu"><div class="bs-filter muted small">${L.length} warga ditemukan</div><div class="bs-pager">${pg.bar}</div></div>`;
+        $('#wList').innerHTML = L.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Nama</th><th>RT</th><th>Pola setor</th><th>No HP</th><th>Kewajiban</th><th></th></tr></thead><tbody>
+            ${pg.items.map((w) => `<tr style="${w.aktif ? '' : 'opacity:.6'}">
+                <td style="white-space:normal;min-width:160px"><b>${esc(w.nama)}</b> <span class="small muted">#${w.id}</span>${w.aktif ? '' : ' <span class="badge red">nonaktif</span>'}</td>
+                <td>${esc(w.rt)}</td><td>${jenisBadge(w.jenis)}</td><td style="white-space:nowrap">${esc(w.no_hp || '-')}</td>
+                <td style="white-space:normal">${w.ikut_jimpitan ? '<span class="badge green">Jimpitan</span>' : `<span class="badge amber">${w.jimpitan_berhenti ? 'Jimpitan s.d. ' + App.tglId(w.jimpitan_berhenti) : 'Bebas jimpitan'}</span>`}
+                    ${w.ikut_iuran ? '<span class="badge green">Iuran kas</span>' : `<span class="badge amber">${w.iuran_berhenti ? 'Iuran kas s.d. ' + App.tglId(w.iuran_berhenti) : 'Bebas iuran kas'}</span>`}</td>
+                <td class="r" style="white-space:nowrap">
                     ${App.has('jimpitan.lihat') ? `<button class="btn sm" data-act="riwayatWarga" data-id="${w.id}">Riwayat</button>` : ''}
-                    ${kelola ? `<button class="btn sm" data-act="wargaForm" data-id="${w.id}">Ubah</button>` : ''}
-                </div></div>`).join('') : '<div class="card empty">Tidak ada data.</div>';
+                    ${kelola ? `<button class="btn sm" data-act="wargaForm" data-id="${w.id}">Ubah</button>` : ''}</td></tr>`).join('')}
+            </tbody></table></div></div>` : '<div class="card empty">Tidak ada data.</div>';
     }
 
     App.changes.wargaFilter = async () => {

@@ -17,7 +17,17 @@ module.exports = route({
         `SELECT id, tanggal, nominal, metode, petugas, catatan, status, alasan_batal FROM setoran
          WHERE warga_id = ? ORDER BY tanggal DESC, created_at DESC LIMIT 30`, [id]
       );
+      // Riwayat iuran wajib (kas RW) warga ini
+      const iu = await db.query(
+        `SELECT id, tanggal, nominal, petugas, status, alasan_batal FROM iuran_wajib
+         WHERE warga_id = ? ORDER BY tanggal DESC, created_at DESC LIMIT 30`, [id]
+      );
+      const iuranSah = (await db.query(
+        "SELECT COALESCE(SUM(nominal), 0) AS n, COUNT(*) AS c FROM iuran_wajib WHERE warga_id = ? AND status = 'sah'", [id]
+      )).rows[0];
       return {
+        iuran: iu.rows.map((x) => ({ ...x, nominal: Number(x.nominal), tanggal: String(x.tanggal).slice(0, 10) })),
+        iuran_total: { jumlah: Number(iuranSah.c), total: Number(iuranSah.n), ikut: !!w.ikut_iuran },
         warga: { id: w.id, nama: w.nama, rt: w.rt, jenis: w.jenis },
         tarif_harian: ctx.tarifNow, mulai_hitung: ctx.mulaiHitung,
         saldo: s, setoran: r.rows.map((x) => ({ ...x, tanggal: String(x.tanggal).slice(0, 10) }))
