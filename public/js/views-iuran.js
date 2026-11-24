@@ -6,7 +6,8 @@
 
     const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
-    const IS = (App.stIuran = { periode: '', rt: '', status: '', q: '', tanggal: '', data: null, nominal: new Map() });
+    const IS = (App.stIuran = { periode: '', rt: '', status: '', q: '', tanggal: '', data: null, nominal: new Map(), tab: 'papan' });
+    const RTS = ['007', '008', '009'];
     const LABEL = { lunas: 'Lunas', sebagian: 'Sebagian', belum: 'Belum bayar', luar: 'Belum ditagih' };
     const WARNA = { lunas: 'hijau', sebagian: 'berjalan', belum: 'merah', luar: 'luar' };
 
@@ -16,12 +17,13 @@
         if (App.rtKunci()) IS.rt = App.user.rt || '';
         root.innerHTML = `
             <h2 class="title">Iuran Wajib Warga</h2>
+            ${tabsIuran()}
+            <div id="iPapan" ${IS.tab === 'rekap' ? 'hidden' : ''}>
             <div id="iRingkas"></div>
             ${App.rtKunci() || !App.has('iuran.tulis') ? `<p class="small" style="margin-bottom:10px">${App.rtKunci() ? `<b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b> ` : ''}${App.has('iuran.tulis') ? '' : '<b>Anda hanya dapat melihat.</b> Pencatatan iuran wajib dilakukan Pengurus RT.'}</p>` : ''}
             <div class="card">
                 <div class="filters">
                     <div class="full-m"><label class="f" for="iPer">Kumpulan RW (tanggal)</label><select id="iPer" data-change="iuranFilter"></select></div>
-                    <div><label class="f" for="iRt">RT</label><select id="iRt" data-change="iuranFilter" ${App.rtKunci() ? 'disabled' : ''}>${App.optRt(IS.rt)}</select></div>
                     <div><label class="f" for="iSt">Status</label><select id="iSt" data-change="iuranFilter">
                         ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${IS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div><label class="f" for="iCari">Cari nama</label><input id="iCari" placeholder="Ketik nama…" value="${esc(IS.q)}" data-input="iuranCari" maxlength="60"></div>
@@ -30,8 +32,24 @@
             </div>
             <div id="iPg"></div>
             <div id="iList" class="list"></div>
-            <div class="savebar" id="iBar"></div>`;
-        await muat();
+            <div class="savebar" id="iBar"></div>
+            </div>
+            <div id="iRekap" ${IS.tab === 'rekap' ? '' : 'hidden'}></div>`;
+        if (IS.tab === 'rekap') await muatRekap(); else await muat();
+    };
+
+    // Tab: Semua RT / per RT / Rekap
+    function tabsIuran() {
+        const kunci = App.rtKunci();
+        const daftar = kunci ? [[IS.rt, 'RT ' + IS.rt]] : [['', 'Semua RT'], ...RTS.map((r) => [r, 'RT ' + r])];
+        return `<div class="subtabs">${daftar.map(([v, l]) => `<button class="tab ${IS.tab === 'papan' && IS.rt === v ? 'active' : ''}" data-act="iuranTab" data-nilai="${v}">${l}</button>`).join('')}
+            <button class="tab ${IS.tab === 'rekap' ? 'active' : ''}" data-act="iuranTab" data-nilai="rekap">Rekap</button></div>`;
+    }
+    App.actions.iuranTab = (el) => {
+        const v = el.dataset.nilai;
+        if (v === 'rekap') IS.tab = 'rekap';
+        else { IS.tab = 'papan'; IS.rt = v; App.pgReset('iuran'); }
+        return App.render();
     };
 
     async function muat() {
@@ -160,7 +178,7 @@
         }, 200);
     });
     App.changes.iuranFilter = async () => {
-        IS.periode = $('#iPer').value; if (!App.rtKunci()) IS.rt = $('#iRt').value; IS.status = $('#iSt').value;
+        IS.periode = $('#iPer').value; IS.status = $('#iSt').value;
         await muat();
     };
     App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
@@ -268,6 +286,62 @@
         if (!items.length) return;
         btn.disabled = true;
         try { await simpan(items); } finally { btn.disabled = false; }
+    };
+
+    /* ================= REKAP IURAN per kumpulan RW ================= */
+    const RKI = (App.stRekapIuran = { periode: '', data: null, cari: '' });
+
+    async function muatRekap() {
+        const el = $('#iRekap');
+        if (!el) return;
+        el.innerHTML = App.loading();
+        const r = await App.api('/api/rekap-iuran?' + App.qs({ periode: RKI.periode }));
+        RKI.data = r;
+        RKI.periode = r.periode.mulai;
+        gambarRekap();
+    }
+
+    function gambarRekap() {
+        const r = RKI.data, el = $('#iRekap');
+        if (!r || !el) return;
+        if (!r.aktif) { el.innerHTML = '<div class="card empty">Iuran wajib belum diaktifkan.</div>'; return; }
+        const p = r.periode, t = r.total;
+        const cari = RKI.cari.trim().toLowerCase();
+        const rows = r.warga.filter((w) => w.total > 0 && (!cari || w.nama.toLowerCase().includes(cari)));
+        const grup = new Map();
+        for (const w of rows) { if (!grup.has(w.rt)) grup.set(w.rt, []); grup.get(w.rt).push(w); }
+        el.innerHTML = `
+            <div class="card">
+                <div class="filters">
+                    <div class="grow"><label class="f" for="rkiPer">Kumpulan RW</label><select id="rkiPer" data-change="rekapIuranPeriode">
+                        ${r.daftar_periode.map((x) => `<option value="${esc(x.mulai)}" ${x.mulai === p.mulai ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${tgl(x.mulai)}${x.berjalan ? ' (berjalan)' : ''}</option>`).join('')}</select></div>
+                </div>
+                <p class="small muted" style="margin-top:8px">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (kumpulan ke-${p.no}).</p>
+            </div>
+            <div class="rk-baris" style="margin:14px 0">
+                <div class="stat rk-c0"><small>Total pemasukan iuran</small><b>${rp(t.total)}</b>
+                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span></div>
+                ${r.rt.map((g, i) => `<div class="stat rk-c${(i % 3) + 1}"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
+                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
+            </div>
+            <h3 class="sec-title">Rincian per warga</h3>
+            <div class="card">
+                <div class="filters"><div class="grow"><label class="f" for="rkiCari">Cari nama</label><input id="rkiCari" placeholder="Ketik nama…" value="${esc(RKI.cari)}" data-input="rekapIuranCari" maxlength="60"></div></div>
+                ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
+                ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, r.rt.findIndex((g) => g.rt === rt)) % 3) + 1}">
+                    <header><b>RT ${esc(rt)}</b><span>${rp(list.reduce((a, w) => a + w.total, 0))}</span></header>
+                    <ul>${list.map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
+                    <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}
+                </div>`
+                : '<div class="empty" style="margin-top:10px">Belum ada iuran diterima pada kumpulan ini.</div>'}
+            </div>`;
+    }
+    App.changes.rekapIuranPeriode = async (el) => { RKI.periode = el.value; await muatRekap(); };
+    App.changes.rekapIuranCari = (inp) => {
+        RKI.cari = inp.value;
+        gambarRekap();
+        const e = $('#rkiCari');
+        if (e) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
     };
 
     App.actions.batalIuran = (el) => {
