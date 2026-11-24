@@ -54,16 +54,22 @@
             ${p.hari_ini ? `<div class="notice no-print">Hari ini adalah kumpulan RW; angka dihitung sampai hari ini (${App.tglId(p.sampai)}). Transaksi yang dicatat setelah ini akan ikut masuk bila laporan dibuka ulang.</div>` : p.berjalan ? `<div class="notice no-print">Kumpulan ini belum tiba; angka dihitung sampai ${App.tglId(p.sampai)}.</div>` : ''}
             ${k ? `<h3 class="sec-title">Ringkasan kas</h3>
             ${(() => {
-                const blok = (judul, kas, ket, kls) => `<section class="kas-blok ${kls}">
+                // Kartu yang bisa diklik menuju halaman rinciannya (hanya bila akun punya izin melihat halaman itu)
+                const IZIN = { iuran: 'iuran.lihat', jimpitan: 'jimpitan.lihat', pengeluaran: 'pengeluaran.lihat' };
+                const TUJUAN = { iuran: 'Iuran Wajib', jimpitan: 'Rekap Jimpitan', pengeluaran: 'Pengeluaran' };
+                const kartu = (kls, label, nilai, sub, ke) => ke && App.has(IZIN[ke])
+                    ? `<button type="button" class="kas-card kas-link ${kls}" data-act="laporanKe" data-ke="${ke}" title="Buka ${TUJUAN[ke]}"><small>${label}</small><b>${nilai}</b>${sub ? `<span class="kas-sub">${sub}</span>` : ''}<span class="kas-go">${TUJUAN[ke]} →</span></button>`
+                    : `<div class="kas-card ${kls}"><small>${label}</small><b>${nilai}</b>${sub ? `<span class="kas-sub">${sub}</span>` : ''}</div>`;
+                const blok = (judul, kas, ket, kls, keMasuk) => `<section class="kas-blok ${kls}">
                     <header><b>${judul}</b><span>Saldo akhir <b>${rp(kas.akhir)}</b></span></header>
                     <div class="kas-grid">
                         <div class="kas-card"><small>Saldo periode sebelumnya</small><b>${rp(kas.awal)}</b><span class="kas-sub">${k.sejak_saldo_awal ? 'Saldo awal Pengaturan' : 'Saldo akhir kumpulan sebelumnya'}</span></div>
-                        <div class="kas-card in"><small>Total pemasukan</small><b>${rp(kas.masuk)}</b>${ket ? `<span class="kas-sub">${ket}</span>` : ''}</div>
-                        <div class="kas-card out"><small>Total pengeluaran</small><b>${rp(kas.keluar)}</b></div>
+                        ${kartu('in', 'Total pemasukan', rp(kas.masuk), ket, keMasuk)}
+                        ${kartu('out', 'Total pengeluaran', rp(kas.keluar), '', 'pengeluaran')}
                         <div class="kas-card akhir${kas.akhir < 0 ? ' neg' : ''}"><small>Saldo akhir</small><b>${rp(kas.akhir)}</b><span class="kas-sub">Cut off ${App.tglId(p.sampai)}</span></div>
                     </div></section>`;
                 const tot = { awal: k.kas_rw.awal + k.kas_jimpitan.awal, masuk: k.kas_rw.masuk + k.kas_jimpitan.masuk, keluar: k.kas_rw.keluar + k.kas_jimpitan.keluar, akhir: k.kas_rw.akhir + k.kas_jimpitan.akhir };
-                return blok('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)} · Lainnya ${rp(k.kas_rw.lainnya)}`, 'kas-rw') + blok('KAS JIMPITAN', k.kas_jimpitan, '', 'kas-jimpitan')
+                return blok('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)} · Lainnya ${rp(k.kas_rw.lainnya)}`, 'kas-rw', 'iuran') + blok('KAS JIMPITAN', k.kas_jimpitan, '', 'kas-jimpitan', 'jimpitan')
                     + blok('TOTAL KAS', tot, `Jimpitan ${rp(k.kas_jimpitan.masuk)} · Iuran RW ${rp(k.kas_rw.masuk)}`, 'kas-total');
             })()}
             <p class="small muted" style="margin:-4px 0 14px">Total Kas = Kas Iuran RW + Kas Jimpitan. Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}; yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk saldo periode sebelumnya. Pengeluaran tanpa label dana dibebankan ke Kas Iuran RW.</p>` : ''}
@@ -144,6 +150,13 @@
         await App.download('/api/laporan?' + App.qs({ periode: LS.periode, format: 'csv' }), `setoran-kumpulan-${LS.periode}.csv`);
     };
     App.actions.laporanCetak = () => window.print();
+    // Kartu laporan → halaman rincian; kumpulan yang sama ikut terpilih di Iuran Wajib / Rekap Jimpitan
+    App.actions.laporanKe = (el) => {
+        const ke = el.dataset.ke;
+        if (ke === 'iuran') { App.stIuran.periode = LS.periode; App.go('iuran'); }
+        else if (ke === 'jimpitan') { App.stRekap.periode = LS.periode; App.stSetoran.jenis = 'rekap'; App.go('setoran'); }
+        else App.go('pengeluaran');
+    };
 
     /* ================= PENGELUARAN ================= */
     const KATEGORI = ['Santunan / Sosial', 'Keamanan / Ronda', 'Kebersihan', 'Fasilitas Lingkungan', 'Kegiatan Warga', 'Administrasi', 'Lainnya'];
