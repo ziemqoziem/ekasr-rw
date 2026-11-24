@@ -2493,6 +2493,6 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bk-modern .tbl-kas tbody tr.jalan td { background: none; }
   .bk-modern .tbl-kas tbody tr { background: var(--panel); margin: 10px 4px; border-radius: 14px; }
   .bk-modern .tbl-kas tbody tr.jalan { background: linear-gradient(180deg, rgba(14, 165, 233, 0.16), rgba(99, 102, 241, 0.06)); }
-  .bk-modern .tbl-kas td.in::before, .bk-modern .tbl-kas td.out::before { content: none; }
+  .bk-modern .tbl-kas td.in[data-l]::before, .bk-modern .tbl-kas td.out[data-l]::before { content: attr(data-l); opacity: 1; }
   .bk-modern .tbl-kas td[data-l]:not(:first-child)::before { max-width: 60%; }
 }
