@@ -56,13 +56,25 @@
     }
 
     function vPeriode(r) {
-        return `<div class="card"><h3>Ringkasan per kumpulan RW (Selasa Kliwon, 12 terakhir)</h3>
-            <p class="small muted" style="margin-bottom:10px">Laporan kas yang dibacakan pada kumpulan RW. Periode berjalan dihitung sampai hari ini.</p>
-            <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Jimpitan</th><th class="r">Iuran wajib</th><th class="r">Pemasukan lainnya</th><th class="r">Total masuk</th><th class="r">Pengeluaran</th><th class="r">Selisih</th><th class="r">Saldo akhir</th></tr></thead><tbody>
-            ${r.per_periode.slice().reverse().map((p) => `<tr><td>${esc(p.weton)}, ${tgl(p.mulai)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</td>
-                <td class="r num">${rp(p.jimpitan)}</td><td class="r num">${rp(p.iuran)}</td><td class="r num">${rp(p.sewa)}</td><td class="r num"><b>${rp(p.masuk)}</b></td>
-                <td class="r num">${rp(p.keluar)}</td><td class="r num" style="color:var(--${p.selisih >= 0 ? 'green' : 'red'})">${rp(p.selisih)}</td><td class="r num"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('')}
-            </tbody></table></div></div>`;
+        const ps = r.per_periode;           // terbaru di indeks 0
+        const b = ps.find((p) => p.berjalan) || ps[0];
+        const kartu = b ? `<div class="rk-baris" style="margin-bottom:14px">
+            <div class="stat rk-c0"><small>Saldo awal kumpulan ke-${b.no}</small><b>${rp(b.saldo_awal)}</b><span class="small muted" style="display:block;margin-top:4px">saldo akhir kumpulan sebelumnya</span></div>
+            <div class="stat rk-c1"><small>Pemasukan</small><b style="color:#10b981">+ ${rp(b.masuk)}</b><span class="small muted" style="display:block;margin-top:4px">jimpitan ${rp(b.jimpitan)} · iuran ${rp(b.iuran)} · lainnya ${rp(b.sewa)}</span></div>
+            <div class="stat rk-c2"><small>Pengeluaran</small><b style="color:#f43f5e">− ${rp(b.keluar)}</b></div>
+            <div class="stat rk-c3"><small>Saldo akhir</small><b>${rp(b.saldo_akhir)}</b><span class="small muted" style="display:block;margin-top:4px">selisih ${b.selisih >= 0 ? '+' : '−'} ${rp(Math.abs(b.selisih))}</span></div>
+        </div>` : '';
+        const baris = ps.map((p) => `<tr>
+            <td data-l="Kumpulan"><span class="kn">K${p.no}</span> <b>${tgl(p.tanggal)}</b><div class="small muted">${esc(p.weton)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</div></td>
+            <td class="r num" data-l="Saldo periode sebelumnya">${rp(p.saldo_awal)}</td>
+            <td class="r num in" data-l="Jimpitan">${rp(p.jimpitan)}</td><td class="r num in" data-l="Iuran wajib">${rp(p.iuran)}</td><td class="r num in" data-l="Lainnya">${rp(p.sewa)}</td>
+            <td class="r num in" data-l="Total masuk"><b>${rp(p.masuk)}</b></td>
+            <td class="r num out" data-l="Pengeluaran">${rp(p.keluar)}</td>
+            <td class="r num sa" data-l="Saldo akhir"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
+        return `${kartu}<section class="card bk-periode bk-modern">
+            <div class="tbl-wrap"><table class="tbl-kas"><thead><tr><th>Kumpulan</th><th class="r">Saldo periode sebelumnya</th><th class="r">Jimpitan</th><th class="r">Iuran wajib</th><th class="r">Lainnya</th><th class="r">Total masuk</th><th class="r">Pengeluaran</th><th class="r">Saldo akhir</th></tr></thead>
+            <tbody>${baris || '<tr><td colspan="8" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
+            <p class="small muted" style="margin-top:10px">Saldo periode sebelumnya + pemasukan − pengeluaran = saldo akhir. Dihitung sampai tanggal kumpulan (cut off), sama dengan halaman Laporan; kumpulan berjalan dihitung sampai hari ini. 12 kumpulan terakhir.</p></section>`;
     }
 
     /* ---------- Tutup buku per 31 Desember ---------- */

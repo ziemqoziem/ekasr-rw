@@ -1,5 +1,6 @@
 const { route, fail, oneOf, butuh } = require('./_lib/http');
-const { totalKas, totalRentang, bukuKas } = require('./_lib/kas');
+const { totalKas, totalRentang, bukuKas, basisAwal } = require('./_lib/kas');
+const L = require('./_lib/laporan');
 const I = require('./_lib/iuran');
 const P = require('./_lib/periode');
 
@@ -30,13 +31,20 @@ module.exports = route({
       let masuk = 0, keluar = 0;
       for (const b of baris) { saldo += b.masuk - b.keluar; masuk += b.masuk; keluar += b.keluar; b.saldo = saldo; }
 
-      const periodeList = I.periodeTerakhir(today, 12);
+      // Sama dengan halaman Laporan: kumpulan K = cut off pada tanggal K (transaksi sejak K-34 s.d. K).
+      // Kumpulan ke-1 dihitung sejak saldo awal berlaku; kumpulan berjalan dihitung sampai hari ini.
+      // Saldo akhir = saldo awal (saldo akhir kumpulan sebelumnya) + pemasukan − pengeluaran.
       const per_periode = [];
-      for (const p of periodeList) {
-        const akhir = p.akhir < today ? p.akhir : today;
-        const t = await totalRentang(p.mulai, akhir);
+      for (const x of L.daftarPeriode(today).slice(0, 12)) {
+        const akhir = x.akhir < today ? x.akhir : today;
+        let mulai = x.mulai;
+        let saldoAwal;
+        const basis = x.no === 1 ? await basisAwal(akhir) : null;
+        if (basis) { mulai = basis.mulai; saldoAwal = Object.values(basis.awal).reduce((a, v) => a + v, 0); }
+        else saldoAwal = (await totalKas(P.addDays(x.mulai, -1))).saldo;
+        const t = await totalRentang(mulai, akhir);
         const sa = await totalKas(akhir);
-        per_periode.push({ mulai: p.mulai, akhir: p.akhir, weton: I.weton(p.mulai), berjalan: p.akhir >= today, ...t, saldo_akhir: sa.saldo });
+        per_periode.push({ no: x.no, tanggal: x.tanggal, mulai, akhir: x.akhir, weton: x.weton, berjalan: x.akhir >= today, saldo_awal: saldoAwal, ...t, saldo_akhir: sa.saldo });
       }
       return {
         dari, sampai, sumber, saldo_awal: sumber ? null : awal.saldo, baris,
