@@ -292,23 +292,21 @@
                 </div>
                 <p class="small muted" style="margin-top:8px">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>
-            <div class="grid cols-3" style="margin:14px 0">
-                <div class="stat good"><small>Total jimpitan</small><b>${rp(t.total)}</b></div>
-                <div class="stat"><small>Warga menyetor</small><b>${t.menyetor} / ${t.warga}</b></div>
-                <div class="stat"><small>Rata-rata per warga</small><b>${rp(t.menyetor ? Math.round(t.total / t.menyetor) : 0)}</b></div>
-            </div>
-            <h3 class="sec-title">Rincian per RT</h3>
-            <div class="grid cols-4" style="margin-bottom:14px">
+            <div class="rk-baris" style="margin:14px 0">
+                <div class="stat good"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
+                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span></div>
                 ${r.rt.map((g) => `<div class="stat"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('') || '<div class="card empty">Tidak ada data.</div>'}
+                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
                 <div class="filters"><div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Ketik nama…" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div></div>
-                ${grup.size ? `<div class="tbl-wrap"><table class="tbl-rekap"><thead><tr><th>Nama (RT)</th><th class="r">Jumlah</th></tr></thead><tbody>
-                ${[...grup.entries()].map(([rt, list]) => `<tr class="rk-rt"><td>RT ${esc(rt)} <span class="muted">· ${list.length} warga</span></td><td class="r num">${rp(list.reduce((a, w) => a + w.total, 0))}</td></tr>
-                    ${list.map((w) => `<tr><td>${esc(w.nama)}</td><td class="r num">${rp(w.total)}</td></tr>`).join('')}`).join('')}
-                </tbody><tfoot><tr><td><b>Total</b></td><td class="r num"><b>${rp(rows.reduce((a, w) => a + w.total, 0))}</b></td></tr></tfoot></table></div>`
+                ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
+                ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol">
+                    <header><b>RT ${esc(rt)}</b><span>${rp(list.reduce((a, w) => a + w.total, 0))}</span></header>
+                    <ul>${list.map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
+                    <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}
+                </div>`
                 : '<div class="empty" style="margin-top:10px">Belum ada setoran pada kumpulan ini.</div>'}
             </div>`;
     }
