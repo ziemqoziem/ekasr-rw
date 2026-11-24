@@ -6,7 +6,7 @@
     const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
     const JENIS = { hasil_sewa: 'Hasil sewa', donasi: 'Donasi', lainnya: 'Lainnya' };
-    const SS = (App.stPemasukanLain = { periode: '', rt: '', jenis: '', urut: 'baru', data: null });
+    const SS = (App.stPemasukanLain = { periode: '', rt: '', data: null });
 
     App.views.pemasukanlain = async (root) => {
         if (!App.has('sewa.lihat')) { root.innerHTML = '<div class="card empty">Anda tidak memiliki akses ke halaman ini.</div>'; return; }
@@ -25,8 +25,8 @@
     function tampil() {
         const r = SS.data;
         const tulis = App.has('sewa.tulis');
-        // Filter jenis + urutan (terbaru/terlama) dilakukan di layar tanpa memuat ulang
-        const data = r.sewa.filter((x) => !SS.jenis || x.jenis === SS.jenis).sort((a, b) => (SS.urut === 'lama' ? 1 : -1) * ((a.tanggal + (a.created_at || '')).localeCompare(b.tanggal + (b.created_at || ''))));
+        // Urutan tetap: terbaru di atas (tanggal, lalu jam input)
+        const data = r.sewa.slice().sort((a, b) => (b.tanggal + (b.created_at || '')).localeCompare(a.tanggal + (a.created_at || '')));
         const pg = App.paginate('pemasukanlain', data);
         const sah = data.filter((x) => x.status === 'sah').reduce((a, x) => a + x.nominal, 0);
         const pilihPer = `<option value="">Semua periode</option>` + r.rekap.slice().reverse().map((p) => `<option value="${p.mulai}" ${SS.periode === p.mulai ? 'selected' : ''}>${esc(p.weton)} ${tgl(p.mulai)}${p.berjalan ? ' (berjalan)' : ''}</option>`).join('');
@@ -42,8 +42,6 @@
                 </div><div class="dlg-actions"><button class="btn primary" type="submit">Simpan penerimaan</button></div></form></div>` : ''}
             <div class="card"><div class="filters">
                 <div><label class="f" for="swPer">Tampilkan periode</label><select id="swPer" data-change="sewaFilter">${pilihPer}</select></div>
-                <div><label class="f" for="swJn">Jenis</label><select id="swJn" data-change="sewaTampil"><option value="">Semua jenis</option>${Object.entries(JENIS).map(([v, l]) => `<option value="${v}" ${SS.jenis === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-                <div><label class="f" for="swUrut">Urutan</label><select id="swUrut" data-change="sewaTampil"><option value="baru" ${SS.urut === 'baru' ? 'selected' : ''}>Terbaru → terlama</option><option value="lama" ${SS.urut === 'lama' ? 'selected' : ''}>Terlama → terbaru</option></select></div>
             </div><p class="small muted">${data.length} catatan · total sah: <b>${rp(sah)}</b></p></div>
             ${pg.bar}
             <div class="list">${data.length ? pg.items.map((x) => `
@@ -58,13 +56,6 @@
     App.changes.sewaFilter = async () => {
         SS.periode = $('#swPer').value;
         await muat();
-    };
-    // Jenis & urutan: hanya menyaring/mengurutkan data yang sudah dimuat
-    App.changes.sewaTampil = () => {
-        SS.jenis = $('#swJn').value;
-        SS.urut = $('#swUrut').value;
-        App.pgReset('pemasukanlain');
-        tampil();
     };
     App.forms.pemasukanlain = async (f) => {
         await App.api('/api/pemasukan-lain', { method: 'POST', body: { tanggal: f.tanggal.value, jenis: f.jenis.value, uraian: f.uraian.value, nominal: Number(f.nominal.value) } });
