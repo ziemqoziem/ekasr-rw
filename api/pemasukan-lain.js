@@ -40,7 +40,7 @@ module.exports = route({
       else if (q.rt) { where.push('rt = ?'); params.push(oneOf(String(q.rt), 'RT', RT_LIST)); }
       if (per) { where.push('tanggal BETWEEN ? AND ?'); params.push(per.mulai, per.akhir); }
       const r = await db.query(
-        `SELECT id, tanggal, rt, jenis, uraian, nominal, petugas, catatan, status, alasan_batal
+        `SELECT id, tanggal, created_at, rt, jenis, uraian, nominal, petugas, catatan, status, alasan_batal
          FROM sewa_aset ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
          ORDER BY tanggal DESC, created_at DESC LIMIT 500`, params
       );
@@ -55,7 +55,7 @@ module.exports = route({
         rekap.push({ mulai: p.mulai, akhir: p.akhir, weton: I.weton(p.mulai), berjalan: p.mulai === I.periodeDari(today).mulai, total: Number(t.n), jumlah: Number(t.c) });
       }
       return {
-        sewa: r.rows.map((x) => ({ ...x, tanggal: String(x.tanggal).slice(0, 10) })),
+        sewa: r.rows.map((x) => ({ ...x, tanggal: String(x.tanggal).slice(0, 10), created_at: x.created_at ? new Date(x.created_at).toISOString() : '' })),
         rekap, batas_rt: batas, bisa_tulis: punya(user, 'sewa.tulis')
       };
     }

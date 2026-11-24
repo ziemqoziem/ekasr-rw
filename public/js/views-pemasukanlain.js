@@ -6,7 +6,7 @@
     const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
     const JENIS = { hasil_sewa: 'Hasil sewa', donasi: 'Donasi', lainnya: 'Lainnya' };
-    const SS = (App.stPemasukanLain = { periode: '', rt: '', data: null });
+    const SS = (App.stPemasukanLain = { periode: '', rt: '', urut: 'baru', data: null });
 
     App.views.pemasukanlain = async (root) => {
         if (!App.has('sewa.lihat')) { root.innerHTML = '<div class="card empty">Anda tidak memiliki akses ke halaman ini.</div>'; return; }
@@ -25,7 +25,9 @@
     function tampil() {
         const r = SS.data;
         const tulis = App.has('sewa.tulis');
-        const pg = App.paginate('pemasukanlain', r.sewa);
+        // Urutan: terbaru (bawaan) atau terlama
+        const data = r.sewa.slice().sort((a, b) => (SS.urut === 'lama' ? 1 : -1) * ((a.tanggal + (a.created_at || '')).localeCompare(b.tanggal + (b.created_at || ''))));
+        const pg = App.paginate('pemasukanlain', data);
         const sah = r.sewa.filter((x) => x.status === 'sah').reduce((a, x) => a + x.nominal, 0);
         const bebasRt = !r.batas_rt;
         const pilihPer = `<option value="">Semua periode</option>` + r.rekap.slice().reverse().map((p) => `<option value="${p.mulai}" ${SS.periode === p.mulai ? 'selected' : ''}>${esc(p.weton)} ${tgl(p.mulai)}${p.berjalan ? ' (berjalan)' : ''}</option>`).join('');
@@ -39,16 +41,13 @@
                     <div class="full"><label class="f" for="swUr">Uraian</label><input id="swUr" name="uraian" required minlength="3" maxlength="200" placeholder="mis. Sewa tenda & kursi / Donasi warga"></div>
                     <div><label class="f" for="swNom">Nominal (Rp)</label><input type="number" id="swNom" name="nominal" min="1" required inputmode="numeric"></div>
                 </div><div class="dlg-actions"><button class="btn primary" type="submit">Simpan penerimaan</button></div></form></div>` : ''}
-            <div class="card"><h3>Laporan per kumpulan RW</h3>
-                <div class="tbl-wrap"><table><thead><tr><th>Kumpulan RW</th><th class="r">Jumlah</th><th class="r">Penerimaan</th></tr></thead><tbody>
-                ${r.rekap.map((p) => `<tr><td>${esc(p.weton)}, ${tgl(p.mulai)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</td><td class="r num">${p.jumlah}</td><td class="r num">${rp(p.total)}</td></tr>`).join('')}
-                </tbody></table></div></div>
             <div class="card"><div class="filters">
                 <div><label class="f" for="swPer">Tampilkan periode</label><select id="swPer" data-change="sewaFilter">${pilihPer}</select></div>
                 ${bebasRt ? `<div><label class="f" for="swF">RT</label><select id="swF" data-change="sewaFilter">${App.optRt(SS.rt)}</select></div>` : ''}
+                <div><label class="f" for="swUrut">Urutan</label><select id="swUrut" data-change="sewaFilter"><option value="baru" ${SS.urut === 'baru' ? 'selected' : ''}>Terbaru → terlama</option><option value="lama" ${SS.urut === 'lama' ? 'selected' : ''}>Terlama → terbaru</option></select></div>
             </div><p class="small muted">${r.sewa.length} catatan · total sah: <b>${rp(sah)}</b></p></div>
             ${pg.bar}
-            <div class="list">${r.sewa.length ? pg.items.map((x) => `
+            <div class="list">${data.length ? pg.items.map((x) => `
                 <div class="item" style="${x.status === 'batal' ? 'opacity:.55' : ''}">
                     <div class="grow"><div class="name">${esc(x.uraian)}</div>
                     <div class="meta"><span class="badge">${esc(JENIS[x.jenis] || 'Lainnya')}</span> ${App.tglId(x.tanggal)} · ${x.rt ? 'RT ' + esc(x.rt) : 'RW'} · oleh ${esc(x.petugas)}${x.status === 'batal' ? ` · <span class="badge red">batal: ${esc(x.alasan_batal || '')}</span>` : ''}</div></div>
@@ -60,6 +59,7 @@
     App.changes.sewaFilter = async () => {
         SS.periode = $('#swPer').value;
         SS.rt = $('#swF') ? $('#swF').value : '';
+        SS.urut = $('#swUrut') ? $('#swUrut').value : 'baru';
         await muat();
     };
     App.forms.pemasukanlain = async (f) => {
