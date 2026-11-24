@@ -59,7 +59,6 @@
             <h2 class="title">Setor Jimpitan / Iuran</h2>
             ${tabsSetoran()}
             <div class="card">
-                <p class="small" id="sPetunjuk" style="margin-bottom:10px"></p>
                 <div class="filters">
                     <div><label class="f" for="sTgl">Tanggal setor</label><input type="date" id="sTgl" value="${esc(SS.tanggal)}" max="${App.today()}" data-change="setoranFilter"></div>
                     <div><label class="f" for="sRt">RT</label><select id="sRt" data-change="setoranFilter" ${App.rtKunci() ? 'disabled' : ''}>${optRt(SS.rt)}</select></div>
@@ -78,22 +77,7 @@
         $('#sList').innerHTML = App.loading();
         App.pgReset('setor');
         SS.data = await App.api('/api/daftar-setoran?' + qs({ tanggal: SS.tanggal, rt: SS.rt, jenis: SS.jenis }));
-        petunjukSetor();
         renderSetoran();
-    }
-
-    function petunjukSetor() {
-        const el = $('#sPetunjuk');
-        if (!el || !SS.data) return;
-        const t = SS.data.tarif_harian;
-        const hb = new Date(Number(SS.tanggal.slice(0, 4)), Number(SS.tanggal.slice(5, 7)), 0).getDate();
-        const txt = {
-            harian: `Warga <b>harian</b> menyetor tiap hari. Saran: ${rp(t)} (1 hari).`,
-            mingguan: `Warga <b>mingguan</b> menyetor seminggu sekali. Saran: ${rp(t * 7)} (7 hari).`,
-            bulanan: `Warga <b>bulanan</b> menyetor sebulan sekali. Saran: ${rp(t * 30)} (30 hari).`
-        }[SS.jenis];
-        if (!App.has('jimpitan.tulis')) { el.innerHTML = `${txt.replace(/ Saran:.*$/, '')} <b>Anda hanya dapat melihat.</b> Pencatatan setoran dilakukan Bendahara Jimpitan; gunakan Saldo dan Kalender untuk melihat riwayat warga.`; return; }
-        el.innerHTML = `${txt} Ketik nominal lalu tekan <b>Setor</b>, atau isi beberapa warga dan tekan <b>Simpan Setoran</b>. Nominal boleh berapa pun; kelebihan jadi titipan, kekurangan jadi tunggakan.`;
     }
 
     App.actions.setoranJenis = (el) => {
@@ -139,7 +123,9 @@
                 const val = SS.nominal.get(w.id);
                 const tulis = App.has('jimpitan.tulis');
                 const chips = w.setoran.map((x) => `<span class="chip ok-chip">${rp(x.nominal)} ${tulis ? `<button class="chip-x" data-act="batalSetoran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}" aria-label="Batalkan setoran ${rp(x.nominal)}">✕</button>` : ''}</span>`).join('');
-                return `<div class="item ${w.setoran.length ? 'done' : ''}" data-row="${w.id}">
+                const bisa = !w.setoran.length && w.default > 0;
+                return `<div class="item ${w.setoran.length ? 'done' : ''}${val > 0 ? ' dipilih' : ''}" data-row="${w.id}">
+                    ${tulis ? `<label class="cek-setor" title="${bisa ? 'Pilih warga ini' : 'Sudah setor pada tanggal ini'}"><input type="checkbox" data-change="setorCek" data-id="${w.id}" aria-label="Pilih ${esc(w.nama)}" ${val > 0 ? 'checked' : ''} ${bisa ? '' : 'disabled'}></label>` : ''}
                     <div class="grow">
                         <div class="name">${esc(w.nama)} ${w.setoran.length ? '<span class="badge green">✓ Sudah setor</span>' : ''}</div>
                         <div class="meta"><span class="badge">RT ${esc(w.rt)}</span> ${lencanaSaldo(w)}</div>
@@ -167,9 +153,12 @@
         let n = 0, total = 0;
         for (const v of SS.nominal.values()) if (v > 0) { n += 1; total += v; }
         const belum = r.warga.filter((w) => !w.setoran.length && w.default > 0).length;
+        const bisaPilih = r.warga.filter((w) => !w.setoran.length && w.default > 0);
+        const semua = bisaPilih.length > 0 && bisaPilih.every((w) => SS.nominal.get(w.id) > 0);
         bar.innerHTML = `
             ${SS.pgHtml ? `<div class="savebar-pg">${SS.pgHtml}</div>` : ''}
             <div class="row" style="gap:8px">
+                <label class="row" style="gap:6px;cursor:pointer;font-weight:600;font-size:.86rem"><input type="checkbox" data-change="setorCekSemua" ${semua ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'} aria-label="Pilih semua warga yang belum setor"> Pilih semua</label>
                 <span class="badge blue"><b>${n}</b> warga dipilih</span>
                 <span style="font-weight:700;font-size:1.15rem;color:var(--text);font-variant-numeric:tabular-nums">${rp(total)}</span>
             </div>
@@ -194,6 +183,21 @@
     // Perbarui bilah simpan tanpa merender ulang daftar (agar fokus input tidak hilang)
     function renderBarSaja() { renderBar(); }
 
+    App.changes.setorCek = (el) => {
+        const w = SS.data.warga.find((x) => x.id === Number(el.dataset.id));
+        if (!w) return;
+        if (el.checked && w.default > 0) SS.nominal.set(w.id, w.default); else SS.nominal.delete(w.id);
+        renderSetoran();
+    };
+    // Pilih semua warga (sesuai filter RT & pencarian, semua halaman) yang belum setor: isi nominal default; hapus centang = kosongkan
+    App.changes.setorCekSemua = (el) => {
+        const cari = ($('#sCari').value || '').trim().toLowerCase();
+        for (const w of SS.data.warga) {
+            if (w.setoran.length || !(w.default > 0) || (cari && !w.nama.toLowerCase().includes(cari))) continue;
+            if (el.checked) SS.nominal.set(w.id, w.default); else SS.nominal.delete(w.id);
+        }
+        renderSetoran();
+    };
     App.actions.isiSaran = (el) => {
         const w = SS.data.warga.find((x) => x.id === Number(el.dataset.id));
         if (!w || !w.saran) return;
