@@ -15,34 +15,51 @@
         const d = await App.api('/api/publik');
         const reg = {};
         const k = d.kas;
-        const ir = d.iuran;
-        const bl = `${BULAN[Number(d.bulan.slice(5, 7)) - 1]} ${d.bulan.slice(0, 4)}`;
-        const nmLalu = BULAN[(Number(d.bulan.slice(5, 7)) + 10) % 12].slice(0, 3);
-        const persenMenyetor = d.total_warga ? Math.round((d.warga_menyetor / d.total_warga) * 100) : 0;
         const tgl = (t) => App.tglId(t);
+        const bl = `${BULAN[Number(d.bulan.slice(5, 7)) - 1]} ${d.bulan.slice(0, 4)}`;
 
-        /* ---- 1) Saldo kas: total + tiap kantong ---- */
-        const kunci = { jimpitan: (b) => b.jimpitan, bendahara_rw: (b) => b.iuran + b.sewa };
-        const kantongTiles = k.kantong.filter((x) => x.kode !== 'umum' || x.saldo !== 0).map((x) => {
-            if (x.kode === 'umum') return D.tile({ label: x.nama, value: rp(x.saldo), tone: 'bad', sub: 'Pengeluaran yang tidak dikaitkan ke satu sumber dana' });
-            const ini = kunci[x.kode](k.bulan_ini), lalu = kunci[x.kode](k.bulan_lalu);
-            return D.tile({
-                label: `Saldo ${x.nama}`, value: rp(x.saldo), tone: x.saldo < 0 ? 'bad' : 'good',
-                delta: D.delta(ini, lalu, true, nmLalu),
-                sub: `Masuk ${bl.split(' ')[0].slice(0, 3)} ${compact(ini)} · total masuk ${compact(x.awal + x.masuk)} · keluar ${compact(x.keluar)}`
-            });
-        });
-        const tilesKas = [
-            D.tile({ hero: true, label: 'Saldo kas RW (seluruh sumber)', value: rp(k.saldo), tone: k.saldo < 0 ? 'bad' : 'good',
-                sub: `Total masuk ${compact(k.masuk)} · total keluar ${compact(k.keluar)} · bulan ini masuk ${compact(k.bulan_ini.masuk)} / keluar ${compact(k.bulan_ini.keluar)}${k.tahun_basis ? ' · saldo awal tahun ' + k.tahun_basis : ''}` }),
-            ...kantongTiles
-        ];
+        /* ---- 1) Saldo Kas RW: kartu saldo utama + kantong ---- */
+        const kantong = k.kantong.filter((x) => x.kode !== 'umum' || x.saldo !== 0);
+        const positif = kantong.filter((x) => x.saldo > 0).reduce((a, x) => a + x.saldo, 0);
+        const WARNA_KANTONG = { jimpitan: 'bk-biru', bendahara_rw: 'bk-ungu', umum: 'bk-merah' };
+        const kartuKantong = kantong.map((x) => {
+            const bagian = positif > 0 && x.saldo > 0 ? Math.round((x.saldo / positif) * 100) : 0;
+            const ket = x.kode === 'umum' ? 'Pengeluaran yang tidak dikaitkan ke satu sumber dana'
+                : `Masuk ${compact(x.awal + x.masuk)} · keluar ${compact(x.keluar)}`;
+            return `<div class="bk-kantong ${WARNA_KANTONG[x.kode] || ''}">
+                <div class="bk-k-head"><span>${esc(x.nama)}</span>${x.kode === 'umum' ? '' : `<em>${bagian}%</em>`}</div>
+                <div class="bk-k-val">${rp(x.saldo)}</div>
+                ${x.kode === 'umum' ? '' : `<div class="bk-bar"><i style="width:${bagian}%"></i></div>`}
+                <div class="bk-k-sub">${ket}</div></div>`;
+        }).join('');
+        const saldoKas = `<div class="bk">
+            <div class="bk-utama ${k.saldo < 0 ? 'neg' : ''}">
+                <div class="bk-label">Saldo kas RW · seluruh sumber</div>
+                <div class="bk-saldo">${rp(k.saldo)}</div>
+                <div class="bk-stats">
+                    <div><small>Total masuk</small><b>${rp(k.masuk)}</b></div>
+                    <div><small>Total keluar</small><b>${rp(k.keluar)}</b></div>
+                    <div><small>Masuk ${esc(bl)}</small><b>${rp(k.bulan_ini.masuk)}</b></div>
+                    <div><small>Keluar ${esc(bl)}</small><b>${rp(k.bulan_ini.keluar)}</b></div>
+                </div>
+                ${k.tahun_basis ? `<div class="bk-foot">Termasuk saldo awal tahun ${esc(k.tahun_basis)}</div>` : ''}
+            </div>
+            <div class="bk-samping">${kartuKantong}</div></div>`;
 
-        const komp = [
-            { name: 'Kas Jimpitan', value: Math.max(0, k.kantong[0].saldo), color: C.s[0] },
-            { name: 'Kas Bendahara RW', value: Math.max(0, k.kantong[1].saldo), color: C.s[2] }
-        ];
-        reg.komp = () => K.donut({ parts: komp, centerTop: compact(k.saldo), centerBottom: 'saldo kas', aria: 'Komposisi saldo kas per sumber' });
+        /* ---- 2) Kas per kumpulan RW (cut off): saldo awal + pemasukan − pengeluaran = saldo akhir ---- */
+        const periodeRows = k.per_periode.slice().reverse().map((p) => `
+            <tr><td data-l="Kumpulan"><b>Kumpulan ke-${p.no}</b><div class="small muted">${tgl(p.tanggal)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</div></td>
+            <td class="r num" data-l="Saldo awal">${rp(p.saldo_awal)}</td>
+            <td class="r num in" data-l="Jimpitan">${rp(p.jimpitan)}</td><td class="r num in" data-l="Iuran">${rp(p.iuran)}</td><td class="r num in" data-l="Lainnya">${rp(p.sewa)}</td>
+            <td class="r num out" data-l="Keluar">${rp(p.keluar)}</td><td class="r num sa" data-l="Saldo akhir"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
+        const tabelPeriode = `<section class="card bk-periode">
+            <div class="tbl-wrap"><table class="tbl-kas"><thead><tr><th>Kumpulan</th><th class="r">Saldo awal</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead>
+            <tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
+            <p class="small muted" style="margin-top:10px">Saldo awal + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
+
+        /* ---- 3) Pemasukan & pengeluaran 12 bulan ---- */
+        const masuk12 = k.tren.reduce((a, t) => a + t.jimpitan + t.iuran + t.sewa, 0);
+        const keluar12 = k.tren.reduce((a, t) => a + t.keluar, 0);
         reg.trenkas = (w) => K.columns({
             labels: k.tren.map((t) => K.bulanPendek(t.bulan)),
             series: [
@@ -51,51 +68,10 @@
                 { name: 'Pemasukan lainnya', color: C.s[3], values: k.tren.map((t) => t.sewa) },
                 { name: 'Pengeluaran', color: C.s[7], values: k.tren.map((t) => t.keluar) }
             ],
-            tipTitle: (i) => D.labelBulan(k.tren[i].bulan), height: 220, aria: 'Pemasukan per sumber dan pengeluaran 6 bulan terakhir'
+            tipTitle: (i) => D.labelBulan(k.tren[i].bulan), height: 260, aria: 'Pemasukan per sumber dan pengeluaran 12 bulan terakhir'
         }, w);
-        reg.masukbulan = () => K.hbars({ items: [
-            { name: 'Jimpitan', value: k.bulan_ini.jimpitan, color: C.s[0] },
-            { name: 'Iuran wajib', value: k.bulan_ini.iuran, color: C.s[2] },
-            { name: 'Pemasukan lainnya', value: k.bulan_ini.sewa, color: C.s[3] },
-            { name: 'Pengeluaran', value: k.bulan_ini.keluar, color: C.s[7] }
-        ] });
-        // Kas per kumpulan RW (cut off): saldo awal + pemasukan − pengeluaran = saldo akhir
-        const periodeRows = k.per_periode.slice().reverse().map((p) => `
-            <tr><td><b>Kumpulan ke-${p.no}</b><div class="small muted">${tgl(p.tanggal)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</div></td>
-            <td class="r num">${rp(p.saldo_awal)}</td>
-            <td class="r num">${rp(p.jimpitan)}</td><td class="r num">${rp(p.iuran)}</td><td class="r num">${rp(p.sewa)}</td>
-            <td class="r num">${rp(p.keluar)}</td><td class="r num"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
-
-        /* ---- 2) Jimpitan ---- */
-        const tilesJ = [
-            D.tile({ label: `Jimpitan ${bl}`, value: rp(d.total_bulan_ini), delta: D.delta(d.total_bulan_ini, d.total_bulan_lalu, true, nmLalu) }),
-            D.tile({ label: 'Jimpitan hari ini', value: rp(d.jimpitan_hari_ini.total), sub: `${d.jimpitan_hari_ini.warga} warga menyetor hari ini` }),
-            D.tile({ label: 'Tunggakan jimpitan', value: rp(d.tunggakan.total), tone: d.tunggakan.total > 0 ? 'bad' : 'good', sub: `${d.tunggakan.warga_menunggak} warga · ${d.tunggakan.persen_lunas}% bebas tunggakan · titipan ${compact(d.tunggakan.titipan || 0)}` })
-        ];
-        // Gauge partisipasi per RT
-        const gaugeRt = d.rt.map((r) => K.gauge({
-            value: r.persen, label: `RT ${r.rt}`, sub: `${r.warga_menyetor_bulan_ini} dari ${r.warga_aktif} warga · ${rp(r.total_bulan_ini)}`,
-            detail: `RT ${r.rt}: ${r.warga_menyetor_bulan_ini} dari ${r.warga_aktif} warga menyetor bulan ini`
-        })).join('');
-        const tarifStrip = d.tarif.map((t) => `<span class="tarif-pill"><b>Jimpitan harian</b> ${t.nominal > 0 ? rp(t.nominal) : '<i class="muted">belum ditentukan</i>'}</span>`).join('');
-
-        /* ---- 3) Iuran wajib (kas RW) ---- */
-        let htmlIuran;
-        if (ir && ir.aktif) {
-            const parts = [
-                { name: 'Lunas', value: ir.lunas, color: C.good }, { name: 'Sebagian', value: ir.sebagian, color: C.warn }, { name: 'Belum bayar', value: ir.belum, color: C.crit }
-            ];
-            reg.iuranst = () => K.donut({ parts, fmt: (v) => `${v} KK`, centerTop: `${ir.persen_lunas}%`, centerBottom: 'lunas', aria: 'Status iuran wajib kumpulan berjalan' });
-            const tilesI = [
-                D.tile({ label: 'Kumpulan RW berjalan', value: esc(tgl(ir.periode.mulai)), sub: `${esc(ir.periode.weton)} · iuran ${rp(ir.nominal)}/KK` }),
-                D.tile({ label: 'Diterima kumpulan ini', value: rp(ir.diterima_periode), sub: `${ir.lunas} lunas · ${ir.sebagian} sebagian · ${ir.belum} belum dari ${ir.warga_wajib} KK` }),
-                D.tile({ label: 'Tunggakan iuran wajib', value: rp(ir.tunggakan_total), tone: ir.tunggakan_total > 0 ? 'bad' : 'good', sub: `${ir.warga_menunggak} KK · titipan ${compact(ir.titipan || 0)}` })
-            ];
-            htmlIuran = `<div class="kpi-grid n3">${tilesI.join('')}</div>
-                ${D.chartCard('iuranst', 'Status iuran wajib kumpulan berjalan', `${ir.periode.weton}, ${tgl(ir.periode.mulai)}`, D.tbl([{ h: 'Status' }, { h: 'KK', r: 1 }], parts.map((p) => [esc(p.name), p.value])), 'cc-narrow')}`;
-        } else {
-            htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW belum diaktifkan oleh pengurus.</div>';
-        }
+        const grafik12 = `<div class="bk-ring"><span class="in">Pemasukan 12 bulan <b>${rp(masuk12)}</b></span><span class="out">Pengeluaran 12 bulan <b>${rp(keluar12)}</b></span></div>
+            ${D.chartCard('trenkas', 'Pemasukan & pengeluaran 12 bulan', 'Jimpitan, iuran wajib, pemasukan lainnya, dan pengeluaran per bulan', D.tbl([{ h: 'Bulan' }, { h: 'Jimpitan', r: 1 }, { h: 'Iuran', r: 1 }, { h: 'Lainnya', r: 1 }, { h: 'Keluar', r: 1 }], k.tren.map((t) => [D.labelBulan(t.bulan), rp(t.jimpitan), rp(t.iuran), rp(t.sewa), rp(t.keluar)])))}`;
 
         root.innerHTML = `
             <section class="home-hero">
@@ -139,32 +115,13 @@
             </section>` : ''}
 
             <h3 class="sec-title">Saldo Kas RW</h3>
-            <div class="kpi-grid n4">${tilesKas.join('')}</div>
+            ${saldoKas}
 
             <h3 class="sec-title">Kas per periode kumpulan RW</h3>
-            <section class="card">
-                <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Saldo awal</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead><tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
-                <p class="small muted" style="margin-top:8px">Saldo awal + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p>
-            </section>
+            ${tabelPeriode}
 
-            <div class="dash-grid g-2">
-                ${D.chartCard('komp', 'Komposisi saldo kas', 'Saldo tiap sumber dana', D.tbl([{ h: 'Sumber' }, { h: 'Saldo', r: 1 }], k.kantong.map((x) => [esc(x.nama), rp(x.saldo)])))}
-                ${D.chartCard('trenkas', 'Pemasukan & pengeluaran 6 bulan', 'Jimpitan, iuran wajib, pemasukan lainnya, dan pengeluaran', D.tbl([{ h: 'Bulan' }, { h: 'Jimpitan', r: 1 }, { h: 'Iuran', r: 1 }, { h: 'Lainnya', r: 1 }, { h: 'Keluar', r: 1 }], k.tren.map((t) => [D.labelBulan(t.bulan), rp(t.jimpitan), rp(t.iuran), rp(t.sewa), rp(t.keluar)])))}
-            </div>
-            <div class="dash-grid" style="grid-template-columns:1fr">
-                ${D.chartCard('masukbulan', `Kas bulan ${bl}`, 'Pemasukan per sumber vs pengeluaran', D.tbl([{ h: 'Pos' }, { h: 'Nominal', r: 1 }], [['Jimpitan', rp(k.bulan_ini.jimpitan)], ['Iuran wajib', rp(k.bulan_ini.iuran)], ['Pemasukan lainnya', rp(k.bulan_ini.sewa)], ['Pengeluaran', rp(k.bulan_ini.keluar)]]))}
-            </div>
-
-            <h3 class="sec-title">Kas Jimpitan</h3>
-            <div class="kpi-grid n3">${tilesJ.join('')}</div>
-            <section class="card">
-                <h3>Partisipasi per RT — ${esc(bl)}</h3>
-                <div class="gauges">${gaugeRt || '<div class="empty">Belum ada data RT.</div>'}</div>
-                <div class="tarif-strip"><span class="small muted">Tarif:</span>${tarifStrip}</div>
-            </section>
-
-            <h3 class="sec-title">Kas Iuran Wajib (per kumpulan RW)</h3>
-            ${htmlIuran}
+            <h3 class="sec-title">Pemasukan &amp; pengeluaran 12 bulan</h3>
+            ${grafik12}
 
             <p class="small muted note">Tampilan publik hanya memuat angka ringkasan. ${d.cek_tunggakan_aktif ? 'Pengecekan status menampilkan data warga yang dicari saja.' : ''}
             ${App.user ? '' : 'Pengurus dan bendahara silakan <a href="#" data-act="loginDialog">masuk</a> untuk mengelola data.'}</p>`;

@@ -13,7 +13,7 @@ function enamBulan(bulan) {
   let y = Number(bulan.slice(0, 4));
   let m = Number(bulan.slice(5, 7));
   const out = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
     out.unshift(`${y}-${pad(m)}`);
     m -= 1;
     if (m === 0) { m = 12; y -= 1; }

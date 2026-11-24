@@ -2277,3 +2277,52 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 .gauges .gauge-box:hover { transform: translateY(-2px); border-color: var(--border-hover); }
 .gauges .gauge-label { font-size: 0.9rem; margin-top: 6px; }
 .gauges .gauge-sub { margin-top: 2px; }
+
+/* ===== Beranda publik: kartu saldo kas, tabel kas per kumpulan, grafik 12 bulan ===== */
+.bk { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 14px; margin-bottom: 8px; }
+.bk-utama { position: relative; overflow: hidden; padding: 24px 26px; border-radius: calc(var(--radius) + 4px); color: #fff; background: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #0891b2 100%); box-shadow: 0 14px 34px -14px rgba(37, 99, 235, 0.65); display: flex; flex-direction: column; gap: 6px; }
+.bk-utama::after { content: ''; position: absolute; right: -60px; top: -70px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 68%); pointer-events: none; }
+.bk-utama.neg { background: linear-gradient(135deg, #be123c, #e11d48 60%, #f97316); box-shadow: 0 14px 34px -14px rgba(225, 29, 72, 0.6); }
+.bk-label { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.85; }
+.bk-saldo { font-size: clamp(1.9rem, 5.2vw, 2.9rem); font-weight: 800; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.bk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.28); }
+.bk-stats small { display: block; font-size: 0.68rem; opacity: 0.8; margin-bottom: 2px; }
+.bk-stats b { font-size: 0.92rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bk-foot { font-size: 0.72rem; opacity: 0.75; margin-top: 6px; }
+.bk-samping { display: flex; flex-direction: column; gap: 14px; }
+.bk-kantong { --kc: 59, 130, 246; flex: 1; padding: 16px 18px; border-radius: var(--radius); background: var(--panel); border: 1px solid rgba(var(--kc), 0.4); border-left: 5px solid rgb(var(--kc)); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.bk-ungu { --kc: 139, 92, 246; }
+.bk-merah { --kc: 239, 68, 68; }
+.bk-k-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
+.bk-k-head em { font-style: normal; font-size: 0.74rem; padding: 2px 8px; border-radius: 99px; background: rgba(var(--kc), 0.15); color: rgb(var(--kc)); }
+.bk-k-val { font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+.bk-bar { height: 6px; border-radius: 99px; background: rgba(var(--kc), 0.15); overflow: hidden; }
+.bk-bar i { display: block; height: 100%; border-radius: 99px; background: rgb(var(--kc)); }
+.bk-k-sub { font-size: 0.74rem; color: var(--text-muted); }
+@media (max-width: 860px) { .bk { grid-template-columns: 1fr; } .bk-stats { grid-template-columns: 1fr 1fr; } .bk-utama { padding: 20px; } }
+
+.bk-periode { padding: 6px 16px 14px; }
+.tbl-kas { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.tbl-kas th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl-kas td { padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tbl-kas tbody tr:last-child td { border-bottom: 0; }
+.tbl-kas tbody tr:hover { background: var(--panel-hover); }
+.tbl-kas td.in { color: #10b981; }
+.tbl-kas td.out { color: #f43f5e; }
+.tbl-kas td.sa { font-size: 0.98rem; }
+@media (max-width: 720px) {
+  .tbl-kas thead { display: none; }
+  .tbl-kas, .tbl-kas tbody, .tbl-kas tr, .tbl-kas td { display: block; width: 100%; }
+  .tbl-kas tr { padding: 10px 4px; border-bottom: 1px solid var(--border); }
+  .tbl-kas tr:last-child { border-bottom: 0; }
+  .tbl-kas td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 8px; border: 0; text-align: right; }
+  .tbl-kas td:first-child { text-align: left; display: block; padding-bottom: 6px; }
+  .tbl-kas td[data-l]:not(:first-child)::before { content: attr(data-l); color: var(--text-muted); font-size: 0.76rem; text-align: left; }
+  .tbl-kas td.sa { border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 8px; }
+}
+
+.bk-ring { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.bk-ring span { padding: 8px 14px; border-radius: 99px; font-size: 0.8rem; color: var(--text-muted); border: 1px solid var(--border); background: var(--panel); }
+.bk-ring span b { margin-left: 6px; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+.bk-ring .in b { color: #10b981; }
+.bk-ring .out b { color: #f43f5e; }
