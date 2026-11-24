@@ -2227,3 +2227,19 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 
 /* Bilah simpan setoran diletakkan di atas daftar warga (tidak menempel di bawah layar) */
 .savebar.savebar-atas { position: static; margin: 0 0 14px; bottom: auto; }
+
+/* Bilah setoran ringkas: satu baris (halaman | dipilih | tombol) */
+.savebar.savebar-atas { padding: 8px 14px; gap: 8px 18px; }
+.savebar-atas .savebar-pg { flex: 0 1 auto; border: 0; padding: 0; margin: 0; }
+.savebar-atas .savebar-pg .pager { justify-content: flex-start; flex-wrap: nowrap; gap: 8px 14px; }
+.savebar-atas .pager-size select { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
+.savebar-atas .pager-nav { gap: 6px; }
+.savebar-atas .pager-nav .btn { min-width: 32px; padding: 4px 8px; }
+.savebar-atas > .row { flex-wrap: nowrap; }
+.savebar-atas > .row:last-child { margin-left: auto; }
+.savebar-atas .btn { padding-top: 6px; padding-bottom: 6px; }
+@media (max-width: 860px) {
+  .savebar-atas .savebar-pg { flex: 1 0 100%; }
+  .savebar-atas .savebar-pg .pager { flex-wrap: wrap; justify-content: space-between; }
+  .savebar-atas > .row:last-child { margin-left: 0; }
+}
