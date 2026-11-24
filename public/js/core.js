@@ -125,7 +125,7 @@
     App.pgGet = (k) => App.pgState[k] || (App.pgState[k] = { size: '10', page: 1 });
     App.pgReset = (k) => { App.pgGet(k).page = 1; };
     // Potong array sesuai pengaturan; kembalikan { items, bar } (bar = HTML kontrol halaman)
-    App.paginate = function (k, arr) {
+    App.paginate = function (k, arr, opsi) {
         const st = App.pgGet(k);
         const total = arr.length;
         const size = st.size === 'all' ? Math.max(total, 1) : Number(st.size);
@@ -135,7 +135,7 @@
         const a = (st.page - 1) * size;
         const items = st.size === 'all' ? arr : arr.slice(a, a + size);
         let bar = '';
-        if (total > 10 || String(st.size) !== '10') {
+        if (total > 10 || String(st.size) !== '10' || (opsi && opsi.selalu)) {
             const opt = [['all', 'Semua'], ['10', '10'], ['15', '15'], ['20', '20']]
                 .map(([v, l]) => `<option value="${v}" ${String(st.size) === v ? 'selected' : ''}>${l}</option>`).join('');
             const info = total ? `${a + 1}–${a + items.length} dari ${total}` : '0 data';

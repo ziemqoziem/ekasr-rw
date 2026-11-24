@@ -166,6 +166,7 @@
         root.innerHTML = `
             <div class="row between"><h2 class="title">Pengeluaran Dana</h2>
             ${App.has('pengeluaran.tulis') ? '<button class="btn primary" data-act="pengeluaranForm">+ Catat pengeluaran</button>' : '<span class="badge">Hanya lihat · dicatat oleh bendahara</span>'}</div>
+            <div id="pKartu"></div>
             <div id="pFilter"></div>
             <div id="pList">${App.loading()}</div>`;
         await loadPengeluaran();
@@ -203,16 +204,14 @@
             <div class="stat rk-c0"><small>Total pengeluaran</small><b style="color:#f43f5e">${rp(total)}</b><span class="small muted" style="display:block;margin-top:4px">${sah.length} pengeluaran${PG.semua ? '' : ' · ' + esc(NAMA_DANA[PG.dana])}</span></div>
             ${jenis.map(([k, g], i) => `<div class="stat rk-c${(i % 3) + 1}"><small>${esc(k)}</small><b>${rp(g.n)}</b><span class="small muted" style="display:block;margin-top:4px">${g.c} pengeluaran · ${total ? Math.round((g.n / total) * 100) : 0}%</span></div>`).join('')}
         </div>`;
-        const pg = App.paginate('pengeluaran', data);
-        $('#pFilter').innerHTML = `<div class="card" style="margin-bottom:14px"><div class="filters">
+        const pg = App.paginate('pengeluaran', data, { selalu: true });
+        $('#pFilter').innerHTML = `<div class="card" style="margin-bottom:12px"><div class="filters">
             <div class="grow"><label class="f" for="pPer">Kumpulan RW (tanggal)</label><select id="pPer" data-change="pengeluaranPeriode">
                 <option value="">Semua periode</option>
                 ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div></div>
             ${PG.periode ? '<p class="small muted">Pengeluaran bertanggal sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off).</p>' : ''}</div>`;
+        $('#pKartu').innerHTML = kartu;
         $('#pList').innerHTML = `
-            ${kartu}
-            ${tulis ? `<p class="small" style="margin-bottom:6px">Pengeluaran yang Anda catat otomatis diambil dari <b>${esc(NAMA_DANA[PG.dana])}</b>.</p>` : ''}
-            <p class="small muted" style="margin-bottom:10px">${PG.semua ? '' : 'Hanya menampilkan pengeluaran dari ' + esc(NAMA_DANA[PG.dana]) + ' · '}500 transaksi terakhir</p>
             ${pg.bar}
             ${data.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Tanggal</th><th>Uraian</th><th>Kategori</th><th>Dana</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
                 ${pg.items.map((p) => `<tr style="${p.status === 'batal' ? 'opacity:.55' : ''}">
