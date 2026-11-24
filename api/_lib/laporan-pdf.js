@@ -109,16 +109,17 @@ function buatPdf(L, ttd, stream) {
   if (L.ringkasan) {
     const k = L.ringkasan;
     judul('1. Ringkasan Kas');
+    kartu([{ l: 'Saldo awal (saldo periode sebelumnya)', v: rp(k.saldo_awal) }], 1);
     kartu([
-      { l: 'Saldo awal', v: rp(k.saldo_awal) },
       { l: 'Pemasukan jimpitan', v: rp(k.jimpitan) },
-      { l: 'Pemasukan iuran wajib', v: rp(k.iuran) },
-      { l: 'Pemasukan lainnya', v: rp(k.sewa) },
+      { l: 'Pemasukan iuran', v: rp(k.iuran) },
+      { l: 'Pemasukan lainnya', v: rp(k.sewa) }
+    ], 3);
+    kartu([
       { l: 'Total pemasukan', v: rp(k.masuk), warna: C.hijau },
       { l: 'Total pengeluaran', v: rp(k.keluar), warna: C.merah },
-      { l: 'Selisih kumpulan ini', v: rp(k.selisih), warna: k.selisih < 0 ? C.merah : C.teks },
       { l: 'Saldo akhir kas', v: rp(k.saldo_akhir), warna: k.saldo_akhir < 0 ? C.merah : C.aksen }
-    ], 4);
+    ], 3);
     const kt = k.kantong_akhir;
     catatan(`Saldo per kantong: jimpitan ${rp(kt.jimpitan)} · iuran wajib ${rp(kt.iuran)} · pemasukan lainnya ${rp(kt.sewa)}${kt.umum ? ' · umum ' + rp(kt.umum) : ''}.`);
   }

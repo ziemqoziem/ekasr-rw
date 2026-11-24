@@ -44,6 +44,7 @@
         const L = r.laporan, p = L.periode, k = L.ringkasan;
         const kecil = (a, n) => a.length === 0 ? `<tr><td colspan="${n}" class="muted">Tidak ada data.</td></tr>` : '';
         const sj = L.status_jimpitan, si = L.status_iuran;
+        const nf = (v) => Number(v || 0).toLocaleString('id-ID');
         $('#lOut').innerHTML = `
             <div class="print-only" style="margin-bottom:12px;text-align:center">
                 <h2>${esc(r.ttd.nama_web)}</h2>
@@ -52,16 +53,17 @@
             </div>
             ${p.hari_ini ? `<div class="notice no-print">Hari ini adalah kumpulan RW; angka dihitung sampai hari ini (${App.tglId(p.sampai)}). Transaksi yang dicatat setelah ini akan ikut masuk bila laporan dibuka ulang.</div>` : p.berjalan ? `<div class="notice no-print">Kumpulan ini belum tiba; angka dihitung sampai ${App.tglId(p.sampai)}.</div>` : ''}
             ${k ? `<h3 class="sec-title">Ringkasan kas</h3>
-            ${k.sejak_saldo_awal ? `<p class="small muted" style="margin-bottom:8px">Cut off ${App.tglId(p.sampai)}: saldo awal + pemasukan sejak ${App.tglId(p.dari)} − pengeluaran.</p>` : ''}
-            <div class="grid cols-4" style="margin-bottom:14px">
-                <div class="stat"><small>Saldo awal</small><b>${rp(k.saldo_awal)}</b></div>
-                <div class="stat"><small>Pemasukan jimpitan</small><b>${rp(k.jimpitan)}</b></div>
-                <div class="stat"><small>Pemasukan iuran wajib</small><b>${rp(k.iuran)}</b></div>
-                <div class="stat"><small>Pemasukan lainnya</small><b>${rp(k.sewa)}</b></div>
-                <div class="stat good"><small>Total pemasukan</small><b>${rp(k.masuk)}</b></div>
-                <div class="stat bad"><small>Total pengeluaran</small><b>${rp(k.keluar)}</b></div>
-                <div class="stat ${k.selisih >= 0 ? '' : 'bad'}"><small>Selisih kumpulan ini</small><b>${rp(k.selisih)}</b></div>
-                <div class="stat ${k.saldo_akhir >= 0 ? 'good' : 'bad'}"><small>Saldo akhir kas</small><b>${rp(k.saldo_akhir)}</b></div>
+            <div class="rk">
+                <div class="rk-card rk-wide rk-awal"><div><span class="rk-lbl">Saldo Awal (Saldo Periode Sebelumnya)</span>
+                    <div class="rk-sub">${k.sejak_saldo_awal ? `Saldo awal Pengaturan; pemasukan dihitung sejak ${App.tglId(p.dari)}` : `Saldo akhir kumpulan sebelumnya`}</div></div>
+                    <b class="rk-val">${rp(k.saldo_awal)}</b></div>
+                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Jimpitan</span><b class="rk-val">${rp(k.jimpitan)}</b></div>
+                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Iuran</span><b class="rk-val">${rp(k.iuran)}</b></div>
+                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Lainnya</span><b class="rk-val">${rp(k.sewa)}</b></div>
+                <div class="rk-card rk-in"><span class="rk-lbl">Total Pemasukan</span><b class="rk-val">${rp(k.masuk)}</b></div>
+                <div class="rk-card rk-out"><span class="rk-lbl">Total Pengeluaran</span><b class="rk-val">${rp(k.keluar)}</b></div>
+                <div class="rk-card rk-akhir ${k.saldo_akhir < 0 ? 'neg' : ''}"><span class="rk-lbl">Saldo Akhir Kas</span><b class="rk-val">${rp(k.saldo_akhir)}</b>
+                    <span class="rk-sub">Cut off ${App.tglId(p.sampai)}</span></div>
             </div>` : ''}
             <h3 class="sec-title">Pemasukan per RT</h3>
             ${(() => {
@@ -84,9 +86,9 @@
                 ${L.pengeluaran.map((x) => `<tr><td>${App.tglId(x.tanggal)}</td><td style="white-space:normal">${esc(x.uraian)}</td><td>${esc(x.kategori)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}${kecil(L.pengeluaran, 4)}
                 </tbody></table></div></div>` : ''}
             ${L.status_warga ? `<div class="card"><h3>Status iuran warga</h3>
-                <p class="small muted">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Tunggakan = kewajiban − setoran; hanya warga yang masih memiliki tunggakan.</p>
-                <div class="tbl-wrap"><table><thead><tr><th>Nama (RT)</th><th class="r">Kewajiban Iuran</th><th class="r">Setoran Iuran</th><th class="r">Tunggakan Iuran</th><th class="r">Kewajiban Jimpitan</th><th class="r">Setoran Jimpitan</th><th class="r">Tunggakan Jimpitan</th><th class="r">Total Tunggakan</th></tr></thead><tbody>
-                ${L.status_warga.map((x) => `<tr><td>${esc(x.nama)} (RT ${esc(x.rt)})</td><td class="r num">${rp(x.iuran_kewajiban)}</td><td class="r num">${rp(x.iuran_setor)}</td><td class="r num">${rp(x.iuran_kurang)}</td><td class="r num">${rp(x.jimpitan_kewajiban)}</td><td class="r num">${rp(x.jimpitan_setor)}</td><td class="r num">${rp(x.jimpitan_kurang)}</td><td class="r num"><b>${rp(x.total)}</b></td></tr>`).join('')}${kecil(L.status_warga, 8)}
+                <p class="small muted">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Nilai dalam Rupiah. Tunggakan = kewajiban − setoran; hanya warga yang masih memiliki tunggakan.</p>
+                <div><table class="tbl-fit"><thead><tr><th>Nama (RT)</th><th class="r">Kewajiban Iuran</th><th class="r">Setoran Iuran</th><th class="r">Tunggakan Iuran</th><th class="r">Kewajiban Jimpitan</th><th class="r">Setoran Jimpitan</th><th class="r">Tunggakan Jimpitan</th><th class="r">Total Tunggakan</th></tr></thead><tbody>
+                ${L.status_warga.map((x) => `<tr><td>${esc(x.nama)} (RT ${esc(x.rt)})</td><td class="r num">${nf(x.iuran_kewajiban)}</td><td class="r num">${nf(x.iuran_setor)}</td><td class="r num">${nf(x.iuran_kurang)}</td><td class="r num">${nf(x.jimpitan_kewajiban)}</td><td class="r num">${nf(x.jimpitan_setor)}</td><td class="r num">${nf(x.jimpitan_kurang)}</td><td class="r num"><b>${nf(x.total)}</b></td></tr>`).join('')}${kecil(L.status_warga, 8)}
                 </tbody></table></div></div>` : ''}
             <div class="print-only small" style="margin-top:36px">
                 <div style="display:flex;justify-content:space-around;text-align:center">
