@@ -99,8 +99,8 @@
                 const dipilih = IS.nominal.has(w.id);
                 const chip = w.riwayat.map((h, i) => `<span class="iu-k rw-${h.status}${kolomSemua[i] && kolomSemua[i].terpilih ? ' sel' : ''}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">K${kolomSemua[i] ? kolomSemua[i].no : i + 1} ${SIMM[h.status] || '–'}</span>`).join('');
                 const aksi = !tulis ? '' : `<div class="iu-aksi">${dipilih
-                    ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button><button class="btn ghost" data-act="iuranBatalPilih" data-id="${w.id}">Batal</button>`
-                    : `<span class="small muted">${kunci ? 'Sudah setor kumpulan ini' : 'Belum setor'}</span><button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`}</div>`;
+                    ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">${defIuran() ? `<button class="btn" data-act="iuranIsiDefault" data-id="${w.id}" title="Isi nominal default ${rp(defIuran())}">+${kom(defIuran())}</button>` : ''}<button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button><button class="btn ghost" data-act="iuranBatalPilih" data-id="${w.id}">Batal</button>`
+                    : `<span class="small muted">${kunci ? 'Sudah setor kumpulan ini' : 'Belum setor'}</span>${defIuran() ? `<button class="btn sm" data-act="iuranIsiDefault" data-id="${w.id}" title="Isi nominal default ${rp(defIuran())}">+${kom(defIuran())}</button>` : ''}<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`}</div>`;
                 return `<div class="iu-card st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
                     <div class="iu-top">
                         ${tulis ? `<input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled' : ''}>` : ''}
@@ -134,8 +134,8 @@
             const sel_ = riw(w).map((h, i) => `<td class="c-per${kolom[i] && kolom[i].terpilih ? ' sel' : ''}"><span class="rw rw-${h.status}" title="K${kolom[i] ? kolom[i].no : ''} · ${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
-                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button><button class="btn sm ghost" data-act="iuranBatalPilih" data-id="${w.id}" title="Batal, tidak jadi mencatat setoran">Batal</button>`
-                : `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="${kunci ? 'Tambah setoran lagi (sebagian/titipan)' : 'Catat setoran'}">+ Tambah</button>`}</td>`;
+                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">${defIuran() ? `<button class="btn sm" data-act="iuranIsiDefault" data-id="${w.id}" title="Isi nominal default ${rp(defIuran())}">+${kom(defIuran())}</button>` : ''}<button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button><button class="btn sm ghost" data-act="iuranBatalPilih" data-id="${w.id}" title="Batal, tidak jadi mencatat setoran">Batal</button>`
+                : `${defIuran() ? `<button class="btn sm" data-act="iuranIsiDefault" data-id="${w.id}" title="Isi nominal default ${rp(defIuran())}">+${kom(defIuran())}</button> ` : ''}<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="${kunci ? 'Tambah setoran lagi (sebagian/titipan)' : 'Catat setoran'}">+ Tambah</button>`}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
                 ${sel_}
@@ -186,6 +186,9 @@
     App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
     App.changes.iuranCari = () => { IS.q = $('#iCari').value; App.pgReset('iuran'); tampil(); };
     // Sudah setor = lunas untuk kumpulan ini atau ada setoran bertanggal di periode ini
+    // Label ringkas nominal default (mis. 5000 → 5rb)
+    const kom = (n) => (n >= 1000 && n % 1000 === 0 ? `${n / 1000}rb` : rp(n));
+    const defIuran = () => (IS.data && IS.data.nominal > 0 ? IS.data.nominal : 0);
     function sudahSetor(w) { return w.status === 'lunas' || w.setoran.length > 0; }
     // Centang = catat setoran sebesar tagihan/saran; nominal masih bisa diubah di kolom yang muncul
     App.changes.iuranCek = (cb) => {
@@ -216,6 +219,16 @@
         IS.nominal.set(w.id, w.saran > 0 ? w.saran : (w.nominal || 0));
         tampil();
         const inp = $(`input[data-input="iuranNominal"][data-id="${w.id}"]`);
+        if (inp) { inp.focus(); inp.select(); }
+    };
+    // Isi nominal default iuran per kumpulan (mis. Rp 5.000) pada baris warga
+    App.actions.iuranIsiDefault = (el) => {
+        const id = Number(el.dataset.id);
+        const w = IS.data.warga.find((x) => x.id === id);
+        if (!w || !(defIuran() > 0)) return;
+        IS.nominal.set(id, defIuran());
+        tampil();
+        const inp = $(`input[data-input="iuranNominal"][data-id="${id}"]`);
         if (inp) { inp.focus(); inp.select(); }
     };
     App.changes.iuranNominal = (inp) => {
