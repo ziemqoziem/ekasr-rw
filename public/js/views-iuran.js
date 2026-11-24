@@ -81,8 +81,7 @@
                 const chip = w.riwayat.map((h, i) => `<span class="iu-k rw-${h.status}${kolomSemua[i] && kolomSemua[i].terpilih ? ' sel' : ''}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">K${kolomSemua[i] ? kolomSemua[i].no : i + 1} ${SIMM[h.status] || '–'}</span>`).join('');
                 const aksi = !tulis ? '' : `<div class="iu-aksi">${dipilih
                     ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button><button class="btn ghost" data-act="iuranBatalPilih" data-id="${w.id}">Batal</button>`
-                    : kunci ? `<span class="small muted">Sudah setor kumpulan ini</span><button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`
-                    : '<span class="small muted">Centang untuk mencatat setoran</span>'}</div>`;
+                    : `<span class="small muted">${kunci ? 'Sudah setor kumpulan ini' : 'Belum setor'}</span><button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`}</div>`;
                 return `<div class="iu-card st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
                     <div class="iu-top">
                         ${tulis ? `<input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled' : ''}>` : ''}
@@ -117,7 +116,7 @@
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
                 ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button><button class="btn sm ghost" data-act="iuranBatalPilih" data-id="${w.id}" title="Batal, tidak jadi mencatat setoran">Batal</button>`
-                : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : '<span class="muted small">centang untuk setor</span>'}</td>`;
+                : `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="${kunci ? 'Tambah setoran lagi (sebagian/titipan)' : 'Catat setoran'}">+ Tambah</button>`}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
                 ${sel_}
