@@ -2351,3 +2351,19 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bk-modern .tbl-kas tbody td:first-child { border-left: 0; padding-left: 8px; }
   .bk-modern .tbl-kas tbody td:last-child { padding-right: 8px; }
 }
+
+/* Kartu saldo kas: rumus saldo awal + pemasukan - pengeluaran */
+.bk-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+.bk-tgl { font-size: 0.72rem; padding: 3px 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.28); }
+.bk-utama .bk-saldo, .bk-rumus, .bk-bulan { position: relative; z-index: 1; }
+.bk-rumus { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.bk-r { flex: 1 1 120px; min-width: 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.22); backdrop-filter: blur(4px); }
+.bk-r small { display: block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; opacity: 0.85; margin-bottom: 3px; }
+.bk-r b { font-size: 1rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bk-r.hasil { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.5); }
+.bk-op { align-self: center; font-size: 1.2rem; font-weight: 700; opacity: 0.85; }
+.bk-bulan { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 14px; font-size: 0.8rem; }
+.bk-bulan > span:first-child { font-weight: 700; opacity: 0.9; }
+.bk-bulan b { font-variant-numeric: tabular-nums; margin-left: 4px; }
+.bk-bulan .in, .bk-bulan .out { padding: 4px 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.16); }
+@media (max-width: 560px) { .bk-op { display: none; } .bk-r { flex: 1 1 45%; } }

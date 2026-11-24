@@ -32,17 +32,24 @@
                 ${x.kode === 'umum' ? '' : `<div class="bk-bar"><i style="width:${bagian}%"></i></div>`}
                 <div class="bk-k-sub">${ket}</div></div>`;
         }).join('');
+        // Rumus: saldo awal + pemasukan − pengeluaran = saldo kas (jumlah seluruh kantong)
+        const awalTotal = k.kantong.reduce((t, x) => t + (x.awal || 0), 0);
+        const masukTrx = k.kantong.reduce((t, x) => t + (x.masuk || 0), 0);
+        const keluarTrx = k.kantong.reduce((t, x) => t + (x.keluar || 0), 0);
         const saldoKas = `<div class="bk">
             <div class="bk-utama ${k.saldo < 0 ? 'neg' : ''}">
-                <div class="bk-label">Saldo kas RW · seluruh sumber</div>
+                <div class="bk-top"><span class="bk-label">Saldo kas RW · seluruh sumber</span><span class="bk-tgl">per ${esc(tgl(App.today()))}</span></div>
                 <div class="bk-saldo">${rp(k.saldo)}</div>
-                <div class="bk-stats">
-                    <div><small>Total masuk</small><b>${rp(k.masuk)}</b></div>
-                    <div><small>Total keluar</small><b>${rp(k.keluar)}</b></div>
-                    <div><small>Masuk ${esc(bl)}</small><b>${rp(k.bulan_ini.masuk)}</b></div>
-                    <div><small>Keluar ${esc(bl)}</small><b>${rp(k.bulan_ini.keluar)}</b></div>
+                <div class="bk-rumus">
+                    <div class="bk-r"><small>Saldo awal${k.tahun_basis ? ' ' + esc(k.tahun_basis) : ''}</small><b>${rp(awalTotal)}</b></div>
+                    <span class="bk-op">+</span>
+                    <div class="bk-r"><small>Pemasukan</small><b>${rp(masukTrx)}</b></div>
+                    <span class="bk-op">−</span>
+                    <div class="bk-r"><small>Pengeluaran</small><b>${rp(keluarTrx)}</b></div>
+                    <span class="bk-op">=</span>
+                    <div class="bk-r hasil"><small>Saldo kas</small><b>${rp(k.saldo)}</b></div>
                 </div>
-                ${k.tahun_basis ? `<div class="bk-foot">Termasuk saldo awal tahun ${esc(k.tahun_basis)}</div>` : ''}
+                <div class="bk-bulan"><span>Bulan ${esc(bl)}</span><span class="in">▲ Masuk <b>${rp(k.bulan_ini.masuk)}</b></span><span class="out">▼ Keluar <b>${rp(k.bulan_ini.keluar)}</b></span></div>
             </div>
             <div class="bk-samping">${kartuKantong}</div></div>`;
 
