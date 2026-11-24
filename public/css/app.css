@@ -2444,3 +2444,22 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bk-k-val { font-size: 1.3rem; }
   .subtabs .tab { padding: 6px 11px; }
 }
+
+/* Tombol Cari & Reset (cek status beranda): 3D, ikon berwarna berbeda */
+.cek-aksi-grup { display: flex; gap: 12px; flex: none; }
+.btn-3d { --b1: #3b82f6; --b2: #0891b2; --bd: #1e3a8a; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px 0 12px; border: 0; border-radius: 14px; cursor: pointer; font: inherit; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.3px; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 52%), linear-gradient(135deg, var(--b1), var(--b2));
+  box-shadow: 0 5px 0 var(--bd), 0 12px 20px -6px rgba(15, 23, 42, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 90ms ease, box-shadow 90ms ease, filter 120ms ease; }
+.btn-3d:hover { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 0 var(--bd), 0 16px 24px -6px rgba(15, 23, 42, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45); }
+.btn-3d:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--bd), 0 4px 8px -4px rgba(15, 23, 42, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.btn-3d:focus-visible { outline: 3px solid rgba(59, 130, 246, 0.55); outline-offset: 3px; }
+.btn-3d .ic { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: rgba(255, 255, 255, 0.95); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12); }
+.btn-3d .ic svg { width: 18px; height: 18px; stroke-width: 2.6; }
+.btn-cari .ic { color: #2563eb; }
+.btn-reset { --b1: #fb923c; --b2: #e11d48; --bd: #9f1239; }
+.btn-reset .ic { color: #e11d48; }
+@media (max-width: 680px) {
+  .cek-aksi-grup { width: 100%; }
+  .cek-aksi-grup .btn-3d { flex: 1 1 0; min-width: 0; }
+}

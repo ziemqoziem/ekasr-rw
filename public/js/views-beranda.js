@@ -111,17 +111,10 @@
                         <label class="f" for="cekNama">Nama warga</label>
                         <input id="cekNama" name="q" required minlength="3" maxlength="40" placeholder="Ketik minimal 3 huruf, misal: Budi">
                     </div>
-                    <div>
-                        <label class="f" for="cekRt">RT</label>
-                        <select id="cekRt" name="rt">
-                            <option value="">Semua RT</option>
-                            <option value="007">RT 007</option>
-                            <option value="008">RT 008</option>
-                            <option value="009">RT 009</option>
-                        </select>
+                    <div class="cek-aksi-grup">
+                        <button class="btn-3d btn-cari" type="submit"><span class="ic">${App.icon('search')}</span>Cari</button>
+                        <button class="btn-3d btn-reset" type="button" data-act="cekReset" title="Kosongkan pencarian dan hasil"><span class="ic">${App.icon('reset')}</span>Reset</button>
                     </div>
-                    <button class="btn primary" type="submit">${App.icon('search')} Cek Status</button>
-                    <button class="btn ghost" type="button" data-act="cekReset" title="Kosongkan pencarian dan hasil">Reset</button>
                 </form>
                 <div id="cekOut" aria-live="polite"></div>
             </section>` : ''}
@@ -216,9 +209,8 @@
 
     // Reset pencarian: kosongkan nama, RT, dan hasil
     App.actions.cekReset = () => {
-        const n = $('#cekNama'), r = $('#cekRt'), o = $('#cekOut');
+        const n = $('#cekNama'), o = $('#cekOut');
         if (n) n.value = '';
-        if (r) r.value = '';
         if (o) o.innerHTML = '';
         if (n) n.focus();
     };
@@ -229,7 +221,7 @@
         btn.disabled = true;
         out.innerHTML = App.loading('Mencari…');
         try {
-            const r = await App.api('/api/cek-tunggakan?' + App.qs({ q: f.q.value.trim(), rt: f.rt.value }));
+            const r = await App.api('/api/cek-tunggakan?' + App.qs({ q: f.q.value.trim() }));
             if (!r.hasil.length) {
                 out.innerHTML = '<div class="empty">Nama tidak ditemukan. Periksa ejaan atau pilih RT yang sesuai.</div>';
             } else {
