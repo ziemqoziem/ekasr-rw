@@ -5,7 +5,8 @@
     const { esc, rp, $ } = App;
 
     const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const KS = (App.stKalender = { rt: '', q: '', warga: 0, bulan: '', daftar: [], data: null });
+    const KS = (App.stKalender = { rt: '', q: '', warga: 0, bulan: '', daftar: [], data: null, mode: 'kalender' });
+    const RTS = ['007', '008', '009'];
     const STATUS = {
         hijau: ['Sudah setor (hari tertutup)', 'cal-hijau'],
         merah: ['Belum setor (sudah jatuh tempo)', 'cal-merah'],
@@ -51,8 +52,11 @@
         if (!App.user) { root.innerHTML = '<div class="card empty">Silakan masuk terlebih dahulu.</div>'; return; }
         if (!KS.bulan) KS.bulan = App.today().slice(0, 7);
         if (App.rtKunci()) KS.rt = App.user.rt || '';
+        if (!App.has('iuran.lihat')) KS.mode = 'kalender';
+        if (KS.mode === 'iuran') return tampilRiwayat(root);
         root.innerHTML = `
             <h2 class="title">Kalender Setoran Warga</h2>
+            ${tabsKal()}
             <div class="card">
                 <p class="small" style="margin-bottom:10px">Pilih warga untuk melihat riwayatnya per tanggal.
                     <span class="cal-key cal-hijau">Hijau</span> = sudah setor, <span class="cal-key cal-merah">Merah</span> = belum setor.</p>
@@ -67,6 +71,76 @@
         KS.daftar = r.warga;
         isiPilihan();
         await muatKalender();
+    };
+
+    // Tab halaman: Kalender jimpitan | Riwayat iuran
+    function tabsKal() {
+        if (!App.has('iuran.lihat')) return '';
+        return `<div class="subtabs">${[['kalender', 'Kalender Jimpitan'], ['iuran', 'Riwayat Iuran']].map(([v, l]) => `<button class="tab ${KS.mode === v ? 'active' : ''}" data-act="kalMode" data-nilai="${v}">${l}</button>`).join('')}</div>`;
+    }
+    App.actions.kalMode = (el) => { KS.mode = el.dataset.nilai; return App.render(); };
+
+    /* ================= RIWAYAT IURAN (per tab RT) ================= */
+    const RI = (App.stRiwayatIuran = { rt: '', q: '', status: '', data: null });
+
+    async function tampilRiwayat(root) {
+        if (App.rtKunci()) RI.rt = App.user.rt || '';
+        root.innerHTML = `
+            <h2 class="title">Riwayat Iuran Warga</h2>
+            ${tabsKal()}
+            <div id="riOut">${App.loading()}</div>`;
+        await muatRiwayat();
+    }
+
+    async function muatRiwayat() {
+        const r = await App.api('/api/riwayat-iuran?' + App.qs({ rt: RI.rt, status: RI.status }));
+        RI.data = r;
+        App.pgReset('riwayatiuran');
+        gambarRiwayat();
+    }
+
+    function gambarRiwayat() {
+        const r = RI.data;
+        if (!r || !$('#riOut')) return;
+        App.pgRedraw.riwayatiuran = gambarRiwayat;
+        const kunci = App.rtKunci();
+        const totalRt = new Map(r.per_rt.map((x) => [x.rt, x]));
+        const semuaTot = r.per_rt.reduce((a, x) => a + x.total, 0);
+        const tabRt = (kunci ? [[RI.rt, 'RT ' + RI.rt]] : [['', 'Semua RT'], ...RTS.map((x) => [x, 'RT ' + x])])
+            .map(([v, l]) => `<button class="tab ${RI.rt === v ? 'active' : ''}" data-act="riwRt" data-nilai="${v}">${l}</button>`).join('');
+        const cari = RI.q.trim().toLowerCase();
+        const rows = r.riwayat.filter((x) => !cari || x.nama.toLowerCase().includes(cari));
+        const pg = App.paginate('riwayatiuran', rows);
+        const sah = rows.filter((x) => x.status === 'sah');
+        const total = sah.reduce((a, x) => a + x.nominal, 0);
+        const ringRt = kunci ? '' : `<p class="small muted" style="margin:-4px 0 10px">Total iuran sah: ${[...totalRt.values()].map((x) => `RT ${esc(x.rt)} <b>${rp(x.total)}</b>`).join(' · ')} · Semua <b>${rp(semuaTot)}</b></p>`;
+        $('#riOut').innerHTML = `
+            <div class="subtabs">${tabRt}</div>
+            ${ringRt}
+            <div class="card">
+                <div class="filters">
+                    <div class="grow"><label class="f" for="riCari">Cari nama</label><input id="riCari" placeholder="Ketik nama…" value="${esc(RI.q)}" data-input="riwCari" maxlength="60"></div>
+                    <div><label class="f" for="riSt">Status</label><select id="riSt" data-change="riwStatus">
+                        ${[['', 'Semua'], ['sah', 'Sah'], ['batal', 'Dibatalkan']].map(([v, l]) => `<option value="${v}" ${RI.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+                </div>
+                <p class="small muted" style="margin-top:8px">${sah.length} pembayaran sah · total <b>${rp(total)}</b>${rows.length - sah.length ? ` · ${rows.length - sah.length} dibatalkan` : ''}${r.terpotong ? ' · menampilkan 1.000 terbaru' : ''}</p>
+            </div>
+            ${pg.bar}
+            ${rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Nama (RT)</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
+                ${pg.items.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${App.tglId(x.tanggal)}</td><td><b>${esc(x.nama)}</b> <span class="badge">RT ${esc(x.rt)}</span></td>
+                    <td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas)}</td>
+                    <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
+                </tbody></table></div></div>` : '<div class="card empty">Belum ada riwayat iuran.</div>'}`;
+    }
+
+    App.actions.riwRt = (el) => { RI.rt = el.dataset.nilai; return muatRiwayat(); };
+    App.changes.riwStatus = (el) => { RI.status = el.value; return muatRiwayat(); };
+    App.changes.riwCari = (inp) => {
+        RI.q = inp.value;
+        App.pgReset('riwayatiuran');
+        gambarRiwayat();
+        const e = $('#riCari');
+        if (e) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
     };
 
     function isiPilihan() {
