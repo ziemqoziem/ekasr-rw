@@ -290,6 +290,8 @@
         gambarRekap();
     }
 
+    const polaHtml = (p) => `<div class="rk-pola">${[['harian', 'Harian'], ['mingguan', 'Mingguan'], ['bulanan', 'Bulanan']].map(([k, l]) => `<div><span>${l}</span><b>${rp((p || {})[k] || 0)}</b></div>`).join('')}</div>`;
+
     function gambarRekap() {
         const r = RK.data;
         if (!r || !$('#rkOut')) return;
@@ -308,9 +310,9 @@
             </div>
             <div class="rk-baris" style="margin:14px 0">
                 <div class="stat rk-c0"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span></div>
+                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span>${polaHtml(t.pola)}</div>
                 ${r.rt.map((g, i) => `<div class="stat rk-c${(i % 3) + 1}"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
+                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span>${polaHtml(g.pola)}</div>`).join('')}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">

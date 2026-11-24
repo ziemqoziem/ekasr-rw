@@ -2510,3 +2510,9 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bar-satu .bs-pager { flex: 1 1 100%; margin-left: 0; }
   .bar-satu .pager { flex-wrap: wrap; justify-content: space-between; }
 }
+
+/* Rincian total per pola setor pada kartu rekap */
+.rk-pola { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.rk-pola > div { display: flex; justify-content: space-between; gap: 10px; font-size: 0.78rem; }
+.rk-pola span { color: var(--text-muted); }
+.rk-pola b { font-variant-numeric: tabular-nums; font-weight: 700; }

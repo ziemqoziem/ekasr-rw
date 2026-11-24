@@ -32,7 +32,7 @@ module.exports = route({
       if (rt) prm.push(rt);
 
       const r = await db.query(
-        `SELECT w.id, w.nama, w.rt, w.aktif, COALESCE(s.c, 0) AS jumlah, COALESCE(s.n, 0) AS total
+        `SELECT w.id, w.nama, w.rt, w.jenis, w.aktif, COALESCE(s.c, 0) AS jumlah, COALESCE(s.n, 0) AS total
          FROM warga w
          LEFT JOIN (SELECT warga_id, COUNT(*) AS c, SUM(nominal) AS n FROM setoran
                     WHERE status = 'sah' AND tanggal BETWEEN ? AND ? GROUP BY warga_id) s ON s.warga_id = w.id
@@ -40,15 +40,16 @@ module.exports = route({
          ${rt ? 'AND w.rt = ?' : ''}
          ORDER BY w.rt, w.nama`, prm);
 
-      const warga = r.rows.map((x) => ({ id: x.id, nama: x.nama, rt: x.rt, jumlah: num(x.jumlah), total: num(x.total) }));
+      const warga = r.rows.map((x) => ({ id: x.id, nama: x.nama, rt: x.rt, jenis: x.jenis, jumlah: num(x.jumlah), total: num(x.total) }));
       const perRt = new Map();
       for (const w of warga) {
-        if (!perRt.has(w.rt)) perRt.set(w.rt, { rt: w.rt, warga: 0, menyetor: 0, jumlah: 0, total: 0 });
+        if (!perRt.has(w.rt)) perRt.set(w.rt, { rt: w.rt, warga: 0, menyetor: 0, jumlah: 0, total: 0, pola: { harian: 0, mingguan: 0, bulanan: 0 } });
         const g = perRt.get(w.rt);
         g.warga += 1;
         if (w.total > 0) g.menyetor += 1;
         g.jumlah += w.jumlah;
         g.total += w.total;
+        if (g.pola[w.jenis] !== undefined) g.pola[w.jenis] += w.total;
       }
       const rtList = [...perRt.values()].sort((a, b) => a.rt.localeCompare(b.rt));
       return {
@@ -58,7 +59,8 @@ module.exports = route({
           total: rtList.reduce((a, g) => a + g.total, 0),
           jumlah: rtList.reduce((a, g) => a + g.jumlah, 0),
           warga: warga.length,
-          menyetor: warga.filter((w) => w.total > 0).length
+          menyetor: warga.filter((w) => w.total > 0).length,
+          pola: ['harian', 'mingguan', 'bulanan'].reduce((o, k) => ({ ...o, [k]: rtList.reduce((a, g) => a + g.pola[k], 0) }), {})
         },
         rt: rtList,
         warga
