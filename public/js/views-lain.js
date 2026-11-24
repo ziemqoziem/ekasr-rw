@@ -210,7 +210,7 @@
             ${data.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Tanggal</th><th>Uraian</th><th>Kategori</th><th>Dana</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
                 ${pg.items.map((p) => `<tr style="${p.status === 'batal' ? 'opacity:.55' : ''}">
                     <td style="white-space:nowrap">${App.tglId(p.tanggal)}</td>
-                    <td style="white-space:normal;min-width:180px"><b>${esc(p.uraian)}</b><div class="small muted">${p.bukti ? 'bukti ' + esc(p.bukti) + ' · ' : ''}oleh ${esc(p.petugas)}${p.status === 'batal' ? ` · <span class="badge red">batal: ${esc(p.alasan_batal || '')}</span>` : ''}</div></td>
+                    <td style="white-space:normal;min-width:180px"><b>${esc(p.uraian)}</b>${p.status === 'batal' ? `<div class="small"><span class="badge red">batal: ${esc(p.alasan_batal || '')}</span></div>` : ''}</td>
                     <td>${esc(p.kategori)}</td>
                     <td><span class="badge">${esc(DANA_PENDEK[p.sumber] || 'Umum')}</span></td>
                     <td class="r num"><b>${rp(p.nominal)}</b></td>
