@@ -48,7 +48,8 @@ async function loadTarifIuran() {
   const r = await db.query('SELECT nominal, berlaku_mulai FROM tarif_iuran ORDER BY berlaku_mulai ASC');
   return r.rows.map((t) => ({ nominal: t.nominal, mulai: String(t.berlaku_mulai).slice(0, 10) }));
 }
-const nominalPada = (tarif, tgl) => tarif.reduce((n, t) => (t.mulai <= tgl ? t.nominal : n), 0);
+// Nominal iuran yang berlaku pada tanggal; periode sebelum tarif pertama (mis. kumpulan pertama yang mulai sehari sebelum tanggal berlaku tarif) memakai tarif pertama
+const nominalPada = (tarif, tgl) => tarif.reduce((n, t) => (t.mulai <= tgl ? t.nominal : n), tarif.length ? tarif[0].nominal : 0);
 
 async function loadBayarIuran() {
   const r = await db.query("SELECT warga_id, SUM(nominal) AS n FROM iuran_wajib WHERE status = 'sah' GROUP BY warga_id");
