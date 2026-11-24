@@ -57,7 +57,8 @@ module.exports = route({
       );
       const pb = new Map();
       for (const x of bayarPeriode.rows) { if (!pb.has(x.warga_id)) pb.set(x.warga_id, []); pb.get(x.warga_id).push({ id: x.id, nominal: x.nominal }); }
-      const enam = I.periodeTerakhir(ctx.today, 6);
+      // Riwayat = 6 periode yang berakhir pada periode TERPILIH (bukan hari ini), tanpa periode sebelum penagihan dimulai
+      const enam = I.periodeTerakhir(periode.mulai, 6).filter((e) => !awalTagih || e.mulai >= awalTagih);
 
       const cnt = { lunas: 0, sebagian: 0, belum: 0, luar: 0 };
       let totalKurang = 0, masukPeriode = 0;

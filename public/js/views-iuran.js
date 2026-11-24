@@ -87,7 +87,7 @@
                 <td><span class="badge st-badge st-${w.status}">${esc(LABEL[w.status])}${esc(sisa)}</span></td>
                 <td class="c-set">${chips || '<span class="muted">-</span>'}</td>
                 <td>${info}</td>
-                <td class="c-riw"><span class="mini-hist" title="6 periode terakhir (lama → baru)">${mini}</span></td>${nom}</tr>`;
+                <td class="c-riw"><span class="mini-hist" title="Riwayat sampai kumpulan terpilih (maks. 6, lama → baru)">${mini}</span></td>${nom}</tr>`;
         }).join('');
         $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-iuran"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
