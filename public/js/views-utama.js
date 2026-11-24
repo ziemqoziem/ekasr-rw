@@ -343,8 +343,11 @@
     App.actions.saldoWarga = async (el) => {
         const r = await App.api('/api/saldo?warga_id=' + encodeURIComponent(el.dataset.id));
         const s = r.saldo;
-        const status = s.kurang > 0
-            ? `<div class="cek-total bad">Kurang ${rp(s.kurang)}</div><p class="small muted">≈ ${s.hari_kurang} hari${s.lama_sisa ? ` · tunggakan lama ${rp(s.lama_sisa)}` : ''}</p>`
+        // Riwayat warga mengabaikan pola setor (harian/mingguan/bulanan): kurang = selisih nyata sampai hari ini
+        const kurang = Math.max(0, -s.saldo);
+        const hariKurang = r.tarif_harian > 0 ? Math.ceil(kurang / r.tarif_harian) : 0;
+        const status = kurang > 0
+            ? `<div class="cek-total bad">Kurang ${rp(kurang)}</div><p class="small muted">≈ ${hariKurang} hari${s.lama_sisa ? ` · tunggakan lama ${rp(s.lama_sisa)}` : ''}</p>`
             : s.lebih > 0
                 ? `<div class="cek-total good">Titipan ${rp(s.lebih)}</div><p class="small muted">Menutup ±${s.hari_tertutup} hari ke depan · lunas sampai ${tglPendek(s.lunas_sampai)}</p>`
                 : `<div class="cek-total good">Lunas</div><p class="small muted">${s.tagihan_berjalan > 0 ? `Tagihan berjalan ${rp(s.tagihan_berjalan)}` : 'Lunas sampai hari ini'}</p>`;
