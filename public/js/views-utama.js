@@ -47,13 +47,17 @@
     /* ================= SETORAN (nominal manual) ================= */
     const SS = (App.stSetoran = { tanggal: '', rt: '', jenis: 'harian', data: null, nominal: new Map() });
 
+    // Tab: Harian / Mingguan / Bulanan (terikat pola warga) + Manual (tanpa pola)
+    const tabsSetoran = () => `<div class="subtabs">${[...JENIS, 'manual'].map((j) => `<button class="tab ${SS.jenis === j ? 'active' : ''}" data-act="setoranJenis" data-jenis="${j}">${j[0].toUpperCase() + j.slice(1)}</button>`).join('')}</div>`;
+
     App.views.setoran = async (root) => {
         if (!App.user) { root.innerHTML = '<div class="card empty">Silakan masuk terlebih dahulu.</div>'; return; }
         if (!SS.tanggal) SS.tanggal = App.today();
         if (App.rtKunci()) SS.rt = App.user.rt || '';
+        if (SS.jenis === 'manual') return tampilManual(root);
         root.innerHTML = `
             <h2 class="title">Setor Jimpitan / Iuran</h2>
-            <div class="subtabs">${JENIS.map((j) => `<button class="tab ${SS.jenis === j ? 'active' : ''}" data-act="setoranJenis" data-jenis="${j}">${j[0].toUpperCase() + j.slice(1)}</button>`).join('')}</div>
+            ${tabsSetoran()}
             <div class="card">
                 <p class="small" id="sPetunjuk" style="margin-bottom:10px"></p>
                 <div class="filters">
@@ -249,7 +253,87 @@
         await App.api('/api/setoran', { method: 'PUT', body: { id: f.dataset.id, alasan: f.alasan.value } });
         App.closeDialog();
         App.toast('Setoran dibatalkan.');
-        if (App.tab === 'setoran') await loadSetoran(); else App.render();
+        if (App.tab === 'setoran') { if (SS.jenis === 'manual') await muatManual(); else await loadSetoran(); } else App.render();
+    };
+
+
+    /* ================= SETORAN MANUAL (tidak terikat harian / mingguan / bulanan) ================= */
+    const labelWarga = (w) => `${w.nama} (RT ${w.rt})`;
+    const cariWarga = (teks) => {
+        const t = String(teks || '').trim().toLowerCase();
+        if (!t || !SS.warga) return null;
+        const persis = SS.warga.filter((w) => labelWarga(w).toLowerCase() === t);
+        if (persis.length === 1) return persis[0];
+        const nama = SS.warga.filter((w) => w.nama.toLowerCase() === t);
+        return nama.length === 1 ? nama[0] : null;
+    };
+
+    async function tampilManual(root) {
+        if (!SS.warga) {
+            try { SS.warga = (await App.api('/api/warga?aktif=1')).warga || []; } catch (e) { SS.warga = []; }
+        }
+        const tulis = App.has('jimpitan.tulis');
+        root.innerHTML = `
+            <h2 class="title">Setor Jimpitan / Iuran</h2>
+            ${tabsSetoran()}
+            <div class="card">
+                <p class="small" style="margin-bottom:12px">Input <b>manual</b>: catat setoran jimpitan untuk warga mana pun, kapan pun, dan berapa pun — <b>tidak terikat</b> pola harian, mingguan, atau bulanan. Cari nama dari data warga, isi nominal, lalu tekan <b>Tambah</b>.</p>
+                ${tulis ? `<form data-form="setoranManual" autocomplete="off">
+                    <div class="form-grid">
+                        <div><label class="f" for="mTgl">Tanggal setor</label><input type="date" id="mTgl" name="tanggal" value="${esc(SS.tanggal)}" max="${App.today()}" required data-change="manualTgl"></div>
+                        <div class="full"><label class="f" for="mWarga">Warga (dari data warga)</label>
+                            <input id="mWarga" name="warga" list="dlManual" placeholder="ketik nama untuk mencari…" required maxlength="170" data-input="manualWarga">
+                            <datalist id="dlManual">${SS.warga.map((w) => `<option value="${esc(labelWarga(w))}"></option>`).join('')}</datalist>
+                            <div class="small muted" id="mInfo" style="margin-top:4px"></div></div>
+                        <div><label class="f" for="mNom">Nominal (Rp)</label><input type="number" id="mNom" name="nominal" min="1" step="1" inputmode="numeric" required placeholder="mis. 5000"></div>
+                        <div><label class="f" for="mMet">Metode</label><select id="mMet" name="metode"><option value="tunai">Tunai</option><option value="transfer">Transfer</option></select></div>
+                        <div class="full"><label class="f" for="mCat">Catatan (opsional)</label><input id="mCat" name="catatan" maxlength="255" placeholder="mis. titip untuk bulan depan"></div>
+                    </div>
+                    <div class="dlg-actions" style="justify-content:flex-start;margin-top:12px"><button class="btn primary" type="submit">+ Tambah</button></div>
+                </form>` : '<p class="small muted"><b>Anda hanya dapat melihat.</b> Pencatatan setoran dilakukan Bendahara Jimpitan.</p>'}
+            </div>
+            <div class="card"><h3 id="mJudul">Setoran tercatat</h3><div id="mList">${App.loading()}</div></div>`;
+        await muatManual();
+    }
+
+    async function muatManual() {
+        const el = $('#mList');
+        if (!el) return;
+        const tulis = App.has('jimpitan.tulis');
+        const r = await App.api('/api/setoran?' + qs({ dari: SS.tanggal, sampai: SS.tanggal, status: 'sah', rt: SS.rt }));
+        const list = r.setoran || [];
+        const total = list.reduce((a, x) => a + x.nominal, 0);
+        $('#mJudul').innerHTML = `Setoran tercatat ${tglPendek(SS.tanggal)} <span class="small muted">· ${list.length} setoran · ${rp(total)}</span>`;
+        el.innerHTML = list.length ? `<div class="tbl-wrap"><table><thead><tr><th>Nama (RT)</th><th class="r">Nominal</th><th>Metode</th><th>Catatan</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
+            ${list.map((x) => `<tr><td>${esc(x.nama)} (RT ${esc(x.rt)})</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.metode)}</td><td style="white-space:normal">${esc(x.catatan || '')}</td>
+                ${tulis ? `<td class="r"><button class="btn sm danger" data-act="batalSetoran" data-id="${esc(x.id)}" data-nama="${esc(x.nama)}">Batalkan</button></td>` : ''}</tr>`).join('')}
+            </tbody></table></div>` : '<div class="empty">Belum ada setoran pada tanggal ini.</div>';
+    }
+
+    App.changes.manualTgl = async (el) => { SS.tanggal = el.value || App.today(); await muatManual(); };
+    App.changes.manualWarga = (inp) => {
+        const w = cariWarga(inp.value);
+        const info = $('#mInfo');
+        if (info) info.textContent = w ? `Warga ${w.jenis} · RT ${w.rt}` : '';
+    };
+    App.forms.setoranManual = async (f) => {
+        const w = cariWarga(f.warga.value);
+        if (!w) { App.toast('Pilih warga dari daftar data warga (ketik nama lalu pilih).', 'err'); f.warga.focus(); return; }
+        const nominal = Math.floor(Number(f.nominal.value));
+        if (!(nominal > 0)) { App.toast('Isi nominal setoran.', 'err'); return; }
+        SS.tanggal = f.tanggal.value || App.today();
+        const kirim = (abaikan) => App.api('/api/setoran-massal', { method: 'POST', body: { tanggal: SS.tanggal, metode: f.metode.value, catatan: f.catatan.value, items: [{ warga_id: w.id, nominal }], abaikan_duplikat: abaikan } });
+        let r = await kirim(false);
+        if (r.gagal.length && r.gagal[0].kode === 'DUPLIKAT') {
+            if (!window.confirm(r.gagal[0].alasan)) return;
+            r = await kirim(true);
+        }
+        if (!r.tersimpan) { App.toast((r.gagal[0] && r.gagal[0].alasan) || 'Gagal menyimpan setoran.', 'err'); return; }
+        App.toast(`${w.nama}: setoran ${rp(nominal)} tersimpan.`);
+        f.warga.value = ''; f.nominal.value = ''; f.catatan.value = '';
+        const info = $('#mInfo'); if (info) info.textContent = '';
+        f.warga.focus();
+        await muatManual();
     };
 
     /* ---------- saldo & riwayat satu warga ---------- */
