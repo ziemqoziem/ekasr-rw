@@ -258,7 +258,7 @@
 
 
     /* ================= REKAP JIMPITAN per kumpulan RW ================= */
-    const RK = (App.stRekap = { periode: '', data: null, cari: '', status: '' });
+    const RK = (App.stRekap = { periode: '', data: null, cari: '' });
     const nf = (v) => Number(v || 0).toLocaleString('id-ID');
 
     async function tampilRekap(root) {
@@ -281,8 +281,7 @@
         if (!r || !$('#rkOut')) return;
         const p = r.periode, t = r.total;
         const cari = RK.cari.trim().toLowerCase();
-        const rows = r.warga.filter((w) => (!cari || w.nama.toLowerCase().includes(cari))
-            && (!RK.status || (RK.status === 'sudah' ? w.total > 0 : w.total === 0)));
+        const rows = r.warga.filter((w) => w.total > 0 && (!cari || w.nama.toLowerCase().includes(cari)));
         const grup = new Map();
         for (const w of rows) { if (!grup.has(w.rt)) grup.set(w.rt, []); grup.get(w.rt).push(w); }
         $('#rkOut').innerHTML = `
@@ -293,36 +292,28 @@
                 </div>
                 <p class="small muted" style="margin-top:8px">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>
-            <div class="grid cols-4" style="margin:14px 0">
+            <div class="grid cols-3" style="margin:14px 0">
                 <div class="stat good"><small>Total jimpitan</small><b>${rp(t.total)}</b></div>
-                <div class="stat"><small>Jumlah setoran</small><b>${nf(t.jumlah)}</b></div>
                 <div class="stat"><small>Warga menyetor</small><b>${t.menyetor} / ${t.warga}</b></div>
                 <div class="stat"><small>Rata-rata per warga</small><b>${rp(t.menyetor ? Math.round(t.total / t.menyetor) : 0)}</b></div>
             </div>
             <h3 class="sec-title">Rincian per RT</h3>
             <div class="grid cols-4" style="margin-bottom:14px">
                 ${r.rt.map((g) => `<div class="stat"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${nf(g.jumlah)} setoran · ${g.menyetor}/${g.warga} warga menyetor</span></div>`).join('') || '<div class="card empty">Tidak ada data.</div>'}
+                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('') || '<div class="card empty">Tidak ada data.</div>'}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
-                <div class="filters">
-                    <div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Ketik nama…" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div>
-                    <div><label class="f" for="rkSt">Tampilkan</label><select id="rkSt" data-change="rekapStatus">
-                        ${[['', 'Semua warga'], ['sudah', 'Sudah menyetor'], ['belum', 'Belum menyetor']].map(([v, l]) => `<option value="${v}" ${RK.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-                </div>
-            </div>
-            ${grup.size ? [...grup.entries()].map(([rt, list]) => {
-                const jml = list.reduce((a, w) => a + w.jumlah, 0), tot = list.reduce((a, w) => a + w.total, 0);
-                return `<div class="card" style="margin-top:12px"><h3>RT ${esc(rt)} <span class="small muted">· ${list.length} warga · ${nf(jml)} setoran · ${rp(tot)}</span></h3>
-                <div class="tbl-wrap"><table><thead><tr><th>Nama</th><th class="r">Setoran</th><th class="r">Total</th></tr></thead><tbody>
-                ${list.map((w) => `<tr><td>${esc(w.nama)}</td><td class="r num">${w.jumlah ? nf(w.jumlah) + '×' : '-'}</td><td class="r num">${w.total ? `<b>${rp(w.total)}</b>` : '<span class="muted">Belum menyetor</span>'}</td></tr>`).join('')}
-                </tbody><tfoot><tr><td><b>Total RT ${esc(rt)}</b></td><td class="r num"><b>${nf(jml)}×</b></td><td class="r num"><b>${rp(tot)}</b></td></tr></tfoot></table></div></div>`;
-            }).join('') : '<div class="card empty" style="margin-top:12px">Tidak ada warga yang cocok.</div>'}`;
+                <div class="filters"><div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Ketik nama…" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div></div>
+                ${grup.size ? `<div class="tbl-wrap"><table class="tbl-rekap"><thead><tr><th>Nama (RT)</th><th class="r">Jumlah</th></tr></thead><tbody>
+                ${[...grup.entries()].map(([rt, list]) => `<tr class="rk-rt"><td>RT ${esc(rt)} <span class="muted">· ${list.length} warga</span></td><td class="r num">${rp(list.reduce((a, w) => a + w.total, 0))}</td></tr>
+                    ${list.map((w) => `<tr><td>${esc(w.nama)}</td><td class="r num">${rp(w.total)}</td></tr>`).join('')}`).join('')}
+                </tbody><tfoot><tr><td><b>Total</b></td><td class="r num"><b>${rp(rows.reduce((a, w) => a + w.total, 0))}</b></td></tr></tfoot></table></div>`
+                : '<div class="empty" style="margin-top:10px">Belum ada setoran pada kumpulan ini.</div>'}
+            </div>`;
     }
 
     App.changes.rekapPeriode = async (el) => { RK.periode = el.value; await muatRekap(); };
-    App.changes.rekapStatus = (el) => { RK.status = el.value; gambarRekap(); };
     App.changes.rekapCari = (inp) => {
         RK.cari = inp.value;
         gambarRekap();

@@ -2150,3 +2150,13 @@ body > * { min-width: 0; max-width: 100%; }
 p .sel-min, p .sel-plus { padding: 0 6px; font-size: inherit; }
 @media (max-width: 600px) { .tbl-rt { font-size: 0.78rem; } .tbl-rt th, .tbl-rt td { padding: 7px 8px; } }
 @media print { .rt-blok { break-inside: avoid; } }
+
+/* Rekap jimpitan: tabel ringkas */
+.grid.cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 720px) { .grid.cols-3 { grid-template-columns: 1fr 1fr; } }
+.tbl-rekap { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.tbl-rekap th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.tbl-rekap th.r { text-align: right; }
+.tbl-rekap td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.tbl-rekap tr.rk-rt td { background: rgba(99, 102, 241, 0.14); font-weight: 700; padding: 8px 10px; }
+.tbl-rekap tfoot td { padding: 10px; border-top: 2px solid var(--border); border-bottom: 0; }
