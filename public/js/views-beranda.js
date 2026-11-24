@@ -69,22 +69,6 @@
             <tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
             <p class="small muted" style="margin-top:10px">Saldo periode sebelumnya + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
 
-        /* ---- 3) Pemasukan & pengeluaran 12 bulan ---- */
-        const masuk12 = k.tren.reduce((a, t) => a + t.jimpitan + t.iuran + t.sewa, 0);
-        const keluar12 = k.tren.reduce((a, t) => a + t.keluar, 0);
-        reg.trenkas = (w) => K.columns({
-            labels: k.tren.map((t) => K.bulanPendek(t.bulan)),
-            series: [
-                { name: 'Jimpitan', color: C.s[0], values: k.tren.map((t) => t.jimpitan) },
-                { name: 'Iuran wajib', color: C.s[2], values: k.tren.map((t) => t.iuran) },
-                { name: 'Pemasukan lainnya', color: C.s[3], values: k.tren.map((t) => t.sewa) },
-                { name: 'Pengeluaran', color: C.s[7], values: k.tren.map((t) => t.keluar) }
-            ],
-            tipTitle: (i) => D.labelBulan(k.tren[i].bulan), height: 260, aria: 'Pemasukan per sumber dan pengeluaran 12 bulan terakhir'
-        }, w);
-        const grafik12 = `<div class="bk-ring"><span class="in">Pemasukan 12 bulan <b>${rp(masuk12)}</b></span><span class="out">Pengeluaran 12 bulan <b>${rp(keluar12)}</b></span></div>
-            ${D.chartCard('trenkas', 'Pemasukan & pengeluaran 12 bulan', 'Jimpitan, iuran wajib, pemasukan lainnya, dan pengeluaran per bulan', D.tbl([{ h: 'Bulan' }, { h: 'Jimpitan', r: 1 }, { h: 'Iuran', r: 1 }, { h: 'Lainnya', r: 1 }, { h: 'Keluar', r: 1 }], k.tren.map((t) => [D.labelBulan(t.bulan), rp(t.jimpitan), rp(t.iuran), rp(t.sewa), rp(t.keluar)])))}`;
-
         root.innerHTML = `
             <section class="home-hero">
                 <div class="home-hero-text">
@@ -124,10 +108,6 @@
 
             <h3 class="sec-title">Kas per periode kumpulan RW</h3>
             ${tabelPeriode}
-
-            <h3 class="sec-title">Pemasukan &amp; pengeluaran 12 bulan</h3>
-            ${grafik12}
-
             <p class="small muted note">Tampilan publik hanya memuat angka ringkasan. ${d.cek_tunggakan_aktif ? 'Pengecekan status menampilkan data warga yang dicari saja.' : ''}
             ${App.user ? '' : 'Pengurus dan bendahara silakan <a href="#" data-act="loginDialog">masuk</a> untuk mengelola data.'}</p>`;
 
