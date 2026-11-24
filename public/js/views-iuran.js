@@ -67,25 +67,32 @@
         const pg = App.paginate('iuran', rows);
         $('#iPg').innerHTML = pg.bar;
         const tulis = App.has('iuran.tulis');
-        $('#iList').innerHTML = rows.length ? pg.items.map((w) => {
-            const chips = w.setoran.map((x) => `<span class="chip ok-chip">${rp(x.nominal)}${tulis ? ` <button class="chip-x" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}" aria-label="Batalkan">✕</button>` : ''}</span>`).join('');
-            const sisa = w.status === 'sebagian' ? ` ${rp(w.dibayar_periode)} dari ${rp(w.nominal)}` : '';
-            const info = w.kurang > 0 ? `<span class="badge red">Tunggakan ${rp(w.kurang)} (${w.periode_kurang} periode)</span>`
-                : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '';
-            const mini = w.riwayat.map((h) => `<i class="cal-dot cal-${WARNA[h.status]}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}"></i>`).join('');
+        // Sudah setor = lunas untuk kumpulan ini ATAU ada setoran bertanggal di dalam periode ini → kotak tercentang & terkunci
+        const bisaPilih = rows.filter((w) => !sudahSetor(w) && w.saran > 0);
+        const semuaDipilih = bisaPilih.length > 0 && bisaPilih.every((w) => IS.nominal.has(w.id));
+        const baris = pg.items.map((w) => {
+            const kunci = sudahSetor(w);
             const dipilih = IS.nominal.has(w.id);
-            return `<div class="item st-${w.status}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
-                ${tulis ? `<label class="cek-setor" title="Centang untuk mencatat setoran iuran"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${dipilih ? 'checked' : ''}></label>` : ''}
-                <div class="grow">
-                    <div class="name">${esc(w.nama)} <span class="badge st-badge st-${w.status}">${esc(LABEL[w.status])}${esc(sisa)}</span></div>
-                    <div class="meta"><span class="badge">RT ${esc(w.rt)}</span> ${info} <span class="mini-hist" title="6 periode terakhir (lama → baru)">${mini}</span></div>
-                    ${chips ? `<div class="chips" style="margin-top:6px">${chips}</div>` : ''}
-                </div>
-                ${tulis ? `<div class="nominal-box${dipilih ? '' : ' hidden'}">
-                    <input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">
-                </div>` : ''}
-            </div>`;
-        }).join('') : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            const chips = w.setoran.map((x) => `<span class="chip ok-chip">${rp(x.nominal)}${tulis ? ` <button class="chip-x" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}" aria-label="Batalkan">✕</button>` : ''}</span>`).join('');
+            const sisa = w.status === 'sebagian' ? ` ${rp(w.dibayar_periode)} / ${rp(w.nominal)}` : '';
+            const info = w.kurang > 0 ? `<span class="badge red">Tunggakan ${rp(w.kurang)} (${w.periode_kurang} periode)</span>`
+                : w.lebih > 0 ? `<span class="badge green">Titipan ${rp(w.lebih)}${w.periode_lebih ? ` · ±${w.periode_lebih} periode` : ''}</span>` : '<span class="muted">-</span>';
+            const mini = w.riwayat.map((h) => `<i class="cal-dot cal-${WARNA[h.status]}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}"></i>`).join('');
+            const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
+            const nom = !tulis ? '' : `<td class="c-nom">${dipilih
+                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">`
+                : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : ''}</td>`;
+            return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
+                <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
+                <td><span class="badge st-badge st-${w.status}">${esc(LABEL[w.status])}${esc(sisa)}</span></td>
+                <td class="c-set">${chips || '<span class="muted">-</span>'}</td>
+                <td>${info}</td>
+                <td class="c-riw"><span class="mini-hist" title="6 periode terakhir (lama → baru)">${mini}</span></td>${nom}</tr>`;
+        }).join('');
+        $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-iuran"><thead><tr>
+            ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
+            <th>Nama (RT)</th><th>Status</th><th>Setoran periode ini</th><th>Tunggakan / titipan</th><th class="c-riw">Riwayat</th>${tulis ? '<th class="c-nom r">Nominal</th>' : ''}</tr></thead>
+            <tbody>${baris}</tbody></table></div></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
         barSimpan();
     }
 
@@ -96,12 +103,12 @@
         bar.style.display = '';
         let n = 0, total = 0;
         for (const v of IS.nominal.values()) if (v > 0) { n += 1; total += v; }
-        const belum = IS.data.warga.filter((w) => w.status !== 'lunas' && w.saran > 0).length;
+        const belum = IS.data.warga.filter((w) => !sudahSetor(w) && w.saran > 0).length;
         bar.innerHTML = `
             <div class="row" style="gap:8px"><span class="badge blue"><b>${n}</b> warga dicentang</span>
                 <span style="font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums">${rp(total)}</span></div>
             <div class="row">
-                <button class="btn sm" data-act="iuranIsiSemua" ${belum ? '' : 'disabled'}>Centang semua belum lunas (${belum})</button>
+                <button class="btn sm" data-act="iuranIsiSemua" ${belum ? '' : 'disabled'}>Centang semua belum setor (${belum})</button>
                 <button class="btn sm ghost" data-act="iuranReset" ${n ? '' : 'disabled'}>Reset</button>
                 <button class="btn primary" data-act="iuranSimpan" ${n ? '' : 'disabled'}>Simpan</button>
             </div>`;
@@ -113,38 +120,47 @@
     };
     App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
     App.changes.iuranCari = () => { IS.q = $('#iCari').value; App.pgReset('iuran'); tampil(); };
+    // Sudah setor = lunas untuk kumpulan ini atau ada setoran bertanggal di periode ini
+    function sudahSetor(w) { return w.status === 'lunas' || w.setoran.length > 0; }
     // Centang = catat setoran sebesar tagihan/saran; nominal masih bisa diubah di kolom yang muncul
     App.changes.iuranCek = (cb) => {
         const id = Number(cb.dataset.id);
         const w = IS.data.warga.find((x) => x.id === id);
         if (!w) return;
-        const row = cb.closest('.item');
-        const box = row ? row.querySelector('.nominal-box') : null;
-        const inp = box ? box.querySelector('input') : null;
         if (cb.checked) {
             if (!(w.saran > 0)) { cb.checked = false; App.toast('Nominal iuran belum diatur.', 'err'); return; }
             IS.nominal.set(id, w.saran);
-            if (inp) inp.value = w.saran;
         } else {
             IS.nominal.delete(id);
-            if (inp) inp.value = '';
         }
-        if (box) box.classList.toggle('hidden', !cb.checked);
-        if (row) row.classList.toggle('dipilih', cb.checked);
-        barSimpan();
+        tampil();
+    };
+    App.changes.iuranCekSemua = (cb) => {
+        const cari = ($('#iCari').value || '').trim().toLowerCase();
+        for (const w of IS.data.warga) {
+            if (cari && !w.nama.toLowerCase().includes(cari)) continue;
+            if (IS.status && w.status !== IS.status) continue;
+            if (sudahSetor(w) || !(w.saran > 0)) continue;
+            if (cb.checked) IS.nominal.set(w.id, w.saran); else IS.nominal.delete(w.id);
+        }
+        tampil();
+    };
+    App.actions.iuranTambah = (el) => {
+        const w = IS.data.warga.find((x) => x.id === Number(el.dataset.id));
+        if (!w) return;
+        IS.nominal.set(w.id, w.saran > 0 ? w.saran : (w.nominal || 0));
+        tampil();
+        const inp = $(`input[data-input="iuranNominal"][data-id="${w.id}"]`);
+        if (inp) { inp.focus(); inp.select(); }
     };
     App.changes.iuranNominal = (inp) => {
         const id = Number(inp.dataset.id);
         const v = Math.floor(Number(inp.value));
         if (v > 0) IS.nominal.set(id, v); else IS.nominal.delete(id);
-        const row = inp.closest('.item');
-        const cb = row ? row.querySelector('input[type="checkbox"]') : null;
-        if (cb) cb.checked = v > 0;
-        if (row) row.classList.toggle('dipilih', v > 0);
         barSimpan();
     };
     App.actions.iuranIsiSemua = () => {
-        for (const w of IS.data.warga) if (w.status !== 'lunas' && w.saran > 0) IS.nominal.set(w.id, w.saran);
+        for (const w of IS.data.warga) if (!sudahSetor(w) && w.saran > 0) IS.nominal.set(w.id, w.saran);
         tampil();
     };
     App.actions.iuranReset = () => { IS.nominal.clear(); tampil(); };
