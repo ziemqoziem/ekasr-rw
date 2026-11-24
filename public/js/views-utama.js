@@ -90,7 +90,7 @@
         const txt = {
             harian: `Warga <b>harian</b> menyetor tiap hari. Saran: ${rp(t)} (1 hari).`,
             mingguan: `Warga <b>mingguan</b> menyetor seminggu sekali. Saran: ${rp(t * 7)} (7 hari).`,
-            bulanan: `Warga <b>bulanan</b> menyetor sebulan sekali. Saran: ${rp(t * hb)} (${hb} hari).`
+            bulanan: `Warga <b>bulanan</b> menyetor sebulan sekali. Saran: ${rp(t * 30)} (30 hari).`
         }[SS.jenis];
         if (!App.has('jimpitan.tulis')) { el.innerHTML = `${txt.replace(/ Saran:.*$/, '')} <b>Anda hanya dapat melihat.</b> Pencatatan setoran dilakukan Bendahara Jimpitan; gunakan Saldo dan Kalender untuk melihat riwayat warga.`; return; }
         el.innerHTML = `${txt} Ketik nominal lalu tekan <b>Setor</b>, atau isi beberapa warga dan tekan <b>Simpan Setoran</b>. Nominal boleh berapa pun; kelebihan jadi titipan, kekurangan jadi tunggakan.`;
@@ -130,7 +130,8 @@
             <span>·</span><span>Total kurang: <b>${rp(r.ringkasan.total_kurang)}</b></span>`;
         App.pgRedraw.setor = renderSetoran;
         const pg = App.paginate('setor', rows);
-        $('#sPg').innerHTML = pg.bar;
+        SS.pgHtml = pg.bar;   // kontrol halaman digabung ke bilah simpan (bagi yang boleh mencatat)
+        $('#sPg').innerHTML = App.has('jimpitan.tulis') ? '' : pg.bar;
         if (!rows.length) {
             $('#sList').innerHTML = '<div class="card empty">Tidak ada warga yang cocok.</div>';
         } else {
@@ -145,7 +146,7 @@
                         ${chips ? `<div class="chips" style="margin-top:6px">${chips}</div>` : ''}
                     </div>
                     <div class="nominal-box">
-                        ${tulis ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal setoran ${esc(w.nama)}" data-input="nominalSetoran" data-id="${w.id}" value="${val ? val : ''}">
+                        ${tulis ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="${w.default ? rp(w.default) : 'Rp 0'}" aria-label="Nominal setoran ${esc(w.nama)}" data-input="nominalSetoran" data-id="${w.id}" value="${val ? val : ''}">
                         <button class="btn sm" data-act="isiSaran" data-id="${w.id}" title="Isi nominal saran (${w.saran ? rp(w.saran) : 'kosong'})">${w.saran ? '+' + compact(w.saran) : '—'}</button>
                         <button class="btn sm primary" data-act="setorSatu" data-id="${w.id}" title="Simpan setoran warga ini sekarang">Setor</button>` : ''}
                         <button class="btn sm ghost" data-act="saldoWarga" data-id="${w.id}" data-nama="${esc(w.nama)}" title="Lihat saldo & riwayat">Saldo</button>
@@ -165,14 +166,15 @@
         if (!App.has('jimpitan.tulis')) { bar.innerHTML = ''; bar.style.display = 'none'; return; }
         let n = 0, total = 0;
         for (const v of SS.nominal.values()) if (v > 0) { n += 1; total += v; }
-        const belum = r.warga.filter((w) => !w.setoran.length && w.saran > 0).length;
+        const belum = r.warga.filter((w) => !w.setoran.length && w.default > 0).length;
         bar.innerHTML = `
+            ${SS.pgHtml ? `<div class="savebar-pg">${SS.pgHtml}</div>` : ''}
             <div class="row" style="gap:8px">
                 <span class="badge blue"><b>${n}</b> warga dipilih</span>
                 <span style="font-weight:700;font-size:1.15rem;color:var(--text);font-variant-numeric:tabular-nums">${rp(total)}</span>
             </div>
             <div class="row">
-                <button class="btn sm" data-act="isiSemuaSaran" ${belum ? '' : 'disabled'}>Isi saran (${belum})</button>
+                <button class="btn sm" data-act="isiDefault" ${belum ? '' : 'disabled'} title="Isi nominal default: harian ${rp(r.tarif_harian || 0)}, mingguan ${rp((r.tarif_harian || 0) * 7)}, bulanan ${rp((r.tarif_harian || 0) * 30)}">Isi default (${belum})</button>
                 <button class="btn sm ghost" data-act="kosongkanNominal" ${n ? '' : 'disabled'}>Reset</button>
                 <button class="btn primary" data-act="simpanSetoran" ${n ? '' : 'disabled'}>Simpan Setoran</button>
             </div>`;
@@ -199,6 +201,14 @@
         const inp = $(`input[data-id="${w.id}"]`);
         if (inp) inp.value = w.saran;
         renderBar();
+    };
+    // Isi nominal default (harian x1, mingguan x7, bulanan x30) untuk warga yang belum setor pada tanggal ini (mengikuti filter RT & pencarian)
+    App.actions.isiDefault = () => {
+        const cari = ($('#sCari').value || '').trim().toLowerCase();
+        for (const w of SS.data.warga) {
+            if (!w.setoran.length && w.default > 0 && (!cari || w.nama.toLowerCase().includes(cari))) SS.nominal.set(w.id, w.default);
+        }
+        renderSetoran();
     };
     App.actions.isiSemuaSaran = () => {
         const cari = ($('#sCari').value || '').trim().toLowerCase();

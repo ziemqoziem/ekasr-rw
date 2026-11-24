@@ -34,8 +34,8 @@ module.exports = route({
         if (!hari.has(s.warga_id)) hari.set(s.warga_id, []);
         hari.get(s.warga_id).push({ id: s.id, nominal: s.nominal });
       }
-      const hariBulan = Number(P.rangeOf('bulanan', ctx.today.slice(0, 7))[1].slice(8));
-      const polaNominal = { harian: ctx.tarifNow, mingguan: ctx.tarifNow * 7, bulanan: ctx.tarifNow * hariBulan };
+      // Nominal default per pola: harian 1 hari, mingguan 7 hari, bulanan 30 hari (mis. tarif Rp 500 → 500 / 3.500 / 15.000)
+      const polaNominal = { harian: ctx.tarifNow, mingguan: ctx.tarifNow * 7, bulanan: ctx.tarifNow * 30 };
 
       let sudah = 0, totalMasuk = 0, totalKurang = 0;
       const rows = wr.rows.map((w) => {
@@ -48,7 +48,7 @@ module.exports = route({
         return {
           id: w.id, nama: w.nama, rt: w.rt, jenis: w.jenis, no_hp: w.no_hp,
           kurang: s.kurang, tagihan_berjalan: s.tagihan_berjalan, lebih: s.lebih, hari_tertutup: s.hari_tertutup, lunas_sampai: s.lunas_sampai,
-          saran: s.tagihan_berjalan > 0 ? s.tagihan_berjalan : polaNominal[w.jenis],
+          saran: s.tagihan_berjalan > 0 ? s.tagihan_berjalan : polaNominal[w.jenis], default: polaNominal[w.jenis],
           setoran: list, total_hari: totalHari
         };
       });
