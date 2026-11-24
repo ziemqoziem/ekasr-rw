@@ -57,9 +57,9 @@ module.exports = route({
       );
       const pb = new Map();
       for (const x of bayarPeriode.rows) { if (!pb.has(x.warga_id)) pb.set(x.warga_id, []); pb.get(x.warga_id).push({ id: x.id, nominal: x.nominal }); }
-      // Riwayat = semua kumpulan sejak penagihan dimulai sampai kumpulan berjalan (satu kolom per kumpulan)
+      // Riwayat = semua kumpulan sejak penagihan dimulai SAMPAI kumpulan terpilih di filter (satu kolom per kumpulan)
       const enam = [];
-      for (let p = sekarang; enam.length < 60; p = I.periodeSebelum(p)) {
+      for (let p = periode; enam.length < 60; p = I.periodeSebelum(p)) {
         if (awalTagih && p.mulai < awalTagih) break;
         enam.unshift({ mulai: p.mulai, akhir: p.akhir });
         if (!awalTagih && enam.length >= 6) break;
