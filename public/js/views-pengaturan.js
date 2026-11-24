@@ -423,11 +423,19 @@
         tampilLog();
     }
     let LOGDATA = [];
+    // Waktu disimpan UTC di database; tampilkan dalam zona Asia/Jakarta (WIB)
+    function waktuWib(v) {
+        const d = new Date(v);
+        if (isNaN(d)) return String(v);
+        const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+            .formatToParts(d).map((x) => [x.type, x.value]));
+        return `${p.day}/${p.month}/${p.year} ${p.hour === '24' ? '00' : p.hour}:${p.minute}:${p.second} WIB`;
+    }
     function tampilLog() {
         const pg = App.paginate('log', LOGDATA);
         $('#pgBody').innerHTML = `${pg.bar}<div class="tbl-wrap"><table>
             <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Keterangan</th></tr></thead>
-            <tbody>${pg.items.map((l) => `<tr><td>${esc(String(l.waktu).replace('T', ' ').slice(0, 19))} UTC</td><td>${esc(l.username)}</td><td><span class="badge">${esc(l.aksi)}</span></td><td style="white-space:normal;min-width:260px">${esc(l.deskripsi)}</td></tr>`).join('')}</tbody>
+            <tbody>${pg.items.map((l) => `<tr><td style="white-space:nowrap">${esc(waktuWib(l.waktu))}</td><td>${esc(l.username)}</td><td><span class="badge">${esc(l.aksi)}</span></td><td style="white-space:normal;min-width:260px">${esc(l.deskripsi)}</td></tr>`).join('')}</tbody>
         </table></div>`;
     }
 
