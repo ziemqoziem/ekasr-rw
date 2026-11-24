@@ -87,7 +87,7 @@
                     <div class="iu-top">
                         ${tulis ? `<input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled' : ''}>` : ''}
                         <div class="iu-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span><div class="small muted">${esc(LABEL[w.status])}</div></div>
-                        <button class="link-setor iu-sum" data-act="iuranRiwayatSetor" data-id="${w.id}"><small>Disetor</small>${rp(w.total_setor)}</button>
+                        <button class="link-setor iu-sum" data-act="iuranRiwayatSetor" data-id="${w.id}"><small>Iuran</small>${rp(w.total_setor)}</button>
                     </div>
                     <div class="iu-riw">${chip}</div>${aksi}</div>`;
             }).join('');
@@ -127,9 +127,9 @@
         const ketK = nK < kolomSemua.length ? ` Layar sempit: menampilkan K${kolom[0].no}–K${kolom[kolom.length - 1].no} dari ${kolomSemua.length} kumpulan.` : '';
         $('#iList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap tbl-satu"><table class="tbl-iuran"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
-            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Sudah disetor</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
+            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Iuran</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
-            <p class="small muted" style="padding:8px 14px 12px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan terpilih. Klik angka “Sudah disetor” untuk melihat atau membatalkan setoran.${ketK}</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            <p class="small muted" style="padding:8px 14px 12px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Iuran” untuk melihat atau membatalkan setoran.${ketK}</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
         barSimpan();
     }
 
@@ -213,7 +213,7 @@
             ${tulis ? `<td class="r"><button class="btn sm danger" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}">Batalkan</button></td>` : ''}</tr>`).join('');
         App.dialog(`
             <h3>Setoran iuran — ${esc(w.nama)} (RT ${esc(w.rt)})</h3>
-            <p class="small muted" style="margin-bottom:10px">Total disetor <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
+            <p class="small muted" style="margin-bottom:10px">Total iuran <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
             <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
             ${baris || `<tr><td colspan="3" class="muted">Belum ada setoran.</td></tr>`}</tbody></table></div>
             <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Tutup</button></div>`);
