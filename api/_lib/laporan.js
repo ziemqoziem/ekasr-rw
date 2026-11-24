@@ -120,14 +120,13 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
     }
     out.status_jimpitan = { warga_aktif: wajibJ, menunggak: nJ, lunas: wajibJ - nJ, total_tunggakan: totJ };
 
-    // Iuran wajib: kewajiban semua kumpulan sampai kumpulan ini (yang ditagih sehari setelah kumpulan) − pembayaran sampai cut off
+    // Iuran wajib: kewajiban semua kumpulan sampai kumpulan ini − pembayaran sampai cut off
     const ci = await I.bangunKonteksIuran();
     const IU = new Map();
     if (ci.aktif) {
-      const tiba = sampai >= p.tanggal;
-      const byi = await db.query("SELECT warga_id, SUM(nominal) AS n FROM iuran_wajib WHERE status = 'sah' AND tanggal <= ? GROUP BY warga_id", [sampai]);
-      const ci2 = { ...ci, today: tiba ? P.addDays(p.tanggal, 1) : sampai, bayar: new Map(byi.rows.map((x) => [x.warga_id, num(x.n)])) };
-      const pi = I.periodeDari(P.addDays(p.tanggal, 1)); // periode iuran yang ditagih pada kumpulan ini
+            const byi = await db.query("SELECT warga_id, SUM(nominal) AS n FROM iuran_wajib WHERE status = 'sah' AND tanggal <= ? GROUP BY warga_id", [sampai]);
+      const ci2 = { ...ci, today: sampai, bayar: new Map(byi.rows.map((x) => [x.warga_id, num(x.n)])) };
+      const pi = I.periodeDari(p.tanggal); // periode iuran = kumpulan ini (mulai Selasa Kliwon)
       const wi = wr.filter((w) => w.ikut_iuran !== 0 || w.iuran_berhenti);
       const hit = I.hitungIuran(wi, ci2);
       const cnt = { lunas: 0, sebagian: 0, belum: 0 };

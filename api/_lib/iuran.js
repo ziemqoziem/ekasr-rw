@@ -5,11 +5,11 @@ const { newId, batasProgram } = require('./util');
 const { pastikanTerbuka } = require('./tutupbuku');
 
 /* =====================================================================================
- * IURAN WAJIB — periode = tiap RABU LEGI (35 hari = lcm(7 hari, 5 pasaran)).
+ * IURAN WAJIB — periode = tiap kumpulan RW: SELASA KLIWON (malam Rabu Legi), 35 hari = lcm(7 hari, 5 pasaran).
  *   hari sejak 1 Jan 1970 = d  → hari: (d + 4) mod 7  (0 = Minggu; 3 = Rabu)
  *                              → pasaran: (d + 3) mod 5 (0 = Legi, 1 Pahing, 2 Pon, 3 Wage, 4 Kliwon)
  *   (1 Jan 1970 = Kamis Wage; 17 Agu 1945 = Jumat Legi → dipakai sebagai uji)
- *   Rabu Legi jatuh pada d ≡ 27 (mod 35). Periode: [Rabu Legi, Rabu Legi berikutnya − 1].
+ *   Selasa Kliwon jatuh pada d ≡ 26 (mod 35). Periode: [Selasa Kliwon, Selasa Kliwon berikutnya − 1].
  * Pembayaran seperti pola jimpitan: nominal bebas; saldo = total bayar − kewajiban periode yang sudah dimulai;
  * pembayaran menutup periode TERTUA lebih dulu.
  * ===================================================================================== */
@@ -25,10 +25,10 @@ const weton = (tgl) => `${namaHari(tgl)} ${pasaran(tgl)}`;
 
 // Periode yang memuat tanggal
 function periodeDari(tgl) {
-  const mulai = P.addDays(tgl, -mod(hariKe(tgl) - 27, SIKLUS));
+  const mulai = P.addDays(tgl, -mod(hariKe(tgl) - 26, SIKLUS));
   return { mulai, akhir: P.addDays(mulai, SIKLUS - 1) };
 }
-// Periode pertama yang DIMULAI pada/setelah tanggal tertentu (kumpulan Rabu Legi pertama sejak tanggal itu)
+// Periode pertama yang DIMULAI pada/setelah tanggal tertentu (kumpulan Selasa Kliwon pertama sejak tanggal itu)
 function periodePertama(tgl) {
   const p = periodeDari(tgl);
   return p.mulai < tgl ? periodeBerikut(p) : p;

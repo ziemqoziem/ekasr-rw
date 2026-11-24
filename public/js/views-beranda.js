@@ -99,7 +99,7 @@
             htmlIuran = `<div class="kpi-grid n4">${tilesI.join('')}</div>
                 ${D.chartCard('iuranst', 'Status iuran wajib kumpulan berjalan', `${ir.periode.weton}, ${tgl(ir.periode.mulai)}`, D.tbl([{ h: 'Status' }, { h: 'KK', r: 1 }], parts.map((p) => [esc(p.name), p.value])), 'cc-narrow')}`;
         } else {
-            htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW (Rabu Legi) belum diaktifkan oleh pengurus.</div>';
+            htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW (Selasa Kliwon) belum diaktifkan oleh pengurus.</div>';
         }
 
         root.innerHTML = `
@@ -151,7 +151,7 @@
             <div class="dash-grid g-2">
                 ${D.chartCard('masukbulan', `Kas bulan ${bl}`, 'Pemasukan per sumber vs pengeluaran', D.tbl([{ h: 'Pos' }, { h: 'Nominal', r: 1 }], [['Jimpitan', rp(k.bulan_ini.jimpitan)], ['Iuran wajib', rp(k.bulan_ini.iuran)], ['Pemasukan lainnya', rp(k.bulan_ini.sewa)], ['Pengeluaran', rp(k.bulan_ini.keluar)]]))}
                 <section class="card">
-                    <h3>Kas per periode kumpulan RW (Rabu Legi)</h3>
+                    <h3>Kas per periode kumpulan RW (Selasa Kliwon)</h3>
                     <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead><tbody>${periodeRows}</tbody></table></div>
                 </section>
             </div>

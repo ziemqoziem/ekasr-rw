@@ -9,7 +9,7 @@ const SUMBER = ['jimpitan', 'iuran_wajib', 'sewa_aset', 'pengeluaran'];
  * BUKU KAS TUNGGAL RW (bendahara RW; admin hanya melihat).
  * Gabungan otomatis dari jimpitan + iuran wajib + pemasukan lainnya dan pengeluaran — tanpa tabel ganda.
  *   ?dari=&sampai=&sumber=   → buku kas kronologis dengan saldo berjalan
- *   per_periode              → ringkasan tiap periode kumpulan (Rabu Legi), 8 terakhir
+ *   per_periode              → ringkasan tiap periode kumpulan (Selasa Kliwon), 8 terakhir
  */
 module.exports = route({
   GET: {

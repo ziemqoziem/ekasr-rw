@@ -1,4 +1,4 @@
-/* Halaman Iuran Wajib: per periode kumpulan RW (tiap Rabu Legi, 35 hari). Pola pembayaran seperti jimpitan. */
+/* Halaman Iuran Wajib: per periode kumpulan RW (tiap Selasa Kliwon, 35 hari). Pola pembayaran seperti jimpitan. */
 (function () {
     'use strict';
     const App = window.App;

@@ -9,7 +9,7 @@ const { pastikanTerbuka } = require('./_lib/tutupbuku');
 /**
  * Pendapatan sewa aset: hanya PENERIMAAN (tanpa data penyewa/piutang).
  * Pengurus RT: hanya RT-nya. Bendahara RW: semua RT (dan RW umum). Admin: hanya melihat.
- * Laporan dikelompokkan per periode kumpulan (Rabu Legi).
+ * Laporan dikelompokkan per periode kumpulan (Selasa Kliwon).
  */
 // Peran "dibatasi RT": hanya RT yang tertera pada akunnya
 const terbatasRt = (user) => peranTerbatasRt(user.role);

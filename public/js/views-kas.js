@@ -56,7 +56,7 @@
     }
 
     function vPeriode(r) {
-        return `<div class="card"><h3>Ringkasan per kumpulan RW (Rabu Legi, 12 terakhir)</h3>
+        return `<div class="card"><h3>Ringkasan per kumpulan RW (Selasa Kliwon, 12 terakhir)</h3>
             <p class="small muted" style="margin-bottom:10px">Laporan kas yang dibacakan pada kumpulan RW. Periode berjalan dihitung sampai hari ini.</p>
             <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Jimpitan</th><th class="r">Iuran wajib</th><th class="r">Pemasukan lainnya</th><th class="r">Total masuk</th><th class="r">Pengeluaran</th><th class="r">Selisih</th><th class="r">Saldo akhir</th></tr></thead><tbody>
             ${r.per_periode.slice().reverse().map((p) => `<tr><td>${esc(p.weton)}, ${tgl(p.mulai)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</td>

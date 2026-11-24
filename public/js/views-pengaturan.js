@@ -127,11 +127,11 @@
                     <div><label class="f" for="tiT">Berlaku mulai</label><input type="date" id="tiT" name="berlaku_mulai" value="${hariIni}" required></div>
                     <div><button class="btn primary" type="submit">Simpan nominal</button></div>
                 </div></form>
-                <p class="small muted">Satu periode = satu kumpulan RW (<b>Rabu Legi</b>, tiap 35 hari). Bila ada perubahan kebijakan, tambahkan nominal baru dengan tanggal berlaku baru; periode yang sudah berjalan tetap memakai nominal lamanya.</p>
+                <p class="small muted">Satu periode = satu kumpulan RW (<b>Selasa Kliwon</b> / malam Rabu Legi, tiap 35 hari). Bila ada perubahan kebijakan, tambahkan nominal baru dengan tanggal berlaku baru; periode yang sudah berjalan tetap memakai nominal lamanya.</p>
             </div>
             <div class="card"><h3>Mulai penagihan</h3>
                 <form data-form="iuranMulai" class="row">
-                    <div><label class="f" for="imT">Tagih mulai kumpulan (Rabu Legi) pertama pada/setelah tanggal</label><input type="date" id="imT" name="iuran_mulai" value="${esc(p.iuran_mulai || '')}"></div>
+                    <div><label class="f" for="imT">Tagih mulai kumpulan (Selasa Kliwon) pertama pada/setelah tanggal</label><input type="date" id="imT" name="iuran_mulai" value="${esc(p.iuran_mulai || '')}"></div>
                     <button class="btn" type="submit" style="align-self:flex-end">Simpan</button>
                 </form>
                 <p class="small muted">Wajib diisi agar halaman Iuran Wajib aktif. Semua KK aktif wajib membayar; warga yang baru mulai iuran ditagih sejak kumpulan setelah tanggal mulainya.</p>
