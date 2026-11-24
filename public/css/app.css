@@ -2096,3 +2096,28 @@ body > * { min-width: 0; max-width: 100%; }
 .tbl-iuran .c-nom input { width: 84px; max-width: 84px; vertical-align: middle; margin-right: 6px; }
 .tbl-iuran .c-nom .btn.primary { vertical-align: middle; padding-left: 10px; padding-right: 10px; }
 @media (max-width: 600px) { .tbl-iuran th.c-nom, .tbl-iuran td.c-nom { width: 150px; } .tbl-iuran .c-nom input { width: 64px; max-width: 64px; margin-right: 4px; } }
+
+/* Tampilan HP: kartu per warga */
+.iu-m { display: flex; flex-direction: column; gap: 10px; }
+.iu-all { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius); background: var(--panel-2); border: 1px solid var(--border); font-size: 0.86rem; font-weight: 600; }
+.iu-all input { width: 22px; height: 22px; }
+.iu-card { border-radius: var(--radius); background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--border); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.iu-card.st-lunas { border-left-color: var(--green); }
+.iu-card.st-sebagian { border-left-color: var(--amber); }
+.iu-card.st-belum { border-left-color: var(--red); }
+.iu-card.dipilih { background: var(--green-bg); border-color: var(--green-border); }
+.iu-top { display: flex; align-items: center; gap: 12px; }
+.iu-top > input[type="checkbox"] { width: 26px; height: 26px; flex: none; }
+.iu-nama { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.iu-sum { flex: none; text-align: right; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; font-size: 0.95rem; }
+.iu-sum small { font-size: 0.64rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; text-decoration: none; }
+.iu-riw { display: flex; flex-wrap: wrap; gap: 6px; }
+.iu-k { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; opacity: 0.75; }
+.iu-k.sel { opacity: 1; outline: 2px solid rgba(99, 102, 241, 0.8); }
+.iu-k.rw-lunas { background: var(--green-bg); color: var(--green); }
+.iu-k.rw-sebagian { background: var(--amber-bg); color: var(--amber); }
+.iu-k.rw-belum { background: var(--red-bg); color: var(--red); }
+.iu-k.rw-luar { background: var(--panel-2); color: var(--text-muted); }
+.iu-aksi { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.iu-aksi input[type="number"] { flex: 1; min-width: 0; min-height: 44px; text-align: right; font-weight: 700; font-size: 1rem; }
+.iu-aksi .btn { min-height: 44px; flex: none; }

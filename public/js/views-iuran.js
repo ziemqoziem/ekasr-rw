@@ -71,6 +71,34 @@
         const bisaPilih = rows.filter((w) => !sudahSetor(w) && w.saran > 0);
         const semuaDipilih = bisaPilih.length > 0 && bisaPilih.every((w) => IS.nominal.has(w.id));
         const kolomSemua = r.kolom || [];
+        // Tampilan HP: kartu per warga (tanpa tabel lebar)
+        IS.ukuranKey = window.innerWidth <= 640 ? 'm' : Math.floor(window.innerWidth / 40);
+        if (window.innerWidth <= 640) {
+            const SIMM = { lunas: '✓', sebagian: '◐', belum: '✕', luar: '–' };
+            const kartu = pg.items.map((w) => {
+                const kunci = sudahSetor(w);
+                const dipilih = IS.nominal.has(w.id);
+                const chip = w.riwayat.map((h, i) => `<span class="iu-k rw-${h.status}${kolomSemua[i] && kolomSemua[i].terpilih ? ' sel' : ''}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">K${kolomSemua[i] ? kolomSemua[i].no : i + 1} ${SIMM[h.status] || '–'}</span>`).join('');
+                const aksi = !tulis ? '' : `<div class="iu-aksi">${dipilih
+                    ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button>`
+                    : kunci ? `<span class="small muted">Sudah setor kumpulan ini</span><button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`
+                    : '<span class="small muted">Centang untuk mencatat setoran</span>'}</div>`;
+                return `<div class="iu-card st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
+                    <div class="iu-top">
+                        ${tulis ? `<input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled' : ''}>` : ''}
+                        <div class="iu-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span><div class="small muted">${esc(LABEL[w.status])}</div></div>
+                        <button class="link-setor iu-sum" data-act="iuranRiwayatSetor" data-id="${w.id}"><small>Disetor</small>${rp(w.total_setor)}</button>
+                    </div>
+                    <div class="iu-riw">${chip}</div>${aksi}</div>`;
+            }).join('');
+            $('#iList').innerHTML = rows.length ? `<div class="iu-m">
+                ${tulis ? `<label class="iu-all"><input type="checkbox" data-change="iuranCekSemua" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}> Centang semua yang belum setor (${bisaPilih.length})</label>` : ''}
+                ${kartu}
+                <p class="small muted" style="padding:4px 2px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Warna menyala = kumpulan terpilih.</p></div>`
+                : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            barSimpan();
+            return;
+        }
         // Muat dalam satu frame: jumlah kolom kumpulan menyesuaikan lebar layar (selalu memuat kumpulan terpilih)
         const lebar = ($('#iList') && $('#iList').clientWidth) || window.innerWidth;
         const tetap = (tulis ? 40 : 0) + 150 + 100 + (tulis ? 140 : 0);
@@ -126,7 +154,11 @@
     let iuranUkuran = null;
     window.addEventListener('resize', () => {
         clearTimeout(iuranUkuran);
-        iuranUkuran = setTimeout(() => { if (IS.data && $('#iList') && $('#iList').querySelector('.tbl-iuran')) tampil(); }, 200);
+        iuranUkuran = setTimeout(() => {
+            const key = window.innerWidth <= 640 ? 'm' : Math.floor(window.innerWidth / 40);
+            const mengetik = document.activeElement && document.activeElement.matches && document.activeElement.matches('input');
+            if (IS.data && $('#iList') && $('#iList').children.length && key !== IS.ukuranKey && !mengetik) tampil();
+        }, 200);
     });
     App.changes.iuranFilter = async () => {
         IS.periode = $('#iPer').value; if (!App.rtKunci()) IS.rt = $('#iRt').value; IS.status = $('#iSt').value;
