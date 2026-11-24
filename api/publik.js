@@ -2,7 +2,8 @@ const db = require('./db');
 const { route } = require('./_lib/http');
 const { bangunKonteks, hitungSaldo, jatuhTempo } = require('./_lib/util');
 const P = require('./_lib/periode');
-const { totalKas, totalRentang } = require('./_lib/kas');
+const { totalKas, totalRentang, basisAwal } = require('./_lib/kas');
+const L = require('./_lib/laporan');
 const I = require('./_lib/iuran');
 
 const num = (v) => Number(v || 0);
@@ -102,10 +103,18 @@ module.exports = route({
       const [mJ, mI, mS, mK] = [await bulanSql('setoran'), await bulanSql('iuran_wajib'), await bulanSql('sewa_aset'), await bulanSql('pengeluaran')];
       const trenKas = b6.map((b) => ({ bulan: b, jimpitan: mJ.get(b) || 0, iuran: mI.get(b) || 0, sewa: mS.get(b) || 0, keluar: mK.get(b) || 0 }));
       const periodeKas = [];
-      for (const p of I.periodeTerakhir(today, 4)) {
-        const akhir = p.akhir < today ? p.akhir : today;
-        const t = await totalRentang(p.mulai, akhir);
-        periodeKas.push({ mulai: p.mulai, akhir: p.akhir, weton: I.weton(p.mulai), berjalan: p.akhir >= today, ...per(t), saldo_akhir: (await totalKas(akhir)).saldo });
+      // Sama dengan halaman Laporan: kumpulan K = cut off pada tanggal K; transaksi sejak kumpulan sebelumnya (K-34) s.d. K.
+      // Kumpulan ke-1 dihitung sejak saldo awal berlaku; kumpulan yang belum tiba dihitung sampai hari ini.
+      // Saldo akhir = saldo awal + pemasukan − pengeluaran (saldo awal = saldo akhir kumpulan sebelumnya).
+      for (const x of L.daftarPeriode(today).slice(0, 4).reverse()) {
+        const sampai = x.akhir < today ? x.akhir : today;
+        let dari = x.mulai;
+        let awal;
+        const basis = x.no === 1 ? await basisAwal(sampai) : null;
+        if (basis) { dari = basis.mulai; awal = Object.values(basis.awal).reduce((a, v) => a + v, 0); }
+        else awal = (await totalKas(P.addDays(x.mulai, -1))).saldo;
+        const t = await totalRentang(dari, sampai);
+        periodeKas.push({ no: x.no, tanggal: x.tanggal, berjalan: x.akhir >= today, saldo_awal: awal, ...per(t), saldo_akhir: (await totalKas(sampai)).saldo });
       }
       const hariIni = (await db.query("SELECT COUNT(DISTINCT warga_id) AS w, COALESCE(SUM(nominal), 0) AS n FROM setoran WHERE status = 'sah' AND tanggal = ?", [today])).rows[0];
       const kas = {

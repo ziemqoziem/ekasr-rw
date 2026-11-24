@@ -59,8 +59,10 @@
             { name: 'Pemasukan lainnya', value: k.bulan_ini.sewa, color: C.s[3] },
             { name: 'Pengeluaran', value: k.bulan_ini.keluar, color: C.s[7] }
         ] });
+        // Kas per kumpulan RW (cut off): saldo awal + pemasukan − pengeluaran = saldo akhir
         const periodeRows = k.per_periode.slice().reverse().map((p) => `
-            <tr><td>${esc(p.weton)}, ${tgl(p.mulai)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</td>
+            <tr><td><b>Kumpulan ke-${p.no}</b><div class="small muted">${tgl(p.tanggal)}${p.berjalan ? ' <span class="badge blue">berjalan</span>' : ''}</div></td>
+            <td class="r num">${rp(p.saldo_awal)}</td>
             <td class="r num">${rp(p.jimpitan)}</td><td class="r num">${rp(p.iuran)}</td><td class="r num">${rp(p.sewa)}</td>
             <td class="r num">${rp(p.keluar)}</td><td class="r num"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
 
@@ -94,13 +96,6 @@
         } else {
             htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW belum diaktifkan oleh pengurus.</div>';
         }
-
-        // Indikator utama (gauge): partisipasi jimpitan, bebas tunggakan, iuran wajib lunas
-        const gaugeUtama = [
-            K.gauge({ value: persenMenyetor, label: 'Partisipasi jimpitan', sub: `${d.warga_menyetor} dari ${d.total_warga} warga · ${bl}`, detail: `${d.warga_menyetor} dari ${d.total_warga} warga wajib jimpitan sudah menyetor bulan ini` }),
-            K.gauge({ value: Math.round(d.tunggakan.persen_lunas || 0), label: 'Bebas tunggakan jimpitan', sub: `${d.tunggakan.warga_menunggak} warga menunggak`, detail: `${d.tunggakan.persen_lunas}% warga tanpa tunggakan jimpitan`, good: 90, warn: 70 }),
-            ir && ir.aktif ? K.gauge({ value: Math.round(ir.persen_lunas || 0), label: 'Iuran wajib lunas', sub: `${ir.lunas} dari ${ir.warga_wajib} KK · kumpulan ${tgl(ir.periode.mulai)}`, detail: `${ir.lunas} dari ${ir.warga_wajib} KK lunas pada kumpulan berjalan` }) : ''
-        ].join('');
 
         root.innerHTML = `
             <section class="home-hero">
@@ -146,19 +141,18 @@
             <h3 class="sec-title">Saldo Kas RW</h3>
             <div class="kpi-grid n4">${tilesKas.join('')}</div>
 
-            <h3 class="sec-title">Indikator Kepatuhan</h3>
-            <section class="card"><div class="gauges">${gaugeUtama}</div>
-                <p class="small muted" style="margin-top:6px">Hijau = baik, kuning = perlu perhatian, merah = rendah.</p></section>
+            <h3 class="sec-title">Kas per periode kumpulan RW</h3>
+            <section class="card">
+                <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Saldo awal</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead><tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
+                <p class="small muted" style="margin-top:8px">Saldo awal + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p>
+            </section>
+
             <div class="dash-grid g-2">
                 ${D.chartCard('komp', 'Komposisi saldo kas', 'Saldo tiap sumber dana', D.tbl([{ h: 'Sumber' }, { h: 'Saldo', r: 1 }], k.kantong.map((x) => [esc(x.nama), rp(x.saldo)])))}
                 ${D.chartCard('trenkas', 'Pemasukan & pengeluaran 6 bulan', 'Jimpitan, iuran wajib, pemasukan lainnya, dan pengeluaran', D.tbl([{ h: 'Bulan' }, { h: 'Jimpitan', r: 1 }, { h: 'Iuran', r: 1 }, { h: 'Lainnya', r: 1 }, { h: 'Keluar', r: 1 }], k.tren.map((t) => [D.labelBulan(t.bulan), rp(t.jimpitan), rp(t.iuran), rp(t.sewa), rp(t.keluar)])))}
             </div>
-            <div class="dash-grid g-2">
+            <div class="dash-grid" style="grid-template-columns:1fr">
                 ${D.chartCard('masukbulan', `Kas bulan ${bl}`, 'Pemasukan per sumber vs pengeluaran', D.tbl([{ h: 'Pos' }, { h: 'Nominal', r: 1 }], [['Jimpitan', rp(k.bulan_ini.jimpitan)], ['Iuran wajib', rp(k.bulan_ini.iuran)], ['Pemasukan lainnya', rp(k.bulan_ini.sewa)], ['Pengeluaran', rp(k.bulan_ini.keluar)]]))}
-                <section class="card">
-                    <h3>Kas per periode kumpulan RW</h3>
-                    <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead><tbody>${periodeRows}</tbody></table></div>
-                </section>
             </div>
 
             <h3 class="sec-title">Kas Jimpitan</h3>
