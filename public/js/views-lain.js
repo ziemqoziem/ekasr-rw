@@ -53,19 +53,18 @@
             </div>
             ${p.hari_ini ? `<div class="notice no-print">Hari ini adalah kumpulan RW; angka dihitung sampai hari ini (${App.tglId(p.sampai)}). Transaksi yang dicatat setelah ini akan ikut masuk bila laporan dibuka ulang.</div>` : p.berjalan ? `<div class="notice no-print">Kumpulan ini belum tiba; angka dihitung sampai ${App.tglId(p.sampai)}.</div>` : ''}
             ${k ? `<h3 class="sec-title">Ringkasan kas</h3>
-            <div class="rk">
-                <div class="rk-card rk-wide rk-awal"><div><span class="rk-lbl">Saldo Awal (Saldo Periode Sebelumnya)</span>
-                    <div class="rk-sub">${k.sejak_saldo_awal ? `Saldo awal Pengaturan; pemasukan dihitung sejak ${App.tglId(p.dari)}` : `Saldo akhir kumpulan sebelumnya`}</div></div>
-                    <b class="rk-val">${rp(k.saldo_awal)}</b></div>
-                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Jimpitan</span><b class="rk-val">${rp(k.jimpitan)}</b></div>
-                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Iuran</span><b class="rk-val">${rp(k.iuran)}</b></div>
-                <div class="rk-card rk-in"><span class="rk-lbl">Pemasukan Lainnya</span><b class="rk-val">${rp(k.sewa)}</b></div>
-                <div class="rk-card rk-in"><span class="rk-lbl">Total Pemasukan</span><b class="rk-val">${rp(k.masuk)}</b></div>
-                <div class="rk-card rk-out"><span class="rk-lbl">Total Pengeluaran</span><b class="rk-val">${rp(k.keluar)}</b></div>
-                <div class="rk-card rk-akhir ${k.saldo_akhir < 0 ? 'neg' : ''}"><span class="rk-lbl">Saldo Akhir Kas</span><b class="rk-val">${rp(k.saldo_akhir)}</b>
-                    <span class="rk-sub">Cut off ${App.tglId(p.sampai)}</span></div>
-            </div>
-            <p class="small muted" style="margin:-6px 0 14px">Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}. Yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk <b>Saldo Awal</b> dan tidak dihitung lagi sebagai pemasukan.</p>` : ''}
+            ${(() => {
+                const blok = (judul, kas, ket, kls) => `<section class="kas-blok ${kls}">
+                    <header><b>${judul}</b><span>Saldo akhir <b>${rp(kas.akhir)}</b></span></header>
+                    <div class="kas-grid">
+                        <div class="kas-card"><small>Saldo periode sebelumnya</small><b>${rp(kas.awal)}</b><span class="kas-sub">${k.sejak_saldo_awal ? 'Saldo awal Pengaturan' : 'Saldo akhir kumpulan sebelumnya'}</span></div>
+                        <div class="kas-card in"><small>Total pemasukan</small><b>${rp(kas.masuk)}</b>${ket ? `<span class="kas-sub">${ket}</span>` : ''}</div>
+                        <div class="kas-card out"><small>Total pengeluaran</small><b>${rp(kas.keluar)}</b></div>
+                        <div class="kas-card akhir${kas.akhir < 0 ? ' neg' : ''}"><small>Saldo akhir</small><b>${rp(kas.akhir)}</b><span class="kas-sub">Cut off ${App.tglId(p.sampai)}</span></div>
+                    </div></section>`;
+                return blok('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)} · Lainnya ${rp(k.kas_rw.lainnya)}`, 'kas-rw') + blok('KAS JIMPITAN', k.kas_jimpitan, '', 'kas-jimpitan');
+            })()}
+            <p class="small muted" style="margin:-4px 0 14px">Total saldo akhir kas <b>${rp(k.saldo_akhir)}</b> (Kas Iuran RW + Kas Jimpitan). Pemasukan dan pengeluaran = transaksi bertanggal ${App.tglId(p.dari)} s.d. ${App.tglId(p.sampai)}; yang sudah dilaporkan pada kumpulan sebelumnya sudah masuk saldo periode sebelumnya. Pengeluaran tanpa label dana dibebankan ke Kas Iuran RW.</p>` : ''}
             <h3 class="sec-title">Pemasukan per RT</h3>
             ${(() => {
                 const rts = [...new Set([...L.jimpitan_rt.map((x) => x.rt), ...L.iuran_rt.map((x) => x.rt)])].sort();

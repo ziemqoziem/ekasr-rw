@@ -109,19 +109,21 @@ function buatPdf(L, ttd, stream) {
   if (L.ringkasan) {
     const k = L.ringkasan;
     judul('1. Ringkasan Kas');
-    kartu([{ l: 'Saldo awal (saldo periode sebelumnya)', v: rp(k.saldo_awal) }], 1);
-    kartu([
-      { l: 'Pemasukan jimpitan', v: rp(k.jimpitan) },
-      { l: 'Pemasukan iuran', v: rp(k.iuran) },
-      { l: 'Pemasukan lainnya', v: rp(k.sewa) }
-    ], 3);
-    kartu([
-      { l: 'Total pemasukan', v: rp(k.masuk), warna: C.hijau },
-      { l: 'Total pengeluaran', v: rp(k.keluar), warna: C.merah },
-      { l: 'Saldo akhir kas', v: rp(k.saldo_akhir), warna: k.saldo_akhir < 0 ? C.merah : C.aksen }
-    ], 3);
-    const kt = k.kantong_akhir;
-    catatan(`Saldo per kantong: jimpitan ${rp(kt.jimpitan)} · iuran wajib ${rp(kt.iuran)} · pemasukan lainnya ${rp(kt.sewa)}${kt.umum ? ' · umum ' + rp(kt.umum) : ''}.`);
+    const blokKas = (nama, kas, ket) => {
+      butuh(150);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor(C.aksen).text(nama, X, doc.y, { width: W });
+      doc.fillColor(C.teks);
+      doc.moveDown(0.3);
+      kartu([
+        { l: 'Saldo sebelumnya', v: rp(kas.awal) },
+        { l: 'Total pemasukan', v: rp(kas.masuk), warna: C.hijau, s: ket },
+        { l: 'Total pengeluaran', v: rp(kas.keluar), warna: C.merah },
+        { l: 'Saldo akhir', v: rp(kas.akhir), warna: kas.akhir < 0 ? C.merah : C.aksen }
+      ], 4);
+    };
+    blokKas('KAS IURAN RW', k.kas_rw, `Iuran ${rp(k.kas_rw.iuran)}\nLainnya ${rp(k.kas_rw.lainnya)}`);
+    blokKas('KAS JIMPITAN', k.kas_jimpitan, '');
+    catatan(`Total saldo akhir kas: ${rp(k.saldo_akhir)} (Kas Iuran RW + Kas Jimpitan).`);
   }
 
   /* ---------- Pemasukan per RT ---------- */

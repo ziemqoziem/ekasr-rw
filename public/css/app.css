@@ -2191,3 +2191,22 @@ p .sel-min, p .sel-plus { padding: 0 6px; font-size: inherit; }
 .rk-rtcol[class*="rk-c"] header { background: linear-gradient(135deg, rgba(var(--rkc), 0.40), rgba(var(--rkc), 0.10)); border-bottom-color: rgba(var(--rkc), 0.5); }
 .rk-rtcol[class*="rk-c"] footer { border-top-color: rgba(var(--rkc), 0.5); background: rgba(var(--rkc), 0.08); }
 .rk-rtcol[class*="rk-c"] li:nth-child(even) { background: rgba(var(--rkc), 0.05); }
+
+/* Laporan: dua kas terpisah */
+.kas-blok { margin-bottom: 16px; border-radius: var(--radius); border: 1px solid rgba(var(--kc), 0.5); background: var(--panel); overflow: hidden; }
+.kas-rw { --kc: 99, 102, 241; }
+.kas-jimpitan { --kc: 16, 185, 129; }
+.kas-blok header { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 11px 16px; background: linear-gradient(135deg, rgba(var(--kc), 0.38), rgba(var(--kc), 0.08)); border-bottom: 1px solid rgba(var(--kc), 0.5); font-size: 0.95rem; letter-spacing: 0.3px; }
+.kas-blok header span { font-size: 0.82rem; color: var(--text-muted); }
+.kas-blok header span b { color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.kas-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 12px; }
+.kas-card { display: flex; flex-direction: column; gap: 5px; padding: 12px 14px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); min-width: 0; }
+.kas-card small { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+.kas-card b { font-size: 1.15rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kas-sub { font-size: 0.72rem; color: var(--text-muted); }
+.kas-card.in b { color: #10b981; }
+.kas-card.out b { color: #f43f5e; }
+.kas-card.akhir { background: linear-gradient(135deg, rgba(var(--kc), 0.28), rgba(var(--kc), 0.06)); border-color: rgba(var(--kc), 0.55); }
+.kas-card.akhir.neg b { color: #f43f5e; }
+@media (max-width: 860px) { .kas-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .kas-grid { grid-template-columns: 1fr; } }

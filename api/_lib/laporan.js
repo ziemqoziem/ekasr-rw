@@ -85,11 +85,20 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
     out.sewa = sewa.rows.map((r) => ({ tanggal: d10(r.tanggal), rt: r.rt, uraian: r.uraian, nominal: num(r.nominal) }));
     out.pengeluaran = kel.rows.map((r) => ({ tanggal: d10(r.tanggal), kategori: r.kategori, uraian: r.uraian, nominal: num(r.nominal) }));
     const t = await totalRentang(dari, sampai);
-    const awalSaldo = basis ? Object.values(basis.awal).reduce((a, b) => a + b, 0) : (await totalKas(P.addDays(p.mulai, -1))).saldo;
+    const awalK = basis ? basis.awal : await (async () => { const x = await totalKas(P.addDays(p.mulai, -1)); return { jimpitan: x.jimpitan, iuran_wajib: x.iuran, sewa_aset: x.sewa, umum: x.umum }; })();
     const akhir = await totalKas(sampai);
+    const ks = await db.query("SELECT sumber, COALESCE(SUM(nominal), 0) AS n FROM pengeluaran WHERE status = 'sah' AND tanggal BETWEEN ? AND ? GROUP BY sumber", [dari, sampai]);
+    const kelS = { jimpitan: 0, iuran_wajib: 0, sewa_aset: 0, umum: 0 };
+    for (const x of ks.rows) kelS[x.sumber] = num(x.n);
+    // Dua kas terpisah: Kas Jimpitan, dan Kas Iuran RW (iuran wajib + pemasukan lainnya; pengeluaran tanpa label dana dibebankan ke sini)
+    const kasJ = { awal: awalK.jimpitan, masuk: t.jimpitan, keluar: kelS.jimpitan, akhir: akhir.jimpitan };
+    const kasRW = {
+      awal: awalK.iuran_wajib + awalK.sewa_aset + awalK.umum, masuk: t.iuran + t.sewa, keluar: kelS.iuran_wajib + kelS.sewa_aset + kelS.umum,
+      akhir: akhir.iuran + akhir.sewa + akhir.umum, iuran: t.iuran, lainnya: t.sewa
+    };
     out.ringkasan = {
-      saldo_awal: awalSaldo, sejak_saldo_awal: !!basis, jimpitan: t.jimpitan, iuran: t.iuran, sewa: t.sewa, masuk: t.masuk, keluar: t.keluar, selisih: t.selisih, saldo_akhir: akhir.saldo,
-      kantong_akhir: { jimpitan: akhir.jimpitan, iuran: akhir.iuran, sewa: akhir.sewa, umum: akhir.umum }
+      sejak_saldo_awal: !!basis, kas_rw: kasRW, kas_jimpitan: kasJ,
+      saldo_awal: kasRW.awal + kasJ.awal, jimpitan: t.jimpitan, iuran: t.iuran, sewa: t.sewa, masuk: t.masuk, keluar: t.keluar, selisih: t.selisih, saldo_akhir: akhir.saldo
     };
   }
 
