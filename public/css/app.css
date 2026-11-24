@@ -2089,3 +2089,10 @@ body > * { min-width: 0; max-width: 100%; }
   .tbl-iuran .c-nom input { max-width: 96px; }
   .tbl-iuran th.c-per, .tbl-iuran td.c-per { width: 30px; }
 }
+
+/* Tombol simpan per baris */
+.tbl-iuran th.c-nom, .tbl-iuran td.c-nom { width: 200px; }
+.tbl-iuran td.c-nom { white-space: nowrap; }
+.tbl-iuran .c-nom input { width: 84px; max-width: 84px; vertical-align: middle; margin-right: 6px; }
+.tbl-iuran .c-nom .btn.primary { vertical-align: middle; padding-left: 10px; padding-right: 10px; }
+@media (max-width: 600px) { .tbl-iuran th.c-nom, .tbl-iuran td.c-nom { width: 150px; } .tbl-iuran .c-nom input { width: 64px; max-width: 64px; margin-right: 4px; } }

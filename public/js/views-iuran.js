@@ -88,7 +88,7 @@
             const sel_ = riw(w).map((h, i) => `<td class="c-per${kolom[i] && kolom[i].terpilih ? ' sel' : ''}"><span class="rw rw-${h.status}" title="K${kolom[i] ? kolom[i].no : ''} · ${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
-                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}">`
+                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button>`
                 : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : '<span class="muted small">centang untuk setor</span>'}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
@@ -210,6 +210,23 @@
         if (lain.length) App.toast(lain.slice(0, 3).map((g) => `${nama.get(Number(g.warga_id)) || g.warga_id}: ${g.alasan}`).join(' | '), 'err');
         await muat();
     }
+    // Simpan setoran satu warga langsung dari barisnya
+    App.actions.iuranSimpanSatu = async (el) => {
+        const id = Number(el.dataset.id);
+        const inp = $(`input[data-input="iuranNominal"][data-id="${id}"]`);
+        const nom = Math.floor(Number(inp ? inp.value : IS.nominal.get(id)));
+        if (!(nom > 0)) { App.toast('Isi nominal terlebih dahulu.', 'err'); return; }
+        el.disabled = true;
+        const lain = [...IS.nominal.entries()].filter(([k]) => k !== id); // centang warga lain dipertahankan
+        try {
+            await simpan([{ warga_id: id, nominal: nom }]);
+            for (const [k, v] of lain) {
+                const w = IS.data.warga.find((x) => x.id === k);
+                if (w && !sudahSetor(w)) IS.nominal.set(k, v);
+            }
+            tampil();
+        } finally { el.disabled = false; }
+    };
     App.actions.iuranSimpan = async (btn) => {
         const items = [...IS.nominal.entries()].filter(([, v]) => v > 0).map(([id, v]) => ({ warga_id: id, nominal: v }));
         if (!items.length) return;
