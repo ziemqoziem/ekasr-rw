@@ -80,7 +80,7 @@
                 const dipilih = IS.nominal.has(w.id);
                 const chip = w.riwayat.map((h, i) => `<span class="iu-k rw-${h.status}${kolomSemua[i] && kolomSemua[i].terpilih ? ' sel' : ''}" title="${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">K${kolomSemua[i] ? kolomSemua[i].no : i + 1} ${SIMM[h.status] || '–'}</span>`).join('');
                 const aksi = !tulis ? '' : `<div class="iu-aksi">${dipilih
-                    ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button>`
+                    ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn primary" data-act="iuranSimpanSatu" data-id="${w.id}">Simpan</button><button class="btn ghost" data-act="iuranBatalPilih" data-id="${w.id}">Batal</button>`
                     : kunci ? `<span class="small muted">Sudah setor kumpulan ini</span><button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}">+ Tambah</button>`
                     : '<span class="small muted">Centang untuk mencatat setoran</span>'}</div>`;
                 return `<div class="iu-card st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">
@@ -116,7 +116,7 @@
             const sel_ = riw(w).map((h, i) => `<td class="c-per${kolom[i] && kolom[i].terpilih ? ' sel' : ''}"><span class="rw rw-${h.status}" title="K${kolom[i] ? kolom[i].no : ''} · ${esc(tgl(h.mulai))}: ${esc(LABEL[h.status])}">${SIM[h.status] || '–'}</span></td>`).join('');
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="iuranCek" data-id="${w.id}" aria-label="Setor iuran ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah setor pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih
-                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button>`
+                ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal iuran ${esc(w.nama)}" data-input="iuranNominal" data-id="${w.id}" value="${IS.nominal.get(w.id) || ''}"><button class="btn sm primary" data-act="iuranSimpanSatu" data-id="${w.id}" title="Simpan setoran ${esc(w.nama)}">Simpan</button><button class="btn sm ghost" data-act="iuranBatalPilih" data-id="${w.id}" title="Batal, tidak jadi mencatat setoran">Batal</button>`
                 : kunci ? `<button class="btn sm ghost" data-act="iuranTambah" data-id="${w.id}" title="Tambah setoran lagi (sebagian/titipan)">+ Tambah</button>` : '<span class="muted small">centang untuk setor</span>'}</td>`;
             return `<tr class="st-${w.status}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
                 <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
@@ -242,6 +242,11 @@
         if (lain.length) App.toast(lain.slice(0, 3).map((g) => `${nama.get(Number(g.warga_id)) || g.warga_id}: ${g.alasan}`).join(' | '), 'err');
         await muat();
     }
+    // Batal: tidak jadi mencatat setoran (lepas centang & kosongkan nominal baris ini)
+    App.actions.iuranBatalPilih = (el) => {
+        IS.nominal.delete(Number(el.dataset.id));
+        tampil();
+    };
     // Simpan setoran satu warga langsung dari barisnya
     App.actions.iuranSimpanSatu = async (el) => {
         const id = Number(el.dataset.id);
