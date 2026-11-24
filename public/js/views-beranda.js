@@ -65,22 +65,16 @@
             <td class="r num">${rp(p.keluar)}</td><td class="r num"><b>${rp(p.saldo_akhir)}</b></td></tr>`).join('');
 
         /* ---- 2) Jimpitan ---- */
-        reg.tren = (w) => K.columns({
-            labels: d.tren.map((t) => K.bulanPendek(t.bulan)),
-            series: [{ name: 'Setoran jimpitan', color: C.s[0], values: d.tren.map((t) => t.total) }],
-            tipTitle: (i) => D.labelBulan(d.tren[i].bulan), height: 200, aria: 'Setoran jimpitan 6 bulan terakhir'
-        }, w);
         const tilesJ = [
             D.tile({ label: `Jimpitan ${bl}`, value: rp(d.total_bulan_ini), delta: D.delta(d.total_bulan_ini, d.total_bulan_lalu, true, nmLalu) }),
             D.tile({ label: 'Jimpitan hari ini', value: rp(d.jimpitan_hari_ini.total), sub: `${d.jimpitan_hari_ini.warga} warga menyetor hari ini` }),
-            D.tile({ label: 'Warga sudah menyetor', value: `${persenMenyetor}%`, meter: persenMenyetor, sub: `${d.warga_menyetor} dari ${d.total_warga} warga wajib jimpitan bulan ini` }),
             D.tile({ label: 'Tunggakan jimpitan', value: rp(d.tunggakan.total), tone: d.tunggakan.total > 0 ? 'bad' : 'good', sub: `${d.tunggakan.warga_menunggak} warga · ${d.tunggakan.persen_lunas}% bebas tunggakan · titipan ${compact(d.tunggakan.titipan || 0)}` })
         ];
-        const rtRows = d.rt.map((r) => `
-            <tr><td><b>RT ${esc(r.rt)}</b></td>
-            <td class="r num">${r.warga_menyetor_bulan_ini}/${r.warga_aktif}</td>
-            <td style="min-width:120px"><div class="row"><div class="bar grow"><i style="width:${r.persen}%"></i></div><span class="small num">${r.persen}%</span></div></td>
-            <td class="r num">${rp(r.total_bulan_ini)}</td></tr>`).join('');
+        // Gauge partisipasi per RT
+        const gaugeRt = d.rt.map((r) => K.gauge({
+            value: r.persen, label: `RT ${r.rt}`, sub: `${r.warga_menyetor_bulan_ini} dari ${r.warga_aktif} warga · ${rp(r.total_bulan_ini)}`,
+            detail: `RT ${r.rt}: ${r.warga_menyetor_bulan_ini} dari ${r.warga_aktif} warga menyetor bulan ini`
+        })).join('');
         const tarifStrip = d.tarif.map((t) => `<span class="tarif-pill"><b>Jimpitan harian</b> ${t.nominal > 0 ? rp(t.nominal) : '<i class="muted">belum ditentukan</i>'}</span>`).join('');
 
         /* ---- 3) Iuran wajib (kas RW) ---- */
@@ -93,14 +87,20 @@
             const tilesI = [
                 D.tile({ label: 'Kumpulan RW berjalan', value: esc(tgl(ir.periode.mulai)), sub: `${esc(ir.periode.weton)} · iuran ${rp(ir.nominal)}/KK` }),
                 D.tile({ label: 'Diterima kumpulan ini', value: rp(ir.diterima_periode), sub: `${ir.lunas} lunas · ${ir.sebagian} sebagian · ${ir.belum} belum dari ${ir.warga_wajib} KK` }),
-                D.tile({ label: 'Warga lunas kumpulan ini', value: `${ir.persen_lunas}%`, meter: ir.persen_lunas, sub: `${ir.lunas} dari ${ir.warga_wajib} KK wajib iuran` }),
                 D.tile({ label: 'Tunggakan iuran wajib', value: rp(ir.tunggakan_total), tone: ir.tunggakan_total > 0 ? 'bad' : 'good', sub: `${ir.warga_menunggak} KK · titipan ${compact(ir.titipan || 0)}` })
             ];
-            htmlIuran = `<div class="kpi-grid n4">${tilesI.join('')}</div>
+            htmlIuran = `<div class="kpi-grid n3">${tilesI.join('')}</div>
                 ${D.chartCard('iuranst', 'Status iuran wajib kumpulan berjalan', `${ir.periode.weton}, ${tgl(ir.periode.mulai)}`, D.tbl([{ h: 'Status' }, { h: 'KK', r: 1 }], parts.map((p) => [esc(p.name), p.value])), 'cc-narrow')}`;
         } else {
-            htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW (Selasa Kliwon) belum diaktifkan oleh pengurus.</div>';
+            htmlIuran = '<div class="card empty">Iuran wajib per kumpulan RW belum diaktifkan oleh pengurus.</div>';
         }
+
+        // Indikator utama (gauge): partisipasi jimpitan, bebas tunggakan, iuran wajib lunas
+        const gaugeUtama = [
+            K.gauge({ value: persenMenyetor, label: 'Partisipasi jimpitan', sub: `${d.warga_menyetor} dari ${d.total_warga} warga · ${bl}`, detail: `${d.warga_menyetor} dari ${d.total_warga} warga wajib jimpitan sudah menyetor bulan ini` }),
+            K.gauge({ value: Math.round(d.tunggakan.persen_lunas || 0), label: 'Bebas tunggakan jimpitan', sub: `${d.tunggakan.warga_menunggak} warga menunggak`, detail: `${d.tunggakan.persen_lunas}% warga tanpa tunggakan jimpitan`, good: 90, warn: 70 }),
+            ir && ir.aktif ? K.gauge({ value: Math.round(ir.persen_lunas || 0), label: 'Iuran wajib lunas', sub: `${ir.lunas} dari ${ir.warga_wajib} KK · kumpulan ${tgl(ir.periode.mulai)}`, detail: `${ir.lunas} dari ${ir.warga_wajib} KK lunas pada kumpulan berjalan` }) : ''
+        ].join('');
 
         root.innerHTML = `
             <section class="home-hero">
@@ -145,6 +145,10 @@
 
             <h3 class="sec-title">Saldo Kas RW</h3>
             <div class="kpi-grid n4">${tilesKas.join('')}</div>
+
+            <h3 class="sec-title">Indikator Kepatuhan</h3>
+            <section class="card"><div class="gauges">${gaugeUtama}</div>
+                <p class="small muted" style="margin-top:6px">Hijau = baik, kuning = perlu perhatian, merah = rendah.</p></section>
             <div class="dash-grid g-2">
                 ${D.chartCard('komp', 'Komposisi saldo kas', 'Saldo tiap sumber dana', D.tbl([{ h: 'Sumber' }, { h: 'Saldo', r: 1 }], k.kantong.map((x) => [esc(x.nama), rp(x.saldo)])))}
                 ${D.chartCard('trenkas', 'Pemasukan & pengeluaran 6 bulan', 'Jimpitan, iuran wajib, pemasukan lainnya, dan pengeluaran', D.tbl([{ h: 'Bulan' }, { h: 'Jimpitan', r: 1 }, { h: 'Iuran', r: 1 }, { h: 'Lainnya', r: 1 }, { h: 'Keluar', r: 1 }], k.tren.map((t) => [D.labelBulan(t.bulan), rp(t.jimpitan), rp(t.iuran), rp(t.sewa), rp(t.keluar)])))}
@@ -152,21 +156,18 @@
             <div class="dash-grid g-2">
                 ${D.chartCard('masukbulan', `Kas bulan ${bl}`, 'Pemasukan per sumber vs pengeluaran', D.tbl([{ h: 'Pos' }, { h: 'Nominal', r: 1 }], [['Jimpitan', rp(k.bulan_ini.jimpitan)], ['Iuran wajib', rp(k.bulan_ini.iuran)], ['Pemasukan lainnya', rp(k.bulan_ini.sewa)], ['Pengeluaran', rp(k.bulan_ini.keluar)]]))}
                 <section class="card">
-                    <h3>Kas per periode kumpulan RW (Selasa Kliwon)</h3>
+                    <h3>Kas per periode kumpulan RW</h3>
                     <div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Jimpitan</th><th class="r">Iuran</th><th class="r">Lainnya</th><th class="r">Keluar</th><th class="r">Saldo akhir</th></tr></thead><tbody>${periodeRows}</tbody></table></div>
                 </section>
             </div>
 
             <h3 class="sec-title">Kas Jimpitan</h3>
-            <div class="kpi-grid n4">${tilesJ.join('')}</div>
-            <div class="dash-grid g-2">
-                ${D.chartCard('tren', 'Jimpitan 6 bulan terakhir', 'Seluruh RW', D.tbl([{ h: 'Bulan' }, { h: 'Setoran', r: 1 }], d.tren.map((t) => [D.labelBulan(t.bulan), rp(t.total)])))}
-                <section class="card">
-                    <h3>Partisipasi per RT — ${esc(bl)}</h3>
-                    <div class="tbl-wrap"><table><thead><tr><th>RT</th><th class="r">Menyetor</th><th>Partisipasi</th><th class="r">Jimpitan</th></tr></thead><tbody>${rtRows}</tbody></table></div>
-                    <div class="tarif-strip"><span class="small muted">Tarif:</span>${tarifStrip}</div>
-                </section>
-            </div>
+            <div class="kpi-grid n3">${tilesJ.join('')}</div>
+            <section class="card">
+                <h3>Partisipasi per RT — ${esc(bl)}</h3>
+                <div class="gauges">${gaugeRt || '<div class="empty">Belum ada data RT.</div>'}</div>
+                <div class="tarif-strip"><span class="small muted">Tarif:</span>${tarifStrip}</div>
+            </section>
 
             <h3 class="sec-title">Kas Iuran Wajib (per kumpulan RW)</h3>
             ${htmlIuran}

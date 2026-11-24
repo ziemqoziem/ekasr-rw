@@ -2271,3 +2271,9 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 .cek-aksi { margin-top: auto; padding-top: 7px; padding-bottom: 7px; justify-content: center; border-color: rgba(var(--kc), 0.6); background: rgba(var(--kc), 0.14); }
 .cek-aksi svg, .cek-aksi .icon { width: 16px; height: 16px; }
 .cek-grid .cek-panel > .cek-aksi { margin-top: auto; align-self: stretch; }
+
+/* Beranda: gauge sebagai panel modern */
+.gauges .gauge-box { border-radius: var(--radius); border: 1px solid var(--border); background: var(--panel-2); padding: 14px 10px 12px; transition: transform var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease); }
+.gauges .gauge-box:hover { transform: translateY(-2px); border-color: var(--border-hover); }
+.gauges .gauge-label { font-size: 0.9rem; margin-top: 6px; }
+.gauges .gauge-sub { margin-top: 2px; }
