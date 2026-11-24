@@ -2367,3 +2367,38 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 .bk-bulan b { font-variant-numeric: tabular-nums; margin-left: 4px; }
 .bk-bulan .in, .bk-bulan .out { padding: 4px 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.16); }
 @media (max-width: 560px) { .bk-op { display: none; } .bk-r { flex: 1 1 45%; } }
+
+/* Kartu saldo kas: gaya bersih (panel terang, saldo besar + rincian berbatang) */
+.bk:has(.bk-lite) { grid-template-columns: 1fr; }
+.bk:has(.bk-lite) .bk-samping { flex-direction: row; }
+@media (max-width: 720px) { .bk:has(.bk-lite) .bk-samping { flex-direction: column; } }
+.bk-lite { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; padding: 26px 28px; border-radius: calc(var(--radius) + 4px); background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+.bk-lite::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: linear-gradient(180deg, #4f46e5, #0891b2); }
+.bk-lite.neg::before { background: linear-gradient(180deg, #e11d48, #f97316); }
+.bl-label { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); }
+.bl-label em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.74rem; padding: 2px 10px; border-radius: 99px; background: var(--panel-2); border: 1px solid var(--border); }
+.bl-saldo { margin-top: 8px; font-size: clamp(2rem, 5.4vw, 3rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; background: linear-gradient(135deg, #4f46e5, #0891b2); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bk-lite.neg .bl-saldo { background: linear-gradient(135deg, #e11d48, #f97316); -webkit-background-clip: text; background-clip: text; }
+.bl-sub { margin-top: 4px; font-size: 0.82rem; color: var(--text-muted); }
+.bl-bulan { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.bl-bulan > div { flex: 1 1 150px; padding: 10px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); }
+.bl-bulan small { display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px; }
+.bl-bulan b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.bl-bulan .in b { color: #059669; }
+.bl-bulan .out b { color: #e11d48; }
+.bl-rincian { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.bl-rincian li { position: relative; padding-bottom: 8px; }
+.bl-rincian li > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.bl-rincian span { font-size: 0.86rem; color: var(--text-muted); font-weight: 600; }
+.bl-rincian b { font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+.bl-rincian i { display: block; height: 7px; border-radius: 99px; background: #6366f1; }
+.bl-rincian .awal i { background: linear-gradient(90deg, #6366f1, #818cf8); }
+.bl-rincian .masuk i { background: linear-gradient(90deg, #10b981, #34d399); }
+.bl-rincian .masuk b { color: #059669; }
+.bl-rincian .keluar i { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+.bl-rincian .keluar b { color: #e11d48; }
+.bl-rincian .total { margin-top: 2px; padding: 12px 0 0; border-top: 2px solid var(--border); }
+.bl-rincian .total > div { margin: 0; }
+.bl-rincian .total span { color: var(--text); font-weight: 800; }
+.bl-rincian .total b { font-size: 1.25rem; }
+@media (max-width: 860px) { .bk-lite { grid-template-columns: 1fr; gap: 20px; padding: 20px 20px 20px 24px; } }
