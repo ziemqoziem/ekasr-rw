@@ -237,12 +237,15 @@
     function kartuHasil(h) {
         const iuranKurang = h.iuran && h.iuran.kurang > 0;
         const ok = h.status !== 'menunggak' && !iuranKurang;
+        // Kartu jimpitan (biru) memuat tombol kalender di dalamnya; kartu iuran wajib (ungu)
+        const tombol = h.jimpitan_wajib === false ? '' : `<button class="btn sm cek-aksi" data-act="kalenderPublik" data-nama="${esc(h.nama)}" data-rt="${esc(h.rt)}">${App.icon('cal')} Lihat kalender jimpitan</button>`;
+        const pj = panelJimpitan(h).replace('class="cek-panel ', 'class="cek-panel cek-jimpitan ').replace(/<\/div>$/, tombol + '</div>');
+        const pi = panelIuran(h).replace('class="cek-panel ', 'class="cek-panel cek-iuran ');
         return `<article class="cek-result ${ok ? 'ok' : 'warn'}">
             <div class="row between">
                 <div><b class="cek-name">${esc(h.nama)}</b> <span class="badge">RT ${esc(h.rt)}</span> <span class="badge blue">jimpitan ${esc(h.jenis)}</span></div>
             </div>
-            <div class="cek-grid">${panelJimpitan(h)}${panelIuran(h)}</div>
-            ${h.jimpitan_wajib === false ? '' : `<button class="btn sm" data-act="kalenderPublik" data-nama="${esc(h.nama)}" data-rt="${esc(h.rt)}" style="margin-top:12px">${App.icon('cal')} Lihat kalender jimpitan</button>`}
+            <div class="cek-grid">${pj}${pi}</div>
         </article>`;
     }
 

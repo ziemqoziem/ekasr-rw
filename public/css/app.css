@@ -2258,3 +2258,16 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
 #sList .nominal-box { gap: 6px; }
 #sList .nominal-box input { min-height: 32px; width: 104px; font-size: 0.86rem; padding-top: 4px; padding-bottom: 4px; }
 #sList .nominal-box .btn { min-height: 32px; padding-top: 3px; padding-bottom: 3px; }
+
+/* Cek status iuran (beranda publik): kartu jimpitan (biru) dan iuran wajib (ungu) berbeda warna */
+.cek-result.ok, .cek-result.warn { background: var(--panel); border-color: var(--border); }
+.cek-grid { align-items: stretch; }
+.cek-grid .cek-panel { --kc: 14, 165, 233; display: flex; flex-direction: column; gap: 6px; padding: 0 0 14px; overflow: hidden; border: 1px solid rgba(var(--kc), 0.55); background: var(--panel-2); }
+.cek-grid .cek-panel.cek-iuran { --kc: 139, 92, 246; }
+.cek-grid .cek-panel > .row.between:first-child { padding: 10px 14px; background: linear-gradient(135deg, rgba(var(--kc), 0.28), rgba(var(--kc), 0.07)); border-bottom: 1px solid rgba(var(--kc), 0.45); flex-wrap: wrap; gap: 6px; }
+.cek-grid .cek-panel > :not(:first-child) { margin-left: 14px; margin-right: 14px; }
+.cek-grid .cek-panel .cek-total { margin-top: 6px; }
+.cek-grid .cek-panel .cek-detail { margin-top: 0; }
+.cek-aksi { margin-top: auto; padding-top: 7px; padding-bottom: 7px; justify-content: center; border-color: rgba(var(--kc), 0.6); background: rgba(var(--kc), 0.14); }
+.cek-aksi svg, .cek-aksi .icon { width: 16px; height: 16px; }
+.cek-grid .cek-panel > .cek-aksi { margin-top: auto; align-self: stretch; }
