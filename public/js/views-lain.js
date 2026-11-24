@@ -155,7 +155,7 @@
         const ke = el.dataset.ke;
         if (ke === 'iuran') { App.stIuran.periode = LS.periode; App.go('iuran'); }
         else if (ke === 'jimpitan') { App.stRekap.periode = LS.periode; App.stSetoran.jenis = 'rekap'; App.go('setoran'); }
-        else App.go('pengeluaran');
+        else { PG.periode = LS.periode; App.go('pengeluaran'); }
     };
 
     /* ================= PENGELUARAN ================= */
@@ -166,12 +166,14 @@
         root.innerHTML = `
             <div class="row between"><h2 class="title">Pengeluaran Dana</h2>
             ${App.has('pengeluaran.tulis') ? '<button class="btn primary" data-act="pengeluaranForm">+ Catat pengeluaran</button>' : '<span class="badge">Hanya lihat · dicatat oleh bendahara</span>'}</div>
+            <div id="pFilter"></div>
             <div id="pList">${App.loading()}</div>`;
         await loadPengeluaran();
     };
 
     async function loadPengeluaran() {
-        const r = await App.api('/api/pengeluaran');
+        const r = await App.api('/api/pengeluaran?' + App.qs({ periode: PG.periode }));
+        PG.daftar = r.daftar_periode || [];
         PG.data = r.pengeluaran;
         PG.dana = r.dana || 'umum';
         PG.semua = !!r.lihat_semua;
@@ -179,7 +181,7 @@
         App.pgRedraw.pengeluaran = tampilPengeluaran;
         tampilPengeluaran();
     }
-    const PG = { data: [], dana: 'umum', semua: false };
+    const PG = { data: [], dana: 'umum', semua: false, periode: '', daftar: [] };
     const NAMA_DANA = { umum: 'Umum (tidak dikaitkan ke satu dana)', jimpitan: 'Dana Jimpitan', iuran_wajib: 'Dana Iuran Wajib', sewa_aset: 'Dana Pemasukan Lainnya' };
 
     const DANA_PENDEK = { umum: 'Umum', jimpitan: 'Dana Jimpitan', iuran_wajib: 'Dana Iuran Wajib', sewa_aset: 'Dana Pemasukan Lainnya' };
@@ -202,6 +204,11 @@
             ${jenis.map(([k, g], i) => `<div class="stat rk-c${(i % 3) + 1}"><small>${esc(k)}</small><b>${rp(g.n)}</b><span class="small muted" style="display:block;margin-top:4px">${g.c} pengeluaran · ${total ? Math.round((g.n / total) * 100) : 0}%</span></div>`).join('')}
         </div>`;
         const pg = App.paginate('pengeluaran', data);
+        $('#pFilter').innerHTML = `<div class="card" style="margin-bottom:14px"><div class="filters">
+            <div class="grow"><label class="f" for="pPer">Kumpulan RW (tanggal)</label><select id="pPer" data-change="pengeluaranPeriode">
+                <option value="">Semua periode</option>
+                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div></div>
+            ${PG.periode ? '<p class="small muted">Pengeluaran bertanggal sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off).</p>' : ''}</div>`;
         $('#pList').innerHTML = `
             ${kartu}
             ${tulis ? `<p class="small" style="margin-bottom:6px">Pengeluaran yang Anda catat otomatis diambil dari <b>${esc(NAMA_DANA[PG.dana])}</b>.</p>` : ''}
@@ -218,6 +225,8 @@
                 </tbody><tfoot><tr><td colspan="4"><b>Total halaman ini</b></td><td class="r num"><b>${rp(pg.items.filter((p) => p.status === 'sah').reduce((a, p) => a + p.nominal, 0))}</b></td>${tulis ? '<td></td>' : ''}</tr></tfoot></table></div></div>`
             : '<div class="card empty">Belum ada pengeluaran.</div>'}`;
     }
+
+    App.changes.pengeluaranPeriode = async (el) => { PG.periode = el.value; await loadPengeluaran(); };
 
     App.actions.pengeluaranForm = (el) => {
         const e = el && el.dataset && el.dataset.id ? PG.data.find((x) => x.id === el.dataset.id) : null;

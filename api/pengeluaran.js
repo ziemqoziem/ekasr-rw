@@ -5,6 +5,8 @@ const P = require('./_lib/periode');
 const { pastikanTerbuka } = require('./_lib/tutupbuku');
 
 const { punya, danaPengeluaran } = require('./_lib/izin');
+const L = require('./_lib/laporan');
+const { basisAwal } = require('./_lib/kas');
 
 const NAMA_DANA = { umum: 'umum', jimpitan: 'dana jimpitan', iuran_wajib: 'dana iuran wajib', sewa_aset: 'dana pemasukan lainnya' };
 // Pemegang buku kas (izin kas.lihat, mis. Bendahara RW) boleh mengubah semua pengeluaran; peran lain hanya pengeluaran dari dananya sendiri
@@ -17,6 +19,17 @@ module.exports = route({
       const q = req.query || {};
       const where = [];
       const params = [];
+      // Filter kumpulan RW (cut off, sama dengan Laporan): K-34 s.d. K; kumpulan ke-1 sejak saldo awal berlaku
+      const today = P.todayWIB();
+      const daftarPeriode = L.daftarPeriode(today);
+      if (q.periode) {
+        const p = L.bacaPeriode(String(q.periode), today);
+        const nomor = daftarPeriode.find((x) => x.tanggal === p.tanggal);
+        let dari = p.mulai;
+        if (nomor && nomor.no === 1) { const basis = await basisAwal(p.akhir < today ? p.akhir : today); if (basis) dari = basis.mulai; }
+        where.push('tanggal BETWEEN ? AND ?');
+        params.push(dari, p.akhir);
+      }
       if (q.dari) { if (!P.validDate(String(q.dari))) throw fail(400, 'Tanggal "dari" tidak valid.'); where.push('tanggal >= ?'); params.push(String(q.dari)); }
       if (q.sampai) { if (!P.validDate(String(q.sampai))) throw fail(400, 'Tanggal "sampai" tidak valid.'); where.push('tanggal <= ?'); params.push(String(q.sampai)); }
       // Tanpa izin buku kas, hanya pengeluaran dari dana peran itu sendiri yang terlihat
@@ -30,7 +43,7 @@ module.exports = route({
       );
       return {
         pengeluaran: r.rows.map((x) => ({ ...x, boleh_ubah: bolehUbah(user, x) })),
-        dana: danaPengeluaran(user), lihat_semua: lihatSemua
+        dana: danaPengeluaran(user), lihat_semua: lihatSemua, daftar_periode: daftarPeriode
       };
     }
   },
