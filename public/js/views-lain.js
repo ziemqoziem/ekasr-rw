@@ -205,14 +205,14 @@
             ${jenis.map(([k, g], i) => `<div class="stat rk-c${(i % 3) + 1}"><small>${esc(k)}</small><b>${rp(g.n)}</b><span class="small muted" style="display:block;margin-top:4px">${g.c} pengeluaran · ${total ? Math.round((g.n / total) * 100) : 0}%</span></div>`).join('')}
         </div>`;
         const pg = App.paginate('pengeluaran', data, { selalu: true });
-        $('#pFilter').innerHTML = `<div class="card" style="margin-bottom:12px"><div class="filters">
-            <div class="grow"><label class="f" for="pPer">Kumpulan RW (tanggal)</label><select id="pPer" data-change="pengeluaranPeriode">
+        // Filter kumpulan RW + kontrol halaman digabung dalam satu baris
+        $('#pFilter').innerHTML = `<div class="card bar-satu">
+            <div class="bs-filter"><label class="f" for="pPer">Kumpulan RW</label><select id="pPer" data-change="pengeluaranPeriode" title="Pengeluaran sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off)">
                 <option value="">Semua periode</option>
-                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div></div>
-            ${PG.periode ? '<p class="small muted">Pengeluaran bertanggal sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off).</p>' : ''}</div>`;
+                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div>
+            <div class="bs-pager">${pg.bar}</div></div>`;
         $('#pKartu').innerHTML = kartu;
         $('#pList').innerHTML = `
-            ${pg.bar}
             ${data.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Tanggal</th><th>Uraian</th><th>Kategori</th><th>Dana</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
                 ${pg.items.map((p) => `<tr style="${p.status === 'batal' ? 'opacity:.55' : ''}">
                     <td style="white-space:nowrap">${App.tglId(p.tanggal)}</td>

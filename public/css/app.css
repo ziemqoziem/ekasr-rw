@@ -2496,3 +2496,17 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .bk-modern .tbl-kas td.in[data-l]::before, .bk-modern .tbl-kas td.out[data-l]::before { content: attr(data-l); opacity: 1; }
   .bk-modern .tbl-kas td[data-l]:not(:first-child)::before { max-width: 60%; }
 }
+
+/* Bilah satu baris: filter di kiri, kontrol halaman di kanan */
+.bar-satu { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; padding: 10px 16px; margin-bottom: 12px; }
+.bar-satu .bs-filter { display: flex; align-items: center; gap: 10px; flex: 1 1 320px; min-width: 0; }
+.bar-satu .bs-filter .f { margin: 0; white-space: nowrap; }
+.bar-satu .bs-filter select { flex: 1; min-width: 0; min-height: 36px; padding-top: 4px; padding-bottom: 4px; }
+.bar-satu .bs-pager { flex: 0 1 auto; margin-left: auto; }
+.bar-satu .pager { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; flex-wrap: nowrap; gap: 8px 14px; }
+.bar-satu .pager-size select { min-height: 34px; }
+@media (max-width: 720px) {
+  .bar-satu .bs-filter { flex: 1 1 100%; }
+  .bar-satu .bs-pager { flex: 1 1 100%; margin-left: 0; }
+  .bar-satu .pager { flex-wrap: wrap; justify-content: space-between; }
+}
