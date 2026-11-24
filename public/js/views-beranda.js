@@ -138,6 +138,7 @@
                         </select>
                     </div>
                     <button class="btn primary" type="submit">${App.icon('search')} Cek Status</button>
+                    <button class="btn ghost" type="button" data-act="cekReset" title="Kosongkan pencarian dan hasil">Reset</button>
                 </form>
                 <div id="cekOut" aria-live="polite"></div>
             </section>` : ''}
@@ -248,6 +249,15 @@
             <div class="cek-grid">${pj}${pi}</div>
         </article>`;
     }
+
+    // Reset pencarian: kosongkan nama, RT, dan hasil
+    App.actions.cekReset = () => {
+        const n = $('#cekNama'), r = $('#cekRt'), o = $('#cekOut');
+        if (n) n.value = '';
+        if (r) r.value = '';
+        if (o) o.innerHTML = '';
+        if (n) n.focus();
+    };
 
     App.forms.cekTunggakan = async (f) => {
         const out = $('#cekOut');
