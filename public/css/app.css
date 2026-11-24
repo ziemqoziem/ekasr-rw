@@ -2243,3 +2243,18 @@ button.kas-card { font: inherit; color: inherit; text-align: left; width: 100%; 
   .savebar-atas .savebar-pg .pager { flex-wrap: wrap; justify-content: space-between; }
   .savebar-atas > .row:last-child { margin-left: 0; }
 }
+
+/* Setoran jimpitan: kartu warga lebih rapat (nama, RT, kurang, setoran dalam satu baris) */
+#sList.list { gap: 6px; }
+#sList .item { padding: 6px 12px; gap: 10px; }
+#sList .item:hover { transform: none; }
+#sList .item > .grow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+#sList .item .name { font-size: 0.88rem; }
+#sList .item .meta { margin-top: 0; gap: 4px; }
+#sList .item .chips { margin-top: 0; gap: 4px; }
+#sList .item .chip, #sList .item .badge { padding-top: 1px; padding-bottom: 1px; }
+#sList .cek-setor { width: 30px; margin: 0; align-self: center; }
+#sList .cek-setor input[type="checkbox"] { width: 18px; height: 18px; }
+#sList .nominal-box { gap: 6px; }
+#sList .nominal-box input { min-height: 32px; width: 104px; font-size: 0.86rem; padding-top: 4px; padding-bottom: 4px; }
+#sList .nominal-box .btn { min-height: 32px; padding-top: 3px; padding-bottom: 3px; }
