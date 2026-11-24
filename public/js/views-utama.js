@@ -293,16 +293,16 @@
                 <p class="small muted" style="margin-top:8px">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>
             <div class="rk-baris" style="margin:14px 0">
-                <div class="stat good"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
+                <div class="stat rk-c0"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
                     <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span></div>
-                ${r.rt.map((g) => `<div class="stat"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
+                ${r.rt.map((g, i) => `<div class="stat rk-c${(i % 3) + 1}"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
                     <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
                 <div class="filters"><div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Ketik nama…" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div></div>
                 ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
-                ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol">
+                ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, r.rt.findIndex((g) => g.rt === rt)) % 3) + 1}">
                     <header><b>RT ${esc(rt)}</b><span>${rp(list.reduce((a, w) => a + w.total, 0))}</span></header>
                     <ul>${list.map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
                     <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}

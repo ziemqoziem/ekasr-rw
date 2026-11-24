@@ -2176,3 +2176,18 @@ p .sel-min, p .sel-plus { padding: 0 6px; font-size: inherit; }
 .rk-rtcol li span { min-width: 0; overflow-wrap: anywhere; }
 .rk-rtcol li b { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
 @media (max-width: 820px) { .rk-kolom { grid-template-columns: 1fr; } .rk-baris { grid-template-columns: 1fr 1fr; } }
+
+/* Rekap jimpitan: warna berbeda per kartu / RT */
+.rk-c0 { --rkc: 16, 185, 129; }   /* total: hijau */
+.rk-c1 { --rkc: 59, 130, 246; }   /* RT pertama: biru */
+.rk-c2 { --rkc: 245, 158, 11; }   /* RT kedua: kuning/oranye */
+.rk-c3 { --rkc: 168, 85, 247; }   /* RT ketiga: ungu */
+.stat[class*="rk-c"] { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(var(--rkc), 0.20), rgba(var(--rkc), 0.04) 70%); border-color: rgba(var(--rkc), 0.45); }
+.stat[class*="rk-c"]::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: rgb(var(--rkc)); }
+.stat[class*="rk-c"] small { color: rgb(var(--rkc)); filter: brightness(1.25); }
+.stat[class*="rk-c"] b { color: var(--text); }
+.stat.rk-c0 b { color: #10b981; }
+.rk-rtcol[class*="rk-c"] { border-color: rgba(var(--rkc), 0.5); }
+.rk-rtcol[class*="rk-c"] header { background: linear-gradient(135deg, rgba(var(--rkc), 0.40), rgba(var(--rkc), 0.10)); border-bottom-color: rgba(var(--rkc), 0.5); }
+.rk-rtcol[class*="rk-c"] footer { border-top-color: rgba(var(--rkc), 0.5); background: rgba(var(--rkc), 0.08); }
+.rk-rtcol[class*="rk-c"] li:nth-child(even) { background: rgba(var(--rkc), 0.05); }
