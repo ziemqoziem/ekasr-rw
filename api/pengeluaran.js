@@ -33,8 +33,10 @@ module.exports = route({
       if (q.dari) { if (!P.validDate(String(q.dari))) throw fail(400, 'Tanggal "dari" tidak valid.'); where.push('tanggal >= ?'); params.push(String(q.dari)); }
       if (q.sampai) { if (!P.validDate(String(q.sampai))) throw fail(400, 'Tanggal "sampai" tidak valid.'); where.push('tanggal <= ?'); params.push(String(q.sampai)); }
       // Tanpa izin buku kas, hanya pengeluaran dari dana peran itu sendiri yang terlihat
-      const lihatSemua = punya(user, 'kas.lihat');
-      if (!lihatSemua) { where.push('sumber = ?'); params.push(danaPengeluaran(user)); }
+      // Peran yang terikat satu dana (Bendahara RW → iuran wajib, Bendahara Jimpitan → jimpitan) hanya melihat pengeluaran dana itu
+      const danaSendiri = danaPengeluaran(user);
+      const lihatSemua = punya(user, 'kas.lihat') && danaSendiri === 'umum';
+      if (!lihatSemua) { where.push('sumber = ?'); params.push(danaSendiri); }
       const r = await db.query(
         `SELECT id, tanggal, kategori, uraian, nominal, bukti, sumber, petugas, status, alasan_batal
          FROM pengeluaran ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
