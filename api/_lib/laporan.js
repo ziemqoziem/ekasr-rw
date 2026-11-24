@@ -142,17 +142,22 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
       out.status_iuran = null;
     }
 
-    // Satu tabel gabungan per warga (hanya yang masih memiliki tunggakan)
+    // Seluruh warga wajib (iuran dan/atau jimpitan). selisih = setoran − kewajiban: minus = tunggakan, plus = kelebihan
     out.status_warga = [];
     for (const w of wr) {
-      const j = J.get(w.id) || { kew: 0, setor: 0, kurang: 0 };
-      const i = IU.get(w.id) || { kew: 0, setor: 0, kurang: 0 };
-      const total = j.kurang + i.kurang;
-      if (total <= 0) continue;
-      out.status_warga.push({ nama: w.nama, rt: w.rt, iuran_kewajiban: i.kew, iuran_setor: i.setor, iuran_kurang: i.kurang,
-        jimpitan_kewajiban: j.kew, jimpitan_setor: j.setor, jimpitan_kurang: j.kurang, total });
+      const j = J.get(w.id), i = IU.get(w.id);
+      if (!j && !i) continue;
+      const jj = j || { kew: 0, setor: 0 }, ii = i || { kew: 0, setor: 0 };
+      const si = ii.setor - ii.kew, sj = jj.setor - jj.kew;
+      out.status_warga.push({
+        nama: w.nama, rt: w.rt,
+        iuran_kewajiban: ii.kew, iuran_setor: ii.setor, iuran_selisih: si,
+        jimpitan_kewajiban: jj.kew, jimpitan_setor: jj.setor, jimpitan_selisih: sj,
+        tunggakan: Math.max(0, -si) + Math.max(0, -sj), kelebihan: Math.max(0, si) + Math.max(0, sj)
+      });
     }
-    out.status_warga.sort((a, b) => a.rt.localeCompare(b.rt) || b.total - a.total || a.nama.localeCompare(b.nama));
+    // Per RT; yang menunggak paling atas, lalu lunas, lalu kelebihan
+    out.status_warga.sort((a, b) => a.rt.localeCompare(b.rt) || b.tunggakan - a.tunggakan || a.kelebihan - b.kelebihan || a.nama.localeCompare(b.nama));
   }
   return out;
 }

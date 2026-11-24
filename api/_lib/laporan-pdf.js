@@ -151,19 +151,41 @@ Iuran ${rp(i.total)} (${i.jumlah} pembayaran)` };
       L.pengeluaran.concat(L.pengeluaran.length ? [{ tanggal: null, uraian: 'Total pengeluaran', kategori: '', nominal: L.ringkasan.keluar, _tebal: true }] : []));
   }
 
-  /* ---------- Status iuran warga ---------- */
+  /* ---------- Status iuran warga (per RT) ---------- */
   if (L.status_warga) {
     const sj = L.status_jimpitan, si = L.status_iuran;
     judul(`${no++}. Status Iuran Warga`);
     const ket = [];
     if (sj) ket.push(`Jimpitan per cut off ${tgl(L.periode.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}).`);
     if (si) ket.push(`Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar.`);
-    catatan(`${ket.join(' ')} Kewajiban dan setoran bersifat kumulatif sejak penagihan dimulai sampai cut off (bukan hanya kumpulan ini). Tunggakan = kewajiban - setoran. Nilai dalam Rupiah; hanya warga yang masih memiliki tunggakan.`);
+    catatan(`${ket.join(' ')} Kewajiban dan setoran kumulatif sejak penagihan dimulai sampai cut off. Merah (-) = tunggakan, hijau (+) = kelebihan. Nilai dalam Rupiah.`);
     const n = (v) => Number(v || 0).toLocaleString('id-ID');
-    tabel([{ k: (b) => `${b.nama} (RT ${b.rt})`, t: 'Nama (RT)', w: 2.6 },
-      { k: (b) => n(b.iuran_kewajiban), t: 'Kewajiban Iuran', w: 1, ...kanan }, { k: (b) => n(b.iuran_setor), t: 'Setoran Iuran', w: 1, ...kanan }, { k: (b) => n(b.iuran_kurang), t: 'Tunggakan Iuran', w: 1, ...kanan },
-      { k: (b) => n(b.jimpitan_kewajiban), t: 'Kewajiban Jimpitan', w: 1, ...kanan }, { k: (b) => n(b.jimpitan_setor), t: 'Setoran Jimpitan', w: 1, ...kanan }, { k: (b) => n(b.jimpitan_kurang), t: 'Tunggakan Jimpitan', w: 1, ...kanan },
-      { k: (b) => n(b.total), t: 'Total Tunggakan', w: 1.1, ...kanan, warna: () => C.merah }], L.status_warga, { fs: 7.5 });
+    const sel = (v, ada) => (!ada ? '-' : v === 0 ? 'Lunas' : v < 0 ? `-${n(-v)}` : `+${n(v)}`);
+    const wr = (v, ada) => (!ada || v === 0 ? C.hijau : v < 0 ? C.merah : C.hijau);
+    const grup = new Map();
+    for (const x of L.status_warga) { if (!grup.has(x.rt)) grup.set(x.rt, []); grup.get(x.rt).push(x); }
+    if (!grup.size) catatan('Tidak ada warga wajib.');
+    for (const [rt, list] of grup) {
+      const tg = list.reduce((a, x) => a + x.tunggakan, 0), kl = list.reduce((a, x) => a + x.kelebihan, 0);
+      const nm = list.filter((x) => x.tunggakan > 0).length;
+      butuh(70);
+      doc.moveDown(0.4);
+      const y = doc.y;
+      doc.roundedRect(X, y, W, 20, 4).fill('#eef2ff');
+      doc.fillColor(C.aksen).font('Helvetica-Bold').fontSize(10).text(`RT ${rt}`, X + 8, y + 5, { width: 60, lineBreak: false });
+      doc.fillColor(C.redup).font('Helvetica').fontSize(8.5).text(
+        `${list.length} warga · ${nm ? `${nm} menunggak, total ${rp(tg)}` : 'tidak ada tunggakan'}${kl ? ` · kelebihan ${rp(kl)}` : ''}`,
+        X + 70, y + 6, { width: W - 78, align: 'right', lineBreak: false });
+      doc.fillColor(C.teks);
+      doc.y = y + 24;
+      tabel([
+        { k: 'nama', t: 'Nama', w: 3 },
+        { k: (b) => (b.iuran_kewajiban ? n(b.iuran_kewajiban) : '-'), t: 'Kewajiban Iuran', w: 1.3, ...kanan },
+        { k: (b) => sel(b.iuran_selisih, b.iuran_kewajiban || b.iuran_setor), t: 'Tunggakan / Kelebihan Iuran', w: 1.5, ...kanan, warna: (b) => wr(b.iuran_selisih, b.iuran_kewajiban || b.iuran_setor) },
+        { k: (b) => (b.jimpitan_kewajiban ? n(b.jimpitan_kewajiban) : '-'), t: 'Kewajiban Jimpitan', w: 1.3, ...kanan },
+        { k: (b) => sel(b.jimpitan_selisih, b.jimpitan_kewajiban || b.jimpitan_setor), t: 'Tunggakan / Kelebihan Jimpitan', w: 1.5, ...kanan, warna: (b) => wr(b.jimpitan_selisih, b.jimpitan_kewajiban || b.jimpitan_setor) }
+      ], list, { fs: 8 });
+    }
   }
 
   /* ---------- Tanda tangan ---------- */

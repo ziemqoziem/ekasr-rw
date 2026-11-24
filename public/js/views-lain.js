@@ -86,11 +86,28 @@
                 <thead><tr><th>Tanggal</th><th>Uraian</th><th>Kategori</th><th class="r">Nominal</th></tr></thead><tbody>
                 ${L.pengeluaran.map((x) => `<tr><td>${App.tglId(x.tanggal)}</td><td style="white-space:normal">${esc(x.uraian)}</td><td>${esc(x.kategori)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}${kecil(L.pengeluaran, 4)}
                 </tbody></table></div></div>` : ''}
-            ${L.status_warga ? `<div class="card"><h3>Status iuran warga</h3>
-                <p class="small muted">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Nilai dalam Rupiah. Kewajiban dan setoran bersifat <b>kumulatif</b> sejak penagihan dimulai sampai cut off (bukan hanya kumpulan ini), jadi setoran kumpulan lama tetap tampil di sini sebagai pengurang. Tunggakan = kewajiban − setoran; hanya warga yang masih memiliki tunggakan.</p>
-                <div><table class="tbl-fit"><thead><tr><th>Nama (RT)</th><th class="r">Kewajiban Iuran</th><th class="r">Setoran Iuran</th><th class="r">Tunggakan Iuran</th><th class="r">Kewajiban Jimpitan</th><th class="r">Setoran Jimpitan</th><th class="r">Tunggakan Jimpitan</th><th class="r">Total Tunggakan</th></tr></thead><tbody>
-                ${L.status_warga.map((x) => `<tr><td>${esc(x.nama)} (RT ${esc(x.rt)})</td><td class="r num">${nf(x.iuran_kewajiban)}</td><td class="r num">${nf(x.iuran_setor)}</td><td class="r num">${nf(x.iuran_kurang)}</td><td class="r num">${nf(x.jimpitan_kewajiban)}</td><td class="r num">${nf(x.jimpitan_setor)}</td><td class="r num">${nf(x.jimpitan_kurang)}</td><td class="r num"><b>${nf(x.total)}</b></td></tr>`).join('')}${kecil(L.status_warga, 8)}
-                </tbody></table></div></div>` : ''}
+            ${L.status_warga ? `<h3 class="sec-title">Status iuran warga</h3>
+            <p class="small muted" style="margin-bottom:10px">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Kewajiban dan setoran <b>kumulatif</b> sejak penagihan dimulai sampai cut off. <span class="sel-min">Merah = tunggakan</span> · <span class="sel-plus">hijau = kelebihan (titipan)</span>.</p>
+            ${(() => {
+                const sel = (v) => v === 0 ? '<span class="sel-nol">Lunas</span>' : v < 0 ? `<span class="sel-min">−${nf(-v)}</span>` : `<span class="sel-plus">+${nf(v)}</span>`;
+                const grup = new Map();
+                for (const x of L.status_warga) { if (!grup.has(x.rt)) grup.set(x.rt, []); grup.get(x.rt).push(x); }
+                if (!grup.size) return '<div class="card empty" style="margin-bottom:14px">Tidak ada warga wajib.</div>';
+                return [...grup.entries()].map(([rt, list]) => {
+                    const tg = list.reduce((a, x) => a + x.tunggakan, 0), kl = list.reduce((a, x) => a + x.kelebihan, 0);
+                    const n = list.filter((x) => x.tunggakan > 0).length;
+                    return `<section class="rt-blok">
+                        <header class="rt-head"><h4>RT ${esc(rt)}</h4>
+                            <span class="rt-chip">${list.length} warga</span>
+                            <span class="rt-chip ${n ? 'bad' : 'good'}">${n ? `${n} menunggak · ${rp(tg)}` : 'Tidak ada tunggakan'}</span>
+                            ${kl ? `<span class="rt-chip good">Kelebihan ${rp(kl)}</span>` : ''}</header>
+                        <div class="tbl-wrap"><table class="tbl-rt"><thead><tr><th>Nama</th><th class="r">Kewajiban Iuran</th><th class="r">Tunggakan / Kelebihan Iuran</th><th class="r">Kewajiban Jimpitan</th><th class="r">Tunggakan / Kelebihan Jimpitan</th></tr></thead><tbody>
+                        ${list.map((x) => `<tr class="${x.tunggakan > 0 ? 'menunggak' : ''}"><td>${esc(x.nama)}</td>
+                            <td class="r num" title="Setoran ${nf(x.iuran_setor)}">${x.iuran_kewajiban ? nf(x.iuran_kewajiban) : '-'}</td><td class="r num">${x.iuran_kewajiban || x.iuran_setor ? sel(x.iuran_selisih) : '-'}</td>
+                            <td class="r num" title="Setoran ${nf(x.jimpitan_setor)}">${x.jimpitan_kewajiban ? nf(x.jimpitan_kewajiban) : '-'}</td><td class="r num">${x.jimpitan_kewajiban || x.jimpitan_setor ? sel(x.jimpitan_selisih) : '-'}</td></tr>`).join('')}
+                        </tbody></table></div></section>`;
+                }).join('');
+            })()}` : ''}
             <div class="print-only small" style="margin-top:36px">
                 <div style="display:flex;justify-content:space-around;text-align:center">
                     <div>Ketua RW<br><br><br><br><b>${esc(r.ttd.ketua_rw || '........................')}</b></div>
