@@ -152,7 +152,8 @@
         await iuran();
     };
 
-    /* ---------- Saldo awal kas per sumber (admin) ---------- */
+    /* ---------- Saldo awal kas: Jimpitan + Kas RW (aset digabung ke Kas RW) ---------- */
+    const kasRwDari = (n) => Number(n.iuran_wajib || 0) + Number(n.sewa_aset || 0) + Number(n.umum || 0);
     async function saldokas() {
         const [sa, st] = await Promise.all([App.api('/api/saldo-awal'), App.api('/api/tutup-buku')]);
         const tahunNow = Number(App.today().slice(0, 4));
@@ -163,15 +164,15 @@
         const terakhir = ditutup.length ? ditutup[ditutup.length - 1] : null;
         $('#pgBody').innerHTML = `
             <div class="card"><h3>Saldo awal kas (hasil tutup buku tahun sebelumnya)</h3>
-                <p class="small muted mb-md">Ini <b>dasar Buku Kas</b>: saldo kas dihitung dari angka ini ditambah semua pemasukan dan dikurangi pengeluaran sejak 1 Januari tahun buku. Karena aplikasi mulai dipakai tahun 2026,
-                isi di sini <b>hasil tutup buku 2025</b> (saldo per 31 Desember 2025) <b>terpisah per sumber</b> sebagai saldo awal 2026. Transaksi bertanggal sebelum 1 Januari 2026 tidak dihitung ke kas.
-                Tahun-tahun berikutnya <b>otomatis</b> dari menu <b>Buku Kas → Tutup Buku</b> (dilakukan Bendahara RW setelah 31 Desember): saldo akhir tahun itu menjadi saldo awal tahun berikutnya.</p>
+                <p class="small muted mb-md">Ini <b>dasar Buku Kas</b>: saldo dihitung dari angka ini ditambah pemasukan dan dikurangi pengeluaran sejak 1 Januari tahun buku. Karena aplikasi mulai dipakai tahun 2026,
+                isi di sini <b>hasil tutup buku 2025</b> (saldo per 31 Desember 2025) sebagai saldo awal 2026 — cukup dua kantong: <b>Kas Jimpitan</b> dan <b>Kas RW</b> (iuran wajib + pemasukan aset/lainnya digabung). Transaksi sebelum 1 Januari 2026 tidak dihitung ke kas.
+                Tahun berikutnya <b>otomatis</b> dari menu <b>Buku Kas → Tutup Buku</b> (Bendahara RW setelah 31 Desember).</p>
                 <form data-form="saldoAwal"><div class="form-grid">
-                    <div><label class="f" for="saT">Tahun buku (mulai 1 Januari; 2026 = hasil tutup buku 2025)</label><input type="number" id="saT" name="tahun" min="2000" max="2100" value="${tahunDefault}" required></div>
+                    <div><label class="f" for="saT">Tahun buku (mulai 1 Januari; 2026 = hasil tutup buku 2025)</label><input type="number" id="saT" name="tahun" min="2000" max="2100" value="${tahunDefault}" required data-change="saTahun"></div>
                     <div class="full small muted mt-neg-xs">Saldo awal = saldo per <b>31 Desember <span id="saTh">${tahunDefault - 1}</span></b></div>
-                    <div><label class="f" for="saJ">Saldo awal Jimpitan (Rp)</label><input type="number" id="saJ" name="jimpitan" min="0" inputmode="numeric" value="${v.jimpitan ?? 0}" required></div>
-                    <div><label class="f" for="saI">Saldo awal Iuran Wajib (Rp)</label><input type="number" id="saI" name="iuran_wajib" min="0" inputmode="numeric" value="${v.iuran_wajib ?? 0}" required></div>
-                    <div><label class="f" for="saS">Saldo awal Pemasukan Lainnya (Rp)</label><input type="number" id="saS" name="sewa_aset" min="0" inputmode="numeric" value="${v.sewa_aset ?? 0}" required></div>
+                    <div><label class="f" for="saJ">Saldo Kas Jimpitan (Rp)</label><input type="number" id="saJ" name="jimpitan" min="0" inputmode="numeric" value="${v.jimpitan ?? 0}" required></div>
+                    <div><label class="f" for="saRw">Saldo Kas RW (Rp)</label><input type="number" id="saRw" name="kas_rw" min="0" inputmode="numeric" value="${kasRwDari(v)}" required>
+                        <p class="small muted mt-xs">Termasuk iuran wajib dan akumulasi kas aset / pemasukan lainnya.</p></div>
                     <div class="full"><label class="f" for="saK">Keterangan (opsional)</label><input id="saK" name="keterangan" maxlength="255" placeholder="mis. Berita acara kumpulan RW"></div>
                 </div><div class="dlg-actions"><button class="btn primary" type="submit">Simpan saldo awal</button></div></form>
                 <p class="small muted">Saldo awal yang sudah berasal dari Tutup Buku atau yang bukunya sudah ditutup tidak dapat diubah di sini.</p>
@@ -182,12 +183,20 @@
                 <p class="small muted">Hanya tahun terakhir. Saldo awal ${terakhir + 1} hasil tutup buku akan dihapus dan transaksi ${terakhir} dapat dikoreksi lagi.</p>` : ''}
             </div>
             <div class="card"><h3>Riwayat saldo awal</h3><div class="tbl-wrap"><table>
-                <thead><tr><th>Tahun</th><th>Asal</th><th class="r">Jimpitan</th><th class="r">Iuran wajib</th><th class="r">Pemasukan lainnya</th><th class="r">Umum</th></tr></thead>
-                <tbody>${sa.saldo_awal.map((x) => `<tr><td>${x.tahun}</td><td>${x.asal === 'tutup_buku' ? 'Tutup buku' : 'Diisi admin'}</td>
-                <td class="r num">${rp(x.nominal.jimpitan)}</td><td class="r num">${rp(x.nominal.iuran_wajib)}</td><td class="r num">${rp(x.nominal.sewa_aset)}</td><td class="r num">${rp(x.nominal.umum)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Belum ada.</td></tr>'}</tbody></table></div></div>`;
+                <thead><tr><th>Tahun</th><th>Asal</th><th class="r">Kas Jimpitan</th><th class="r">Kas RW</th><th class="r">Total</th></tr></thead>
+                <tbody>${sa.saldo_awal.map((x) => {
+                    const jim = Number(x.nominal.jimpitan || 0);
+                    const rw = kasRwDari(x.nominal);
+                    return `<tr><td>${x.tahun}</td><td>${x.asal === 'tutup_buku' ? 'Tutup buku' : 'Diisi admin'}</td>
+                <td class="r num">${rp(jim)}</td><td class="r num">${rp(rw)}</td><td class="r num"><b>${rp(jim + rw)}</b></td></tr>`;
+                }).join('') || '<tr><td colspan="5" class="muted">Belum ada.</td></tr>'}</tbody></table></div></div>`;
     }
+    App.changes.saTahun = (el) => {
+        const th = $('#saTh');
+        if (th) th.textContent = String(Number(el.value) - 1);
+    };
     App.forms.saldoAwal = async (f) => {
-        await App.api('/api/saldo-awal', { method: 'POST', body: { tahun: Number(f.tahun.value), jimpitan: Number(f.jimpitan.value), iuran_wajib: Number(f.iuran_wajib.value), sewa_aset: Number(f.sewa_aset.value), keterangan: f.keterangan.value } });
+        await App.api('/api/saldo-awal', { method: 'POST', body: { tahun: Number(f.tahun.value), jimpitan: Number(f.jimpitan.value), kas_rw: Number(f.kas_rw.value), keterangan: f.keterangan.value } });
         App.toast('Saldo awal kas disimpan.');
         await saldokas();
     };
