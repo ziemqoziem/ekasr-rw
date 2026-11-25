@@ -64,7 +64,7 @@
                     <div><label class="f" for="sRt">RT</label><select id="sRt" data-change="setoranFilter" ${App.rtKunci() ? 'disabled' : ''}>${optRt(SS.rt)}</select></div>
                     <div><label class="f" for="sCari">Cari nama</label><input id="sCari" placeholder="Ketik nama…" data-input="setoranCari" maxlength="60"></div>
                 </div>
-                <div id="sRingkas" class="row small muted" style="margin-top:8px"></div>
+                <div id="sRingkas" class="row small muted mt-sm"></div>
             </div>
             <div class="savebar savebar-atas" id="sBar"></div>
             <div id="sPg"></div>
@@ -129,7 +129,7 @@
                     <div class="grow">
                         <div class="name">${esc(w.nama)} ${w.setoran.length ? '<span class="badge green">✓ Sudah setor</span>' : ''}</div>
                         <div class="meta"><span class="badge">RT ${esc(w.rt)}</span> ${lencanaSaldo(w)}</div>
-                        ${chips ? `<div class="chips" style="margin-top:6px">${chips}</div>` : ''}
+                        ${chips ? `<div class="chips mt-sm">${chips}</div>` : ''}
                     </div>
                     <div class="nominal-box">
                         ${tulis ? `<input type="number" inputmode="numeric" min="1" step="1" placeholder="${w.default ? rp(w.default) : 'Rp 0'}" aria-label="Nominal setoran ${esc(w.nama)}" data-input="nominalSetoran" data-id="${w.id}" value="${val ? val : ''}">
@@ -157,10 +157,10 @@
         const semua = bisaPilih.length > 0 && bisaPilih.every((w) => SS.nominal.get(w.id) > 0);
         bar.innerHTML = `
             ${SS.pgHtml ? `<div class="savebar-pg">${SS.pgHtml}</div>` : ''}
-            <div class="row" style="gap:8px">
-                <label class="row" style="gap:6px;cursor:pointer;font-weight:600;font-size:.86rem"><input type="checkbox" data-change="setorCekSemua" ${semua ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'} aria-label="Pilih semua warga yang belum setor"> Pilih semua</label>
+            <div class="row gap-sm">
+                <label class="row cek-row"><input type="checkbox" data-change="setorCekSemua" ${semua ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'} aria-label="Pilih semua warga yang belum setor"> Pilih semua</label>
                 <span class="badge blue"><b>${n}</b> warga dipilih</span>
-                <span style="font-weight:700;font-size:1.15rem;color:var(--text);font-variant-numeric:tabular-nums">${rp(total)}</span>
+                <span class="font-total">${rp(total)}</span>
             </div>
             <div class="row">
                 <button class="btn sm" data-act="isiDefault" ${belum ? '' : 'disabled'} title="Isi nominal default: harian ${rp(r.tarif_harian || 0)}, mingguan ${rp((r.tarif_harian || 0) * 7)}, bulanan ${rp((r.tarif_harian || 0) * 30)}">Isi default (${belum})</button>
@@ -253,7 +253,7 @@
     App.actions.batalSetoran = (el) => {
         App.dialog(`
             <h3>Batalkan setoran</h3>
-            <p class="muted small" style="margin-bottom:12px">${esc(el.dataset.nama)} — setoran tidak dihapus, hanya ditandai batal dan tercatat di log. Saldo dihitung ulang otomatis.</p>
+            <p class="muted small mb-md">${esc(el.dataset.nama)} — setoran tidak dihapus, hanya ditandai batal dan tercatat di log. Saldo dihitung ulang otomatis.</p>
             <form data-form="batalSetoran" data-id="${esc(el.dataset.id)}">
                 <label class="f" for="bAlasan">Alasan pembatalan</label>
                 <input id="bAlasan" name="alasan" required minlength="3" maxlength="255" placeholder="mis. salah catat">
@@ -310,13 +310,13 @@
                     <div class="grow"><label class="f" for="rkPer">Kumpulan RW</label><select id="rkPer" data-change="rekapPeriode">
                         ${r.daftar_periode.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === p.tanggal ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)} ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div>
                 </div>
-                <p class="small muted" style="margin-top:8px">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
+                <p class="small muted mt-sm">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>
-            <div class="rk-baris" style="margin:14px 0">
+            <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span>${polaHtml(t.pola)}</div>
+                    <span class="small muted stat-sub">${t.menyetor} / ${t.warga} warga menyetor</span>${polaHtml(t.pola)}</div>
                 ${r.rt.map((g, i) => `<div class="stat rk-c${(i % 3) + 1}"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span>${polaHtml(g.pola)}</div>`).join('')}
+                    <span class="small muted stat-sub">${g.menyetor} / ${g.warga} warga menyetor</span>${polaHtml(g.pola)}</div>`).join('')}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
@@ -327,7 +327,7 @@
                     <ul>${list.map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
                     <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}
                 </div>`
-                : '<div class="empty" style="margin-top:10px">Belum ada setoran pada kumpulan ini.</div>'}
+                : '<div class="empty mt-md">Belum ada setoran pada kumpulan ini.</div>'}
             </div>`;
     }
 
@@ -340,7 +340,7 @@
     };
 
     /* ---------- saldo & riwayat satu warga ---------- */
-    const baris = (x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
+    const baris = (x) => `<tr class="${x.status === 'batal' ? 'opacity-dim' : ''}"><td>${tglPendek(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas || '-')}</td>
         <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`;
     const tabelRiwayat = (arr, kosong) => (arr.length
         ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>${arr.map(baris).join('')}</tbody></table></div>`
@@ -449,12 +449,12 @@
         $('#tInfo').textContent = `Kewajiban Rp ${Number(r.tarif_harian).toLocaleString('id-ID')}/hari sejak ${tglPendek(r.mulai_hitung)}. Tunggakan dihitung pada jatuh tempo pola warga (harian: kemarin, mingguan: Minggu terakhir, bulanan: akhir bulan).`;
         const hit = (j) => r.tunggakan.filter((x) => x.jenis === j).reduce((a, x) => a + x.kurang, 0);
         $('#tOut').innerHTML = `
-            <div class="rk-baris" style="margin-bottom:14px">
-                <div class="stat rk-c0" style="--c:#f43f5e"><small>Total tunggakan</small><b style="color:#f43f5e">${rp(s.total)}</b><span class="small muted" style="display:block;margin-top:4px">${s.warga_menunggak} warga menunggak</span>
+            <div class="rk-baris mb">
+                <div class="stat rk-c0"><small>Total tunggakan</small><b class="val-out">${rp(s.total)}</b><span class="small muted stat-sub">${s.warga_menunggak} warga menunggak</span>
                     <div class="rk-pola">${['harian', 'mingguan', 'bulanan'].map((j) => `<div><span>${j[0].toUpperCase() + j.slice(1)}</span><i><u style="width:${s.total ? Math.round((hit(j) / s.total) * 100) : 0}%"></u></i><b>${rp(hit(j))}</b></div>`).join('')}</div></div>
                 <div class="stat rk-c2"><small>Tunggakan berjalan</small><b>${rp(s.total_rutin)}</b></div>
                 <div class="stat rk-c3"><small>Tunggakan lama</small><b>${rp(s.total_lama)}</b></div>
-                <div class="stat rk-c1"><small>Titipan warga</small><b style="color:#10b981">${rp(s.titipan)}</b><span class="small muted" style="display:block;margin-top:4px">${s.warga_titipan} warga</span></div>
+                <div class="stat rk-c1"><small>Titipan warga</small><b class="val-in">${rp(s.titipan)}</b><span class="small muted stat-sub">${s.warga_titipan} warga</span></div>
             </div>
             <div id="tPg"></div><div id="tList"></div>`;
         App.pgReset('tunggakan');
@@ -467,7 +467,7 @@
         const pg = App.paginate('tunggakan', arr, { selalu: true });
         $('#tPg').innerHTML = `<div class="card bar-satu"><div class="bs-filter muted small">${arr.length} warga menunggak · urut kekurangan terbesar</div><div class="bs-pager">${pg.bar}</div></div>`;
         $('#tList').innerHTML = arr.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Nama</th><th>RT</th><th>Pola</th><th>Jatuh tempo</th><th class="r">Berjalan</th><th class="r">Lama</th><th class="r">Kurang</th><th></th></tr></thead><tbody>
-            ${pg.items.map(barisTunggakan).join('')}</tbody><tfoot><tr><td colspan="6"><b>Total halaman ini</b></td><td class="r num"><b style="color:#f43f5e">${rp(pg.items.reduce((a, x) => a + x.kurang, 0))}</b></td><td></td></tr></tfoot></table></div></div>`
+            ${pg.items.map(barisTunggakan).join('')}</tbody><tfoot><tr><td colspan="6"><b>Total halaman ini</b></td><td class="r num"><b class="val-out">${rp(pg.items.reduce((a, x) => a + x.kurang, 0))}</b></td><td></td></tr></tfoot></table></div></div>`
             : '<div class="card empty">Tidak ada tunggakan. 🎉</div>';
     }
 
@@ -477,10 +477,10 @@
         const pesan = `Assalamu'alaikum, Bapak/Ibu ${t.nama}. Kami dari pengurus RW 03 Dukuh Pencil mengingatkan jimpitan/iuran yang masih kurang sebesar ${rp(t.kurang)}. Terima kasih atas perhatiannya.`;
         return `<tr>
             <td style="white-space:normal;min-width:150px"><b>${esc(t.nama)}</b><div class="small muted">≈ ${t.hari_kurang} hari</div></td>
-            <td>${esc(t.rt)}</td><td>${jenisBadge(t.jenis)}</td><td style="white-space:nowrap">${tglPendek(t.jatuh_tempo).slice(0, 5)}</td>
+            <td>${esc(t.rt)}</td><td>${jenisBadge(t.jenis)}</td><td class="nowrap">${tglPendek(t.jatuh_tempo).slice(0, 5)}</td>
             <td class="r num">${t.berjalan_kurang ? rp(t.berjalan_kurang) : '-'}</td><td class="r num">${t.lama_sisa ? rp(t.lama_sisa) : '-'}</td>
-            <td class="r num"><b style="color:#f43f5e">${rp(t.kurang)}</b></td>
-            <td class="r" style="white-space:nowrap">
+            <td class="r num"><b class="val-out">${rp(t.kurang)}</b></td>
+            <td class="r nowrap">
                 ${App.has('jimpitan.tulis') ? `<button class="btn sm primary" data-act="bayarKurang" data-w="${t.id}" data-nama="${esc(t.nama)}" data-kurang="${t.kurang}">Bayar</button>` : ''}
                 <button class="btn sm ghost" data-act="saldoWarga" data-id="${t.id}" data-nama="${esc(t.nama)}">Riwayat</button>
                 ${wa ? `<a class="btn sm" style="color:var(--green);border-color:var(--green-border);background:var(--green-bg)" target="_blank" rel="noopener noreferrer" href="https://wa.me/${wa}?text=${encodeURIComponent(pesan)}">WA</a>` : ''}</td></tr>`;
@@ -565,19 +565,19 @@
         const aktif = L.filter((w) => w.aktif).length;
         const bebasJ = L.filter((w) => !w.ikut_jimpitan).length;
         const bebasI = L.filter((w) => !w.ikut_iuran).length;
-        $('#wKartu').innerHTML = `<div class="rk-baris" style="margin-bottom:14px">
+        $('#wKartu').innerHTML = `<div class="rk-baris mb-lg">
             <div class="stat rk-c0"><small>Total warga</small><b>${L.length}</b></div>
-            <div class="stat rk-c1"><small>Aktif</small><b>${aktif}</b><span class="small muted" style="display:block;margin-top:4px">${L.length - aktif} nonaktif</span></div>
+            <div class="stat rk-c1"><small>Aktif</small><b>${aktif}</b><span class="small muted stat-sub">${L.length - aktif} nonaktif</span></div>
             <div class="stat rk-c2"><small>Bebas jimpitan</small><b>${bebasJ}</b></div>
             <div class="stat rk-c3"><small>Bebas iuran kas</small><b>${bebasI}</b></div></div>`;
         $('#wPg').innerHTML = `<div class="card bar-satu"><div class="bs-filter muted small">${L.length} warga ditemukan</div><div class="bs-pager">${pg.bar}</div></div>`;
         $('#wList').innerHTML = L.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Nama</th><th>RT</th><th>Pola setor</th><th>No HP</th><th>Kewajiban</th><th></th></tr></thead><tbody>
             ${pg.items.map((w) => `<tr style="${w.aktif ? '' : 'opacity:.6'}">
                 <td style="white-space:normal;min-width:160px"><b>${esc(w.nama)}</b> <span class="small muted">#${w.id}</span>${w.aktif ? '' : ' <span class="badge red">nonaktif</span>'}</td>
-                <td>${esc(w.rt)}</td><td>${jenisBadge(w.jenis)}</td><td style="white-space:nowrap">${esc(w.no_hp || '-')}</td>
+                <td>${esc(w.rt)}</td><td>${jenisBadge(w.jenis)}</td><td class="nowrap">${esc(w.no_hp || '-')}</td>
                 <td style="white-space:normal">${w.ikut_jimpitan ? '<span class="badge green">Jimpitan</span>' : `<span class="badge amber">${w.jimpitan_berhenti ? 'Jimpitan s.d. ' + App.tglId(w.jimpitan_berhenti) : 'Bebas jimpitan'}</span>`}
                     ${w.ikut_iuran ? '<span class="badge green">Iuran kas</span>' : `<span class="badge amber">${w.iuran_berhenti ? 'Iuran kas s.d. ' + App.tglId(w.iuran_berhenti) : 'Bebas iuran kas'}</span>`}</td>
-                <td class="r" style="white-space:nowrap">
+                <td class="r nowrap">
                     ${App.has('jimpitan.lihat') ? `<button class="btn sm" data-act="riwayatWarga" data-id="${w.id}">Riwayat</button>` : ''}
                     ${kelola ? `<button class="btn sm" data-act="wargaForm" data-id="${w.id}">Ubah</button>` : ''}</td></tr>`).join('')}
             </tbody></table></div></div>` : '<div class="card empty">Tidak ada data.</div>';

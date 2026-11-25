@@ -376,7 +376,7 @@
         document.documentElement.setAttribute('data-theme', App.theme);
         store('set', 'jimpitan_theme', App.theme);
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.content = App.theme === 'light' ? '#f8fafc' : '#090d16';
+        if (meta) meta.content = App.theme === 'light' ? '#f3f7f7' : '#071012';
         App.renderUserArea();
         window.dispatchEvent(new Event('resize'));
     };

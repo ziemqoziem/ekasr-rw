@@ -58,7 +58,7 @@
             <h2 class="title">Kalender Setoran Warga</h2>
             ${tabsKal()}
             <div class="card">
-                <p class="small" style="margin-bottom:10px">Pilih warga untuk melihat riwayatnya per tanggal.
+                <p class="small mb-md">Pilih warga untuk melihat riwayatnya per tanggal.
                     <span class="cal-key cal-hijau">Hijau</span> = sudah setor, <span class="cal-key cal-merah">Merah</span> = belum setor.</p>
                 <div class="filters">
                     <div><label class="f" for="kRt">RT</label><select id="kRt" data-change="kalenderRt" ${App.rtKunci() ? 'disabled' : ''}>${App.optRt(KS.rt)}</select></div>
@@ -123,11 +123,11 @@
                     <div><label class="f" for="riSt">Status</label><select id="riSt" data-change="riwStatus">
                         ${[['', 'Semua'], ['sah', 'Sah'], ['batal', 'Dibatalkan']].map(([v, l]) => `<option value="${v}" ${RI.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                 </div>
-                <p class="small muted" style="margin-top:8px">${sah.length} pembayaran sah · total <b>${rp(total)}</b>${rows.length - sah.length ? ` · ${rows.length - sah.length} dibatalkan` : ''}${r.terpotong ? ' · menampilkan 1.000 terbaru' : ''}</p>
+                <p class="small muted mt-sm">${sah.length} pembayaran sah · total <b>${rp(total)}</b>${rows.length - sah.length ? ` · ${rows.length - sah.length} dibatalkan` : ''}${r.terpotong ? ' · menampilkan 1.000 terbaru' : ''}</p>
             </div>
             ${pg.bar}
             ${rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Nama (RT)</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
-                ${pg.items.map((x) => `<tr style="${x.status === 'batal' ? 'opacity:.55' : ''}"><td>${App.tglId(x.tanggal)}</td><td><b>${esc(x.nama)}</b> <span class="badge">RT ${esc(x.rt)}</span></td>
+                ${pg.items.map((x) => `<tr class="${x.status === 'batal' ? 'opacity-dim' : ''}"><td>${App.tglId(x.tanggal)}</td><td><b>${esc(x.nama)}</b> <span class="badge">RT ${esc(x.rt)}</span></td>
                     <td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas)}</td>
                     <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
                 </tbody></table></div></div>` : '<div class="card empty">Belum ada riwayat iuran.</div>'}`;
@@ -180,7 +180,7 @@
                     <button class="btn sm" data-act="kalenderGeser" data-n="1" aria-label="Bulan berikutnya">›</button>
                 </div>
                 ${App.kalenderHtml(d, true)}
-                <div class="row" style="margin-top:12px">${status}<span class="small muted">Tarif ${rp(d.tarif_harian)}/hari · dihitung sejak ${App.tglId(d.mulai)}</span></div>
+                <div class="row mt-md">${status}<span class="small muted">Tarif ${rp(d.tarif_harian)}/hari · dihitung sejak ${App.tglId(d.mulai)}</span></div>
                 <p class="small muted" style="margin-top:6px">Titik putih pada tanggal = ada setoran dicatat hari itu; sentuh tanggal untuk rinciannya. Warga mingguan/bulanan baru merah setelah lewat jatuh tempo.</p>
             </div>`;
     }
@@ -226,7 +226,7 @@
             const d = await App.api('/api/kalender-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
             App.dialog(`
                 <h3>${esc(d.warga.nama)} <span class="small muted">RT ${esc(d.warga.rt)} · ${esc(d.warga.jenis)}</span></h3>
-                <p class="small muted" style="margin-bottom:10px">3 bulan terakhir. Hijau = sudah setor, merah = belum setor.</p>
+                <p class="small muted mb-md">3 bulan terakhir. Hijau = sudah setor, merah = belum setor.</p>
                 ${App.kalenderHtml(d, false)}
                 <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>`);
         } catch (e) {

@@ -9,7 +9,7 @@
 
     // Palet kategorikal — urutan TETAP, adaptif terhadap tema terang/gelap.
     const C = {
-        s: ['#3b82f6', '#f97316', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#ef4444'],
+        s: ['#0d9488', '#f97316', '#10b981', '#f59e0b', '#0284c7', '#06b6d4', '#0e7490', '#ef4444'],
         good: '#10b981', warn: '#f59e0b', serious: '#f97316', crit: '#ef4444'
     };
     Object.defineProperty(C, 'grid', {

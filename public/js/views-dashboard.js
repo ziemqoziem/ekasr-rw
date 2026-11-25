@@ -292,7 +292,7 @@
                 ${chartCard('top', 'Penunggak terbesar', '8 warga teratas', tbl(cols, rows))}
             </div>
             <section class="card"><h3>Daftar 10 penunggak terbesar</h3>${tbl(cols, rows)}
-                <p class="small muted" style="margin-top:10px">Daftar lengkap dan tombol pengingat WhatsApp ada di menu <a href="#tunggakan" data-act="go" data-tab="tunggakan">Tunggakan</a>.</p></section>`;
+                <p class="small muted mt-md">Daftar lengkap dan tombol pengingat WhatsApp ada di menu <a href="#tunggakan" data-act="go" data-tab="tunggakan">Tunggakan</a>.</p></section>`;
     }
 
     /* ================= KAS ================= */

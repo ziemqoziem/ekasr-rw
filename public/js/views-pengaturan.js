@@ -43,7 +43,7 @@
         const r = await muatPeran();
         const kel = [...new Set(KATALOG.map((k) => k.kelompok))];
         $('#pgBody').innerHTML = `
-            <div class="row between" style="margin-bottom:12px">
+            <div class="row between mb-md">
                 <p class="small muted grow">Atur <b>apa saja yang boleh dilakukan</b> tiap peran. Peran <b>Admin</b> selalu dapat mengakses semua menu (izin melihat & mengelola sistem terkunci). Perubahan berlaku langsung untuk semua akun dengan peran itu. Batas dijaga server, bukan hanya disembunyikan di menu.</p>
                 <button class="btn primary" data-act="peranForm">+ Tambah peran</button>
             </div>
@@ -54,7 +54,7 @@
                     <div class="row"><button class="btn sm" data-act="peranForm" data-kode="${esc(p.kode)}">Atur hak akses</button>
                     ${p.sistem ? '' : `<button class="btn sm danger" data-act="peranHapus" data-kode="${esc(p.kode)}">Hapus</button>`}</div>
                 </div>`).join('')}</div>
-            <div class="card" style="margin-top:14px"><h3>Matriks hak akses</h3><div class="tbl-wrap"><table>
+            <div class="card mt-lg"><h3>Matriks hak akses</h3><div class="tbl-wrap"><table>
                 <thead><tr><th>Izin</th>${PERAN.map((p) => `<th>${esc(p.nama)}</th>`).join('')}</tr></thead><tbody>
                 ${kel.map((g) => `<tr><td colspan="${PERAN.length + 1}" class="muted"><b>${esc(g)}</b></td></tr>` + KATALOG.filter((k) => k.kelompok === g).map((k) =>
                     `<tr><td>${esc(k.label)}${k.info ? `<div class="small muted">${esc(k.info)}</div>` : ''}</td>${PERAN.map((p) => `<td>${p.izin.includes(k.izin) ? '<span class="badge green">✔</span>' : '<span class="badge">—</span>'}</td>`).join('')}</tr>`).join('')).join('')}
@@ -73,11 +73,11 @@
                     <div class="full"><label class="f" for="prT">Keterangan</label><input id="prT" name="keterangan" value="${esc(v.keterangan || '')}" maxlength="255"></div>
                     <div class="full"><label class="f" for="prD">Pengeluaran yang dicatat peran ini diambil dari dana</label><select id="prD" name="dana_pengeluaran">
                         ${[['umum', 'Umum (tidak dikaitkan ke satu dana)'], ['jimpitan', 'Dana Jimpitan'], ['iuran_wajib', 'Dana Iuran Wajib']].map(([k, l]) => `<option value="${k}" ${(v.dana_pengeluaran || 'umum') === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-                        <p class="small muted" style="margin-top:4px">Berlaku bila peran ini diberi izin mencatat pengeluaran. Peran dengan izin buku kas melihat semua pengeluaran; peran lain hanya yang dari dananya.</p></div>
-                    <div class="full row" style="gap:8px;padding:6px 0"><input type="checkbox" id="prRt" name="batas_rt" ${v.batas_rt ? 'checked' : ''} ${v.kode === 'admin' ? 'disabled' : ''}>
+                        <p class="small muted mt-sm">Berlaku bila peran ini diberi izin mencatat pengeluaran. Peran dengan izin buku kas melihat semua pengeluaran; peran lain hanya yang dari dananya.</p></div>
+                    <div class="full row gap-sm pad-sm"><input type="checkbox" id="prRt" name="batas_rt" ${v.batas_rt ? 'checked' : ''} ${v.kode === 'admin' ? 'disabled' : ''}>
                         <label for="prRt"><b>Dibatasi per RT</b> — akun berperan ini hanya mengakses data warga, iuran, dan pemasukan lainnya di <b>RT pada akunnya</b> (RT wajib diisi di akun).</label></div>
-                    <div class="full">${kel.map((g) => `<div style="margin:8px 0 4px"><b class="small">${esc(g)}</b></div>` + KATALOG.filter((k) => k.kelompok === g).map((k) =>
-                        `<label class="row" style="gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer"><input type="checkbox" name="izin" value="${k.izin}" data-change="peranIzin" ${v.izin.includes(k.izin) || (v.kode === 'admin' && ADMIN_WAJIB.includes(k.izin)) ? 'checked' : ''}${v.kode === 'admin' && ADMIN_WAJIB.includes(k.izin) ? ' disabled' : ''}>
+                    <div class="full">${kel.map((g) => `<div class="izin-kel"><b class="small">${esc(g)}</b></div>` + KATALOG.filter((k) => k.kelompok === g).map((k) =>
+                        `<label class="row izin-row"><input type="checkbox" name="izin" value="${k.izin}" data-change="peranIzin" ${v.izin.includes(k.izin) || (v.kode === 'admin' && ADMIN_WAJIB.includes(k.izin)) ? 'checked' : ''}${v.kode === 'admin' && ADMIN_WAJIB.includes(k.izin) ? ' disabled' : ''}>
                         <span>${esc(k.label)}${k.info ? `<span class="small muted"> — ${esc(k.info)}</span>` : ''}</span></label>`).join('')).join('')}</div>
                 </div>
                 <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Batal</button><button type="submit" class="btn primary">Simpan</button></div>
@@ -117,7 +117,7 @@
         const hariIni = App.today();
         const berlaku = rt.tarif.filter((t) => App.ymd(t.berlaku_mulai) <= hariIni)[0];
         $('#pgBody').innerHTML = `
-            <div class="grid cols-4" style="margin-bottom:14px">
+            <div class="grid cols-4 mb-lg">
                 <div class="stat ${berlaku ? 'good' : 'warn'}"><small>Iuran per periode (berlaku)</small><b>${berlaku ? rp(berlaku.nominal) : 'Belum diatur'}</b></div>
                 <div class="stat ${p.iuran_mulai ? 'good' : 'warn'}"><small>Mulai ditagih</small><b>${p.iuran_mulai ? App.tglId(p.iuran_mulai) : 'Belum diatur'}</b></div>
             </div>
@@ -132,7 +132,7 @@
             <div class="card"><h3>Mulai penagihan</h3>
                 <form data-form="iuranMulai" class="row">
                     <div><label class="f" for="imT">Tagih mulai kumpulan (Selasa Kliwon) pertama pada/setelah tanggal</label><input type="date" id="imT" name="iuran_mulai" value="${esc(p.iuran_mulai || '')}"></div>
-                    <button class="btn" type="submit" style="align-self:flex-end">Simpan</button>
+                    <button class="btn" type="submit" class="form-inline-end">Simpan</button>
                 </form>
                 <p class="small muted">Wajib diisi agar halaman Iuran Wajib aktif. Semua KK aktif wajib membayar; warga yang baru mulai iuran ditagih sejak kumpulan setelah tanggal mulainya.</p>
             </div>
@@ -163,12 +163,12 @@
         const terakhir = ditutup.length ? ditutup[ditutup.length - 1] : null;
         $('#pgBody').innerHTML = `
             <div class="card"><h3>Saldo awal kas (hasil tutup buku tahun sebelumnya)</h3>
-                <p class="small muted" style="margin-bottom:10px">Ini <b>dasar Buku Kas</b>: saldo kas dihitung dari angka ini ditambah semua pemasukan dan dikurangi pengeluaran sejak 1 Januari tahun buku. Karena aplikasi mulai dipakai tahun 2026,
+                <p class="small muted mb-md">Ini <b>dasar Buku Kas</b>: saldo kas dihitung dari angka ini ditambah semua pemasukan dan dikurangi pengeluaran sejak 1 Januari tahun buku. Karena aplikasi mulai dipakai tahun 2026,
                 isi di sini <b>hasil tutup buku 2025</b> (saldo per 31 Desember 2025) <b>terpisah per sumber</b> sebagai saldo awal 2026. Transaksi bertanggal sebelum 1 Januari 2026 tidak dihitung ke kas.
                 Tahun-tahun berikutnya <b>otomatis</b> dari menu <b>Buku Kas → Tutup Buku</b> (dilakukan Bendahara RW setelah 31 Desember): saldo akhir tahun itu menjadi saldo awal tahun berikutnya.</p>
                 <form data-form="saldoAwal"><div class="form-grid">
                     <div><label class="f" for="saT">Tahun buku (mulai 1 Januari; 2026 = hasil tutup buku 2025)</label><input type="number" id="saT" name="tahun" min="2000" max="2100" value="${tahunDefault}" required></div>
-                    <div class="full small muted" style="margin-top:-4px">Saldo awal = saldo per <b>31 Desember <span id="saTh">${tahunDefault - 1}</span></b></div>
+                    <div class="full small muted mt-neg-xs">Saldo awal = saldo per <b>31 Desember <span id="saTh">${tahunDefault - 1}</span></b></div>
                     <div><label class="f" for="saJ">Saldo awal Jimpitan (Rp)</label><input type="number" id="saJ" name="jimpitan" min="0" inputmode="numeric" value="${v.jimpitan ?? 0}" required></div>
                     <div><label class="f" for="saI">Saldo awal Iuran Wajib (Rp)</label><input type="number" id="saI" name="iuran_wajib" min="0" inputmode="numeric" value="${v.iuran_wajib ?? 0}" required></div>
                     <div><label class="f" for="saS">Saldo awal Pemasukan Lainnya (Rp)</label><input type="number" id="saS" name="sewa_aset" min="0" inputmode="numeric" value="${v.sewa_aset ?? 0}" required></div>
@@ -178,7 +178,7 @@
             </div>
             <div class="card"><h3>Tutup buku</h3>
                 <p>Tahun ditutup: <b>${ditutup.length ? ditutup.join(', ') : 'belum ada'}</b>. Tutup buku dilakukan oleh Bendahara RW di menu Buku Kas.</p>
-                ${terakhir && App.has('tutupbuku.buka') ? `<button class="btn danger" data-act="bukaTutupBuku" data-tahun="${terakhir}" style="margin-top:8px">Buka kembali tutup buku ${terakhir}</button>
+                ${terakhir && App.has('tutupbuku.buka') ? `<button class="btn danger" data-act="bukaTutupBuku" data-tahun="${terakhir}" class="mt-sm">Buka kembali tutup buku ${terakhir}</button>
                 <p class="small muted">Hanya tahun terakhir. Saldo awal ${terakhir + 1} hasil tutup buku akan dihapus dan transaksi ${terakhir} dapat dikoreksi lagi.</p>` : ''}
             </div>
             <div class="card"><h3>Riwayat saldo awal</h3><div class="tbl-wrap"><table>
@@ -221,13 +221,13 @@
     function tampilAkun() {
         const pg = App.paginate('akun', akunList);
         $('#pgBody').innerHTML = `
-            <div class="row between" style="margin-bottom:12px">
+            <div class="row between mb-md">
                 <p class="small muted grow">Atur akun dan peran tiap pengguna. Hak akses tiap peran diatur di tab <b>Hak Akses Peran</b>.</p>
                 <button class="btn primary" data-act="akunForm">+ Tambah akun</button>
             </div>
             ${pg.bar}
             <div class="list">${pg.items.map((u) => `
-                <div class="item" style="${u.aktif ? '' : 'opacity:.55'}">
+                <div class="item ${u.aktif ? '' : 'opacity-dim'}">
                     <div class="grow"><div class="name">${esc(u.nama)} <span class="small muted">@${esc(u.username)}</span></div>
                     <div class="meta"><span class="badge blue">${esc(ROLE_LABEL[u.role] || u.role)}</span>${u.rt ? ' RT ' + esc(u.rt) : ''}${u.aktif ? '' : ' <span class="badge red">nonaktif</span>'}</div></div>
                     <button class="btn sm" data-act="akunForm" data-id="${u.id}">Ubah</button>
@@ -280,7 +280,7 @@
         const hariIni = App.today();
         const berlaku = r.tarif.filter((t) => App.ymd(t.berlaku_mulai) <= hariIni).sort((a, b) => App.ymd(b.berlaku_mulai).localeCompare(App.ymd(a.berlaku_mulai)))[0];
         $('#pgBody').innerHTML = `
-            <div class="grid cols-4" style="margin-bottom:14px">
+            <div class="grid cols-4 mb-lg">
                 <div class="stat ${berlaku && berlaku.nominal > 0 ? 'good' : 'warn'}"><small>Tarif harian (berlaku sekarang)</small><b>${berlaku && berlaku.nominal > 0 ? rp(berlaku.nominal) : 'Belum diatur'}</b></div>
             </div>
             <div class="card"><h3>Tambah / ubah tarif harian</h3>
@@ -312,16 +312,16 @@
             <div class="card"><h3>Status perhitungan</h3>
                 <p>Kewajiban harian dihitung mulai <b>${App.tglId(p.mulai_hitung)}</b>. Saldo warga berjalan terus tanpa perlu "tutup tahun": kekurangan otomatis menjadi tunggakan dan saldo lebih otomatis menutup hari berikutnya.
                 Setoran bertanggal <b>sebelum</b> tanggal ini tidak dihitung ke saldo.</p>
-                <form data-form="mulaiHitung" class="row" style="margin-top:10px">
+                <form data-form="mulaiHitung" class="row mt-md">
                     <div><label class="f" for="mhT">Ubah tanggal mulai hitung</label><input type="date" id="mhT" name="mulai_hitung" value="${esc(p.mulai_hitung || '')}" required></div>
-                    <button class="btn" type="submit" style="align-self:flex-end">Simpan</button>
+                    <button class="btn" type="submit" class="form-inline-end">Simpan</button>
                 </form>
             </div>
 
             <div class="card"><h3>Impor tunggakan lama (CSV)</h3>
-                <p class="small muted" style="margin-bottom:10px">Format kolom (baris pertama judul): <code>no,tahun,nominal,keterangan</code> — <b>no</b> = nomor warga di daftar jimpitan. Contoh: <code>12,2025,36500,Tunggakan 2025</code>. Pemisah koma atau titik koma.</p>
+                <p class="small muted mb-md">Format kolom (baris pertama judul): <code>no,tahun,nominal,keterangan</code> — <b>no</b> = nomor warga di daftar jimpitan. Contoh: <code>12,2025,36500,Tunggakan 2025</code>. Pemisah koma atau titik koma.</p>
                 <input type="file" id="csvFile" accept=".csv,text/csv" data-change="csvPilih">
-                <div id="csvOut" style="margin-top:12px"></div>
+                <div id="csvOut" class="mt-md"></div>
             </div>
 
             <div class="card"><h3>Tambah tunggakan lama manual</h3>
@@ -435,7 +435,7 @@
         const pg = App.paginate('log', LOGDATA);
         $('#pgBody').innerHTML = `${pg.bar}<div class="tbl-wrap"><table>
             <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Keterangan</th></tr></thead>
-            <tbody>${pg.items.map((l) => `<tr><td style="white-space:nowrap">${esc(waktuWib(l.waktu))}</td><td>${esc(l.username)}</td><td><span class="badge">${esc(l.aksi)}</span></td><td style="white-space:normal;min-width:260px">${esc(l.deskripsi)}</td></tr>`).join('')}</tbody>
+            <tbody>${pg.items.map((l) => `<tr><td class="nowrap">${esc(waktuWib(l.waktu))}</td><td>${esc(l.username)}</td><td><span class="badge">${esc(l.aksi)}</span></td><td class="wrap-normal min-col-lg">${esc(l.deskripsi)}</td></tr>`).join('')}</tbody>
         </table></div>`;
     }
 

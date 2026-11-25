@@ -76,11 +76,11 @@
             <h3 class="sec-title">Pemasukan per RT</h3>
             ${(() => {
                 const rts = [...new Set([...L.jimpitan_rt.map((x) => x.rt), ...L.iuran_rt.map((x) => x.rt)])].sort();
-                if (!rts.length) return '<div class="card empty" style="margin-bottom:14px">Tidak ada pemasukan pada kumpulan ini.</div>';
+                if (!rts.length) return '<div class="card empty mb-lg">Tidak ada pemasukan pada kumpulan ini.</div>';
                 const nJ = L.jimpitan_rt.reduce((a, x) => a + x.jumlah, 0), nI = L.iuran_rt.reduce((a, x) => a + x.jumlah, 0);
                 const kartuRt = (judul, j, i, nj, ni, cls) => `<div class="stat ${cls || ''}"><small>${judul}</small><b>${rp(j + i)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">Jimpitan ${rp(j)} (${nj} setoran)<br>Iuran ${rp(i)} (${ni} pembayaran)</span></div>`;
-                return `<div class="grid cols-4" style="margin-bottom:14px">${kartuRt('Total semua RT', L.total_jimpitan, L.total_iuran, nJ, nI, 'good')}${rts.map((rt) => {
+                    <span class="small muted stat-sub">Jimpitan ${rp(j)} (${nj} setoran)<br>Iuran ${rp(i)} (${ni} pembayaran)</span></div>`;
+                return `<div class="grid cols-4 mb-lg">${kartuRt('Total semua RT', L.total_jimpitan, L.total_iuran, nJ, nI, 'good')}${rts.map((rt) => {
                     const j = L.jimpitan_rt.find((x) => x.rt === rt) || { total: 0, jumlah: 0 }, i = L.iuran_rt.find((x) => x.rt === rt) || { total: 0, jumlah: 0 };
                     return kartuRt('RT ' + esc(rt), j.total, i.total, j.jumlah, i.jumlah);
                 }).join('')}</div>`;
@@ -94,12 +94,12 @@
                 ${L.pengeluaran.map((x) => `<tr><td>${App.tglId(x.tanggal)}</td><td style="white-space:normal">${esc(x.uraian)}</td><td>${esc(x.kategori)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}${kecil(L.pengeluaran, 4)}
                 </tbody></table></div></div>` : ''}
             ${L.status_warga ? `<h3 class="sec-title">Status iuran warga</h3>
-            <p class="small muted" style="margin-bottom:10px">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Kewajiban dan setoran <b>kumulatif</b> sejak penagihan dimulai sampai cut off. <span class="sel-min">Merah = tunggakan</span> · <span class="sel-plus">hijau = kelebihan (titipan)</span>.</p>
+            <p class="small muted mb-md">${sj ? `Jimpitan per cut off ${App.tglId(p.sampai)}: ${sj.warga_aktif} warga wajib, ${sj.lunas} lunas, ${sj.menunggak} menunggak (total ${rp(sj.total_tunggakan)}). ` : ''}${si ? `Iuran wajib ${rp(si.nominal)} kumpulan ini: ${si.lunas} lunas, ${si.sebagian} sebagian, ${si.belum} belum bayar. ` : ''}Kewajiban dan setoran <b>kumulatif</b> sejak penagihan dimulai sampai cut off. <span class="sel-min">Merah = tunggakan</span> · <span class="sel-plus">hijau = kelebihan (titipan)</span>.</p>
             ${(() => {
                 const sel = (v) => v === 0 ? '<span class="sel-nol">Lunas</span>' : v < 0 ? `<span class="sel-min">−${nf(-v)}</span>` : `<span class="sel-plus">+${nf(v)}</span>`;
                 const grup = new Map();
                 for (const x of L.status_warga) { if (!grup.has(x.rt)) grup.set(x.rt, []); grup.get(x.rt).push(x); }
-                if (!grup.size) return '<div class="card empty" style="margin-bottom:14px">Tidak ada warga wajib.</div>';
+                if (!grup.size) return '<div class="card empty mb-lg">Tidak ada warga wajib.</div>';
                 return [...grup.entries()].map(([rt, list]) => {
                     const tg = list.reduce((a, x) => a + x.tunggakan, 0), kl = list.reduce((a, x) => a + x.kelebihan, 0);
                     const n = list.filter((x) => x.tunggakan > 0).length;
@@ -200,9 +200,9 @@
             perJenis.set(p.kategori, g);
         }
         const jenis = [...perJenis.entries()].sort((a, b) => b[1].n - a[1].n);
-        const kartu = `<div class="rk-baris" style="margin-bottom:14px">
-            <div class="stat rk-c0"><small>Total pengeluaran</small><b style="color:#f43f5e">${rp(total)}</b><span class="small muted" style="display:block;margin-top:4px">${sah.length} pengeluaran${PG.semua ? '' : ' · ' + esc(NAMA_DANA[PG.dana])}</span></div>
-            ${jenis.map(([k, g], i) => `<div class="stat rk-c${(i % 3) + 1}"><small>${esc(k)}</small><b>${rp(g.n)}</b><span class="small muted" style="display:block;margin-top:4px">${g.c} pengeluaran · ${total ? Math.round((g.n / total) * 100) : 0}%</span></div>`).join('')}
+        const kartu = `<div class="rk-baris mb-lg">
+            <div class="stat rk-c0"><small>Total pengeluaran</small><b class="val-out">${rp(total)}</b><span class="small muted stat-sub">${sah.length} pengeluaran${PG.semua ? '' : ' · ' + esc(NAMA_DANA[PG.dana])}</span></div>
+            ${jenis.map(([k, g], i) => `<div class="stat rk-c${(i % 3) + 1}"><small>${esc(k)}</small><b>${rp(g.n)}</b><span class="small muted stat-sub">${g.c} pengeluaran · ${total ? Math.round((g.n / total) * 100) : 0}%</span></div>`).join('')}
         </div>`;
         const pg = App.paginate('pengeluaran', data, { selalu: true });
         // Filter kumpulan RW + kontrol halaman digabung dalam satu baris
@@ -214,13 +214,13 @@
         $('#pKartu').innerHTML = kartu;
         $('#pList').innerHTML = `
             ${data.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Tanggal</th><th>Uraian</th><th>Kategori</th><th>Dana</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
-                ${pg.items.map((p) => `<tr style="${p.status === 'batal' ? 'opacity:.55' : ''}">
-                    <td style="white-space:nowrap">${App.tglId(p.tanggal)}</td>
-                    <td style="white-space:normal;min-width:180px"><b>${esc(p.uraian)}</b>${p.status === 'batal' ? `<div class="small"><span class="badge red">batal: ${esc(p.alasan_batal || '')}</span></div>` : ''}</td>
+                ${pg.items.map((p) => `<tr class="${p.status === 'batal' ? 'opacity-dim' : ''}">
+                    <td class="nowrap">${App.tglId(p.tanggal)}</td>
+                    <td class="wrap-normal min-col"><b>${esc(p.uraian)}</b>${p.status === 'batal' ? `<div class="small"><span class="badge red">batal: ${esc(p.alasan_batal || '')}</span></div>` : ''}</td>
                     <td>${esc(p.kategori)}</td>
                     <td><span class="badge">${esc(DANA_PENDEK[p.sumber] || 'Umum')}</span></td>
                     <td class="r num"><b>${rp(p.nominal)}</b></td>
-                    ${tulis ? `<td class="r" style="white-space:nowrap">${p.boleh_ubah && p.status !== 'batal' ? `<button class="btn sm" data-act="pengeluaranForm" data-id="${esc(p.id)}">Ubah</button> <button class="btn sm danger" data-act="pengeluaranHapus" data-id="${esc(p.id)}">Hapus</button>` : ''}</td>` : ''}</tr>`).join('')}
+                    ${tulis ? `<td class="r nowrap">${p.boleh_ubah && p.status !== 'batal' ? `<button class="btn sm" data-act="pengeluaranForm" data-id="${esc(p.id)}">Ubah</button> <button class="btn sm danger" data-act="pengeluaranHapus" data-id="${esc(p.id)}">Hapus</button>` : ''}</td>` : ''}</tr>`).join('')}
                 </tbody><tfoot><tr><td colspan="4"><b>Total halaman ini</b></td><td class="r num"><b>${rp(pg.items.filter((p) => p.status === 'sah').reduce((a, p) => a + p.nominal, 0))}</b></td>${tulis ? '<td></td>' : ''}</tr></tfoot></table></div></div>`
             : '<div class="card empty">Belum ada pengeluaran.</div>'}`;
     }
@@ -240,7 +240,7 @@
                     <div class="full"><label class="f" for="pgUr">Uraian</label><input id="pgUr" name="uraian" value="${esc(v.uraian)}" required minlength="3" maxlength="255" placeholder="mis. Santunan warga sakit"></div>
                     <div class="full"><label class="f">Diambil dari dana</label>
                         <div class="badge blue" style="padding:8px 12px">${esc(NAMA_DANA[e ? e.sumber : PG.dana] || NAMA_DANA.umum)}</div>
-                        <p class="small muted" style="margin-top:4px">${e ? 'Dana asal tidak berubah saat pengeluaran diubah.' : 'Ditentukan otomatis menurut peran pencatat.'}</p></div>
+                        <p class="small muted mt-sm">${e ? 'Dana asal tidak berubah saat pengeluaran diubah.' : 'Ditentukan otomatis menurut peran pencatat.'}</p></div>
                     <div><label class="f" for="pgNom">Nominal (Rp)</label><input type="number" id="pgNom" name="nominal" value="${esc(v.nominal)}" min="1" required inputmode="numeric"></div>
                     <div class="full"><label class="f" for="pgBukti">No. bukti / nota</label><input id="pgBukti" name="bukti" value="${esc(v.bukti || '')}" maxlength="100"></div>
                 </div>
@@ -262,7 +262,7 @@
         const e = PG.data.find((x) => x.id === el.dataset.id);
         App.dialog(`
             <h3>Hapus pengeluaran</h3>
-            <p class="small muted" style="margin-bottom:12px">${e ? esc(e.uraian) + ' — ' + rp(e.nominal) + ' (' + App.tglId(e.tanggal) + ')' : ''}<br>
+            <p class="small muted mb-md">${e ? esc(e.uraian) + ' — ' + rp(e.nominal) + ' (' + App.tglId(e.tanggal) + ')' : ''}<br>
             Data dihapus permanen dari daftar dan saldo kas dihitung ulang. Isi lengkapnya tetap tersimpan di Log Aktivitas.</p>
             <form data-form="pengeluaranHapus" data-id="${esc(el.dataset.id)}">
                 <label class="f" for="phAlasan">Alasan penghapusan</label>

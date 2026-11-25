@@ -20,7 +20,7 @@
             ${tabsIuran()}
             <div id="iPapan" ${IS.tab === 'rekap' ? 'hidden' : ''}>
             <div id="iRingkas"></div>
-            ${App.rtKunci() || !App.has('iuran.tulis') ? `<p class="small" style="margin-bottom:10px">${App.rtKunci() ? `<b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b> ` : ''}${App.has('iuran.tulis') ? '' : '<b>Anda hanya dapat melihat.</b> Pencatatan iuran wajib dilakukan Pengurus RT.'}</p>` : ''}
+            ${App.rtKunci() || !App.has('iuran.tulis') ? `<p class="small hint-rt">${App.rtKunci() ? `<b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b> ` : ''}${App.has('iuran.tulis') ? '' : '<b>Anda hanya dapat melihat.</b> Pencatatan iuran wajib dilakukan Pengurus RT.'}</p>` : ''}
             <div class="card">
                 <div class="filters">
                     <div class="full-m"><label class="f" for="iPer">Kumpulan RW (tanggal)</label><select id="iPer" data-change="iuranFilter"></select></div>
@@ -69,17 +69,17 @@
         App.pgRedraw.iuran = tampil;
         if (!r.aktif) {
             $('#iRingkas').innerHTML = '';
-            $('#iList').innerHTML = `<div class="card empty">${esc(r.pesan)}${App.can('admin') ? '<br><button class="btn primary" style="margin-top:10px" data-act="go" data-tab="pengaturan">Buka Pengaturan</button>' : ''}</div>`;
+            $('#iList').innerHTML = `<div class="card empty">${esc(r.pesan)}${App.can('admin') ? '<br><button class="btn primary mt-md" data-act="go" data-tab="pengaturan">Buka Pengaturan</button>' : ''}</div>`;
             $('#iPg').innerHTML = ''; $('#iBar').innerHTML = '';
             return;
         }
         const s = r.ringkasan;
-        $('#iRingkas').innerHTML = `<div class="grid cols-4" style="margin-bottom:12px">
+        $('#iRingkas').innerHTML = `<div class="grid cols-4 grid-stats">
             <div class="stat good"><small>Lunas</small><b>${s.lunas}</b></div>
             <div class="stat warn"><small>Sebagian</small><b>${s.sebagian}</b></div>
             <div class="stat bad"><small>Belum bayar</small><b>${s.belum}</b></div>
             <div class="stat"><small>Diterima untuk kumpulan ini</small><b>${rp(s.total_masuk)}</b></div></div>
-            <p class="small muted" style="margin-bottom:12px">Iuran per periode: <b>${rp(r.nominal)}</b> · Total tunggakan (kumpulan sebelumnya yang belum lunas): <b>${rp(s.total_kurang)}</b></p>`;
+            <p class="small muted mb-md">Iuran per periode: <b>${rp(r.nominal)}</b> · Total tunggakan (kumpulan sebelumnya yang belum lunas): <b>${rp(s.total_kurang)}</b></p>`;
         const cari = ($('#iCari').value || '').trim().toLowerCase();
         const rows = r.warga.filter((w) => (!cari || w.nama.toLowerCase().includes(cari)) && (!IS.status || w.status === IS.status));
         const pg = App.paginate('iuran', rows);
@@ -112,7 +112,7 @@
             $('#iList').innerHTML = rows.length ? `<div class="iu-m">
                 ${tulis ? `<label class="iu-all"><input type="checkbox" data-change="iuranCekSemua" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}> Centang semua yang belum setor (${bisaPilih.length})</label>` : ''}
                 ${kartu}
-                <p class="small muted" style="padding:4px 2px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Warna menyala = kumpulan terpilih.</p></div>`
+                <p class="small muted pad-sm">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Warna menyala = kumpulan terpilih.</p></div>`
                 : '<div class="card empty">Tidak ada warga yang cocok.</div>';
             barSimpan();
             return;
@@ -147,7 +147,7 @@
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="iuranCekSemua" aria-label="Centang semua yang belum setor" title="Centang semua yang belum setor" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
             <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Iuran</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
-            <p class="small muted" style="padding:8px 14px 12px">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Iuran” untuk melihat atau membatalkan setoran.${ketK}</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
+            <p class="small muted pad-note">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Iuran” untuk melihat atau membatalkan setoran.${ketK}</p></div>` : '<div class="card empty">Tidak ada warga yang cocok.</div>';
         barSimpan();
     }
 
@@ -161,8 +161,8 @@
         const belum = IS.data.warga.filter((w) => !sudahSetor(w) && w.saran > 0).length;
         bar.innerHTML = `
             ${IS.pgHtml ? `<div class="savebar-pg">${IS.pgHtml}</div>` : ''}
-            <div class="row" style="gap:8px"><span class="badge blue"><b>${n}</b> warga dicentang</span>
-                <span style="font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums">${rp(total)}</span></div>
+            <div class="row gap-sm"><span class="badge blue"><b>${n}</b> warga dicentang</span>
+                <span class="font-total">${rp(total)}</span></div>
             <div class="row">
                 <button class="btn sm" data-act="iuranIsiSemua" ${belum ? '' : 'disabled'}>Centang semua belum setor (${belum})</button>
                 <button class="btn sm ghost" data-act="iuranReset" ${n ? '' : 'disabled'}>Reset</button>
@@ -245,7 +245,7 @@
             ${tulis ? `<td class="r"><button class="btn sm danger" data-act="batalIuran" data-id="${esc(x.id)}" data-nama="${esc(w.nama)}">Batalkan</button></td>` : ''}</tr>`).join('');
         App.dialog(`
             <h3>Setoran iuran — ${esc(w.nama)} (RT ${esc(w.rt)})</h3>
-            <p class="small muted" style="margin-bottom:10px">Total iuran <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
+            <p class="small muted mb-md">Total iuran <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
             <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
             ${baris || `<tr><td colspan="3" class="muted">Belum ada setoran.</td></tr>`}</tbody></table></div>
             <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Tutup</button></div>`);
@@ -333,13 +333,13 @@
                     <div class="grow"><label class="f" for="rkiPer">Kumpulan RW</label><select id="rkiPer" data-change="rekapIuranPeriode">
                         ${r.daftar_periode.map((x) => `<option value="${esc(x.mulai)}" ${x.mulai === p.mulai ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${tgl(x.mulai)}${x.berjalan ? ' (berjalan)' : ''}</option>`).join('')}</select></div>
                 </div>
-                <p class="small muted" style="margin-top:8px">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (kumpulan ke-${p.no}).</p>
+                <p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (kumpulan ke-${p.no}).</p>
             </div>
-            <div class="rk-baris" style="margin:14px 0">
+            <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Total pemasukan iuran</small><b>${rp(t.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${t.menyetor} / ${t.warga} warga menyetor</span></div>
+                    <span class="small muted stat-sub">${t.menyetor} / ${t.warga} warga menyetor</span></div>
                 ${r.rt.map((g, i) => `<div class="stat rk-c${(i % 3) + 1}"><small>RT ${esc(g.rt)}</small><b>${rp(g.total)}</b>
-                    <span class="small muted" style="display:block;margin-top:4px">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
+                    <span class="small muted stat-sub">${g.menyetor} / ${g.warga} warga menyetor</span></div>`).join('')}
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
@@ -351,7 +351,7 @@
                     <ul>${urutkan(list).map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
                     <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}
                 </div>`
-                : '<div class="empty" style="margin-top:10px">Belum ada iuran diterima pada kumpulan ini.</div>'}
+                : '<div class="empty mt-md">Belum ada iuran diterima pada kumpulan ini.</div>'}
             </div>`;
     }
     App.actions.rekapIuranUrut = (el) => { RKI.urut = el.dataset.nilai; gambarRekap(); };
@@ -366,7 +366,7 @@
     App.actions.batalIuran = (el) => {
         App.dialog(`
             <h3>Batalkan pembayaran iuran</h3>
-            <p class="muted small" style="margin-bottom:12px">${esc(el.dataset.nama)} — tidak dihapus, hanya ditandai batal dan tercatat di log. Alokasi ke periode dihitung ulang otomatis.</p>
+            <p class="muted small mb-md">${esc(el.dataset.nama)} — tidak dihapus, hanya ditandai batal dan tercatat di log. Alokasi ke periode dihitung ulang otomatis.</p>
             <form data-form="batalIuran" data-id="${esc(el.dataset.id)}">
                 <label class="f" for="biAlasan">Alasan pembatalan</label>
                 <input id="biAlasan" name="alasan" required minlength="3" maxlength="255" placeholder="mis. salah catat">

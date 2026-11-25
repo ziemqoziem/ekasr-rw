@@ -67,7 +67,7 @@
         const tabelPeriode = `<section class="card bk-periode bk-modern">
             <div class="tbl-wrap"><table class="tbl-kas"><thead><tr><th>Kumpulan</th><th class="r">Saldo periode sebelumnya</th><th class="r h-in">Jimpitan</th><th class="r h-in">Iuran</th><th class="r h-in">Lainnya</th><th class="r h-out">Keluar</th><th class="r h-akhir">Saldo akhir</th></tr></thead>
             <tbody>${periodeRows || '<tr><td colspan="7" class="muted">Belum ada kumpulan.</td></tr>'}</tbody></table></div>
-            <p class="small muted" style="margin-top:10px">Saldo periode sebelumnya + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
+            <p class="small muted mt-md">Saldo periode sebelumnya + jimpitan + iuran + lainnya − keluar = saldo akhir. Dihitung sampai tanggal kumpulan (cut off); kumpulan berjalan dihitung sampai hari ini.</p></section>`;
 
         root.innerHTML = `
             <section class="home-hero">
@@ -84,7 +84,7 @@
 
             ${d.cek_tunggakan_aktif ? `
             <section class="card cek-card">
-                <div class="row between" style="margin-bottom:8px">
+                <div class="row between cek-form-head">
                     <div>
                         <h3>Cek Status Iuran Warga</h3>
                         <p class="small muted">Ketik nama untuk melihat status <b>iuran jimpitan</b> dan <b>iuran wajib (kas RW)</b> Anda: tunggakan, saldo titipan, dan riwayat.</p>
@@ -158,7 +158,7 @@
             const cls = x.status === 'lunas' ? 'cal-hijau' : x.status === 'sebagian' ? 'cal-berjalan' : (x.selesai ? 'cal-merah' : 'cal-berjalan');
             return `<i class="cal-dot ${cls}" title="Kumpulan ${tglP(x.mulai)}: ${x.status === 'lunas' ? 'lunas' : x.status === 'sebagian' ? 'sebagian' : 'belum bayar'}"></i>`;
         }).join('');
-        const hist = kotak ? `<p class="small muted" style="margin-top:6px">Riwayat kumpulan (lama → baru): <span class="mini-hist">${kotak}</span></p>` : '';
+        const hist = kotak ? `<p class="small muted mt-sm">Riwayat kumpulan (lama → baru): <span class="mini-hist">${kotak}</span></p>` : '';
         const akhir = `<p class="small muted">Pembayaran terakhir: ${i.terakhir_bayar ? tglP(i.terakhir_bayar) : 'belum ada'} · iuran ${rp(i.nominal)}/kumpulan</p>`;
         if (i.kurang > 0) {
             return panel(judul, '', '<span class="badge red">▲ Ada tunggakan</span>', `<div class="cek-total bad">${rp(i.kurang)}</div>`,
@@ -169,7 +169,7 @@
                 `<p class="small muted">${i.lebih > 0 ? `Titipan menutup ±${i.periode_lebih} kumpulan berikutnya.` : 'Tidak ada tunggakan iuran wajib.'}</p>${hist}${akhir}`, 'ok');
         }
         return panel(judul, '', `<span class="badge amber">${i.status_berjalan === 'sebagian' ? '◐ Dibayar sebagian' : '○ Belum bayar periode ini'}</span>`,
-            `<div class="cek-total" style="color:var(--amber)">${rp(i.tagihan_berjalan)}</div>`,
+            `<div class="cek-total val-amber">${rp(i.tagihan_berjalan)}</div>`,
             `<p class="small muted">Tagihan kumpulan terakhir (belum jatuh tempo; jatuh tempo pada kumpulan berikutnya). Tidak ada tunggakan dari kumpulan sebelumnya.</p>${hist}${akhir}`, 'ok');
     }
     function kartuHasil(h) {
@@ -204,7 +204,7 @@
                 <div class="rj-sub"><span>Kewajiban <b>${rp(x.kewajiban)}</b></span><span>Setoran <b>${x.setoran ? rp(x.setoran) : '-'}</b></span></div></div>`).join('')}</div>
             <div class="rj-pager"><label class="small muted" for="rjSize">Per halaman</label><select id="rjSize" data-change="riwayatUkuran"><option value="5" ${RJ.size === 5 ? 'selected' : ''}>5</option><option value="10" ${RJ.size === 10 ? 'selected' : ''}>10</option></select>
                 <button type="button" class="btn sm" data-act="riwayatHal" data-d="-1" ${RJ.hal <= 0 ? 'disabled' : ''} aria-label="Sebelumnya">‹</button><span>${RJ.hal + 1} / ${n}</span><button type="button" class="btn sm" data-act="riwayatHal" data-d="1" ${RJ.hal >= n - 1 ? 'disabled' : ''} aria-label="Berikutnya">›</button></div>
-            <p class="small muted" style="margin-top:8px">Saldo akhir bulan bersifat kumulatif: setoran sejak awal dikurangi seluruh kewajiban sampai akhir bulan itu.${r.tunggakan_lama ? ` Termasuk tunggakan lama ${rp(r.tunggakan_lama)}.` : ''}</p>`
+            <p class="small muted mt-sm">Saldo akhir bulan bersifat kumulatif: setoran sejak awal dikurangi seluruh kewajiban sampai akhir bulan itu.${r.tunggakan_lama ? ` Termasuk tunggakan lama ${rp(r.tunggakan_lama)}.` : ''}</p>`
             : '<div class="empty">Belum ada data bulanan.</div>';
     }
     App.actions.riwayatHal = (el) => { if (!RJ) return; RJ.hal += Number(el.dataset.d); isiRiwayat(); };
