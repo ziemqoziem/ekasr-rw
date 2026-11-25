@@ -56,7 +56,8 @@ if (config && mysql) {
   pool = mysql.createPool({
     ...config,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: parseInt(process.env.DB_POOL || '25', 10),
+    queueLimit: 50,
     charset: 'utf8mb4',
     timezone: 'Z',
     dateStrings: ['DATE'],            // DATE tetap berupa 'YYYY-MM-DD' (tanpa geser zona waktu)

@@ -1,5 +1,5 @@
 const { route, fail, oneOf, butuh } = require('./_lib/http');
-const { totalKas, totalRentang, bukuKas, basisAwal } = require('./_lib/kas');
+const { createKasMemo, bukuKas } = require('./_lib/kas');
 const L = require('./_lib/laporan');
 const I = require('./_lib/iuran');
 const P = require('./_lib/periode');
@@ -25,7 +25,8 @@ module.exports = route({
       if (dari > sampai) throw fail(400, 'Tanggal "dari" harus sebelum "sampai".');
       const sumber = q.sumber ? oneOf(String(q.sumber), 'Sumber', SUMBER) : null;
 
-      const awal = await totalKas(P.addDays(dari, -1));
+      const memo = createKasMemo();
+      const awal = await memo.totalKas(P.addDays(dari, -1));
       const baris = await bukuKas(dari, sampai, sumber);
       let saldo = sumber ? 0 : awal.saldo;
       let masuk = 0, keluar = 0;
@@ -39,17 +40,17 @@ module.exports = route({
         const akhir = x.akhir < today ? x.akhir : today;
         let mulai = x.mulai;
         let saldoAwal;
-        const basis = x.no === 1 ? await basisAwal(akhir) : null;
+        const basis = x.no === 1 ? await memo.basisAwal(akhir) : null;
         if (basis) { mulai = basis.mulai; saldoAwal = Object.values(basis.awal).reduce((a, v) => a + v, 0); }
-        else saldoAwal = (await totalKas(P.addDays(x.mulai, -1))).saldo;
-        const t = await totalRentang(mulai, akhir);
-        const sa = await totalKas(akhir);
+        else saldoAwal = (await memo.totalKas(P.addDays(x.mulai, -1))).saldo;
+        const t = await memo.totalRentang(mulai, akhir);
+        const sa = await memo.totalKas(akhir);
         per_periode.push({ no: x.no, tanggal: x.tanggal, mulai, akhir: x.akhir, weton: x.weton, berjalan: x.akhir >= today, saldo_awal: saldoAwal, ...t, saldo_akhir: sa.saldo });
       }
       return {
         dari, sampai, sumber, saldo_awal: sumber ? null : awal.saldo, baris,
         total_masuk: masuk, total_keluar: keluar, saldo_akhir: sumber ? null : saldo,
-        saldo_kas: await totalKas(), per_periode
+        saldo_kas: await memo.totalKas(), per_periode
       };
     }
   }

@@ -70,6 +70,7 @@ module.exports = route({
         'INSERT INTO pengeluaran (id, tanggal, kategori, uraian, nominal, bukti, sumber, petugas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [id, tanggal, kategori, uraian, nominal, bukti, sumber, user.username]
       );
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'PENGELUARAN', `Pengeluaran "${uraian}" (${kategori}) Rp ${nominal} dari ${NAMA_DANA[sumber]} (${id}).`, req);
       return { id, sumber };
     }
@@ -97,6 +98,7 @@ module.exports = route({
         'UPDATE pengeluaran SET tanggal = ?, kategori = ?, uraian = ?, nominal = ?, bukti = ? WHERE id = ?',
         [tanggal, kategori, uraian, nominal, bukti, id]
       );
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'UBAH_PENGELUARAN',
         `Mengubah pengeluaran ${id} (${NAMA_DANA[p.sumber]}): [${String(p.tanggal).slice(0, 10)} | ${p.kategori} | ${p.uraian} | Rp ${p.nominal}] → [${tanggal} | ${kategori} | ${uraian} | Rp ${nominal}].`, req);
       return { id };
@@ -115,6 +117,7 @@ module.exports = route({
       if (!bolehUbah(user, p)) throw fail(403, `Pengeluaran ini berasal dari ${NAMA_DANA[p.sumber]} dan tidak dapat dihapus oleh peran Anda.`);
       await pastikanTerbuka(String(p.tanggal).slice(0, 10));
       await db.query('DELETE FROM pengeluaran WHERE id = ?', [id]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'HAPUS_PENGELUARAN',
         `Menghapus pengeluaran ${id} [${String(p.tanggal).slice(0, 10)} | ${p.kategori} | ${p.uraian} | Rp ${p.nominal} | ${p.sumber} | bukti ${p.bukti || '-'} | dicatat ${p.petugas} | ${p.status}]: ${alasan}`, req);
       return { id };

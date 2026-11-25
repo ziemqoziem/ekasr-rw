@@ -76,6 +76,7 @@ module.exports = route({
       if (s.status === 'batal') throw fail(400, 'Setoran ini sudah dibatalkan.');
       await pastikanTerbuka(s.tanggal);
       await db.query("UPDATE setoran SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BATAL_SETORAN', `Membatalkan setoran ${id} (${s.nama}, Rp ${s.nominal}): ${alasan}`, req);
       return { id };
     }

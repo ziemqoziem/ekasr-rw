@@ -3,6 +3,7 @@ const P = require('./periode');
 const { fail } = require('./http');
 const { newId, batasProgram } = require('./util');
 const { pastikanTerbuka } = require('./tutupbuku');
+const { invalidatePublik } = require('./cache-publik');
 
 /* =====================================================================================
  * IURAN WAJIB — periode = tiap kumpulan RW: SELASA KLIWON (malam Rabu Legi), 35 hari = lcm(7 hari, 5 pasaran).
@@ -142,6 +143,7 @@ async function simpanIuran({ user, warga, tanggal, nominal, metode, catatan, aba
     'INSERT INTO iuran_wajib (id, warga_id, tanggal, nominal, metode, petugas, catatan) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [id, warga.id, tanggal, nom, METODE.includes(metode) ? metode : 'tunai', user.username, catatan || null]
   );
+  invalidatePublik();
   return { id, nominal: nom };
 }
 

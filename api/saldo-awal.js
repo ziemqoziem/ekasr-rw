@@ -43,6 +43,7 @@ module.exports = route({
         );
       }
       await db.query("INSERT IGNORE INTO saldo_awal (tahun, sumber, nominal, asal, keterangan, dibuat_oleh) VALUES (?, 'umum', 0, 'manual', ?, ?)", [tahun, ket, user.username]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'SALDO_AWAL', `Saldo awal kas ${tahun}: jimpitan Rp ${nilai.jimpitan}, iuran wajib Rp ${nilai.iuran_wajib}, pemasukan lainnya Rp ${nilai.sewa_aset}.`, req);
       return { tahun, nominal: nilai };
     }

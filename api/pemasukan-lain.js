@@ -87,6 +87,7 @@ module.exports = route({
         'INSERT INTO sewa_aset (id, tanggal, rt, jenis, uraian, nominal, petugas, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [id, tanggal, rt, jenis, uraian, nominal, user.username, catatan]
       );
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'SEWA_ASET', `Pemasukan lainnya (${jenis}) "${uraian}"${rt ? ' RT ' + rt : ''} Rp ${nominal} tanggal ${tanggal} (${id}).`, req);
       return { id };
     }
@@ -104,6 +105,7 @@ module.exports = route({
       if (terbatasRt(user) && s.rt !== user.rt) throw fail(403, 'Anda hanya dapat mengelola data RT Anda sendiri.');
       await pastikanTerbuka(s.tanggal);
       await db.query("UPDATE sewa_aset SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BATAL_SEWA_ASET', `Membatalkan pemasukan lainnya ${id} ("${s.uraian}", Rp ${s.nominal}): ${alasan}`, req);
       return { id };
     }

@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS setoran (
   INDEX idx_setoran_tanggal (tanggal),
   INDEX idx_setoran_warga (warga_id),
   INDEX idx_setoran_periode (periode_kunci),
+  INDEX idx_setoran_status_tgl (status, tanggal),
+  INDEX idx_setoran_status_warga_tgl (status, warga_id, tanggal),
   CONSTRAINT fk_setoran_warga FOREIGN KEY (warga_id) REFERENCES warga(id),
   CONSTRAINT fk_setoran_tl FOREIGN KEY (tunggakan_id) REFERENCES tunggakan_lama(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -104,7 +106,9 @@ CREATE TABLE IF NOT EXISTS pengeluaran (
   status ENUM('sah','batal') NOT NULL DEFAULT 'sah',
   alasan_batal VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_pengeluaran_tanggal (tanggal)
+  INDEX idx_pengeluaran_tanggal (tanggal),
+  INDEX idx_pengeluaran_status_tgl (status, tanggal),
+  INDEX idx_pengeluaran_status_tgl_sumber (status, tanggal, sumber)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS log_aktivitas (
@@ -143,6 +147,8 @@ CREATE TABLE IF NOT EXISTS iuran_wajib (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_iuran_tanggal (tanggal),
   INDEX idx_iuran_warga (warga_id),
+  INDEX idx_iuran_status_tgl (status, tanggal),
+  INDEX idx_iuran_status_warga_tgl (status, warga_id, tanggal),
   CONSTRAINT fk_iuran_warga FOREIGN KEY (warga_id) REFERENCES warga(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -161,7 +167,8 @@ CREATE TABLE IF NOT EXISTS sewa_aset (
   alasan_batal VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_sewa_tanggal (tanggal),
-  INDEX idx_sewa_rt (rt)
+  INDEX idx_sewa_rt (rt),
+  INDEX idx_sewa_status_tgl (status, tanggal)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ==============================================================================

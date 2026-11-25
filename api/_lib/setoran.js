@@ -2,6 +2,7 @@ const db = require('../db');
 const { fail } = require('./http');
 const { newId, bangunKonteks, hitungSaldo } = require('./util');
 const { pastikanTerbuka } = require('./tutupbuku');
+const { invalidatePublik } = require('./cache-publik');
 
 const METODE = ['tunai', 'transfer'];
 const MAKS_DB = 2000000000; // batas kolom INT; tidak ada batas bisnis
@@ -31,6 +32,7 @@ async function simpanSetoran({ user, warga, tanggal, nominal, metode, catatan, a
      VALUES (?, ?, ?, 'rutin', ?, ?, ?, ?)`,
     [id, warga.id, tanggal, nom, METODE.includes(metode) ? metode : 'tunai', user.username, catatan || null]
   );
+  invalidatePublik();
   return { id, nominal: nom };
 }
 

@@ -2,7 +2,8 @@ const db = require('./db');
 const { route } = require('./_lib/http');
 const { bangunKonteks, hitungSaldo, jatuhTempo } = require('./_lib/util');
 const P = require('./_lib/periode');
-const { totalKas, totalRentang, basisAwal } = require('./_lib/kas');
+const { createKasMemo } = require('./_lib/kas');
+const { getPublik, setPublik } = require('./_lib/cache-publik');
 const L = require('./_lib/laporan');
 const I = require('./_lib/iuran');
 
@@ -29,11 +30,15 @@ module.exports = route({
   GET: {
     auth: 'public',
     fn: async () => {
+      const cached = getPublik();
+      if (cached) return cached;
+
       const today = P.todayWIB();
       const bulan = today.slice(0, 7);
       const [awalBulan] = P.rangeOf('bulanan', bulan);
       const bulanLalu = P.addDays(awalBulan, -1).slice(0, 7);
       const [awalLalu, akhirLalu] = P.rangeOf('bulanan', bulanLalu);
+      const memo = createKasMemo();
 
       const warga = await db.query('SELECT rt, jenis, COUNT(*) AS n FROM warga WHERE aktif = 1 AND (ikut_jimpitan = 1 OR jimpitan_berhenti IS NOT NULL) GROUP BY rt, jenis ORDER BY rt');
       const bayar = await db.query(
@@ -51,7 +56,7 @@ module.exports = route({
         return { rt: k, warga_aktif: n, warga_menyetor_bulan_ini: sudah, persen: n ? Math.round((sudah / n) * 100) : 0, total_bulan_ini: b ? num(b.total) : 0 };
       });
 
-      const kasAll = await totalKas();
+      const kasAll = await memo.totalKas();
       const masuk = kasAll.masuk;
       const keluar = kasAll.keluar;
       const keluarBulan = num((await db.query(
@@ -92,15 +97,12 @@ module.exports = route({
 
       /* ---- KAS lengkap (agregat; tanpa nama) ---- */
       const per = (n) => ({ jimpitan: n.jimpitan, iuran: n.iuran, sewa: n.sewa, masuk: n.masuk, keluar: n.keluar, selisih: n.selisih });
-      const [bi, bl] = [await totalRentang(awalBulan, today), await totalRentang(awalLalu, akhirLalu)];
-      const bulanSql = async (tabel) => {
-        const r = await db.query(
-          `SELECT DATE_FORMAT(tanggal, '%Y-%m') AS b, SUM(nominal) AS total FROM ${tabel} WHERE status = 'sah' AND tanggal BETWEEN ? AND ? GROUP BY b`,
-          [`${b6[0]}-01`, today]
-        );
-        return new Map(r.rows.map((x) => [x.b, num(x.total)]));
-      };
-      const [mJ, mI, mS, mK] = [await bulanSql('setoran'), await bulanSql('iuran_wajib'), await bulanSql('sewa_aset'), await bulanSql('pengeluaran')];
+      const [bi, bl] = await Promise.all([memo.totalRentang(awalBulan, today), memo.totalRentang(awalLalu, akhirLalu)]);
+      const bulanSql = (tabel) => db.query(
+        `SELECT DATE_FORMAT(tanggal, '%Y-%m') AS b, SUM(nominal) AS total FROM ${tabel} WHERE status = 'sah' AND tanggal BETWEEN ? AND ? GROUP BY b`,
+        [`${b6[0]}-01`, today]
+      ).then((r) => new Map(r.rows.map((x) => [x.b, num(x.total)])));
+      const [mJ, mI, mS, mK] = await Promise.all([bulanSql('setoran'), bulanSql('iuran_wajib'), bulanSql('sewa_aset'), bulanSql('pengeluaran')]);
       const trenKas = b6.map((b) => ({ bulan: b, jimpitan: mJ.get(b) || 0, iuran: mI.get(b) || 0, sewa: mS.get(b) || 0, keluar: mK.get(b) || 0 }));
       const periodeKas = [];
       // Sama dengan halaman Laporan: kumpulan K = cut off pada tanggal K; transaksi sejak kumpulan sebelumnya (K-34) s.d. K.
@@ -110,11 +112,11 @@ module.exports = route({
         const sampai = x.akhir < today ? x.akhir : today;
         let dari = x.mulai;
         let awal;
-        const basis = x.no === 1 ? await basisAwal(sampai) : null;
+        const basis = x.no === 1 ? await memo.basisAwal(sampai) : null;
         if (basis) { dari = basis.mulai; awal = Object.values(basis.awal).reduce((a, v) => a + v, 0); }
-        else awal = (await totalKas(P.addDays(x.mulai, -1))).saldo;
-        const t = await totalRentang(dari, sampai);
-        periodeKas.push({ no: x.no, tanggal: x.tanggal, berjalan: x.akhir >= today, saldo_awal: awal, ...per(t), saldo_akhir: (await totalKas(sampai)).saldo });
+        else awal = (await memo.totalKas(P.addDays(x.mulai, -1))).saldo;
+        const t = await memo.totalRentang(dari, sampai);
+        periodeKas.push({ no: x.no, tanggal: x.tanggal, berjalan: x.akhir >= today, saldo_awal: awal, ...per(t), saldo_akhir: (await memo.totalKas(sampai)).saldo });
       }
       const hariIni = (await db.query("SELECT COUNT(DISTINCT warga_id) AS w, COALESCE(SUM(nominal), 0) AS n FROM setoran WHERE status = 'sah' AND tanggal = ?", [today])).rows[0];
       const kas = {
@@ -156,7 +158,7 @@ module.exports = route({
         }
       } catch (_) { /* tabel iuran belum dimigrasi */ }
 
-      return {
+      const payload = {
         tanggal: today,
         kas, iuran, jimpitan_hari_ini: { total: num(hariIni.n), warga: num(hariIni.w) },
         bulan,
@@ -179,6 +181,8 @@ module.exports = route({
         tarif: [{ jenis: 'harian', nominal: ctx.tarifNow }],
         tarif_belum_diatur: ctx.tarifNow > 0 ? [] : ['harian']
       };
+      setPublik(payload);
+      return payload;
     }
   }
 });

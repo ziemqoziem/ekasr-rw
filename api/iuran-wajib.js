@@ -131,6 +131,7 @@ module.exports = route({
       cekRtWarga(user, s.rt);
       await pastikanTerbuka(s.tanggal);
       await db.query("UPDATE iuran_wajib SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BATAL_IURAN_WAJIB', `Membatalkan iuran wajib ${id} (${s.nama}, Rp ${s.nominal}): ${alasan}`, req);
       return { id };
     }

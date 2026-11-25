@@ -125,6 +125,31 @@ if (process.env.DB_SOCKET) { cfg.socketPath = process.env.DB_SOCKET; delete cfg.
     log.push('revisi v5: Pengurus RT + bendahara mendapat dashboard.lihat (halaman awal setelah login)');
   }
 
+  // 2i) Index komposit status+tanggal untuk agregat kas/dashboard/publik
+  const [sudahIdx] = await db.query("SELECT 1 FROM pengaturan WHERE kunci = 'migrasi_idx_status_tgl'");
+  if (!sudahIdx.length) {
+    const idx = [
+      ['setoran', 'idx_setoran_status_tgl', '(status, tanggal)'],
+      ['setoran', 'idx_setoran_status_warga_tgl', '(status, warga_id, tanggal)'],
+      ['iuran_wajib', 'idx_iuran_status_tgl', '(status, tanggal)'],
+      ['iuran_wajib', 'idx_iuran_status_warga_tgl', '(status, warga_id, tanggal)'],
+      ['pengeluaran', 'idx_pengeluaran_status_tgl', '(status, tanggal)'],
+      ['pengeluaran', 'idx_pengeluaran_status_tgl_sumber', '(status, tanggal, sumber)'],
+      ['sewa_aset', 'idx_sewa_status_tgl', '(status, tanggal)']
+    ];
+    for (const [tabel, nama, kol] of idx) {
+      const [ada] = await db.query(
+        'SELECT 1 FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ? LIMIT 1',
+        [DB_NAME, tabel, nama]
+      );
+      if (!ada.length) {
+        await db.query(`ALTER TABLE \`${tabel}\` ADD INDEX \`${nama}\` ${kol}`);
+        log.push(`index ${tabel}.${nama} ditambahkan`);
+      }
+    }
+    await db.query("INSERT INTO pengaturan (kunci, nilai) VALUES ('migrasi_idx_status_tgl', '1')");
+  }
+
   // 2d) Warga: pilihan program iuran (jimpitan / iuran kas); semua warga bawaan wajib keduanya
   const kolW = [['ikut_jimpitan', 'TINYINT(1) NOT NULL DEFAULT 1'], ['jimpitan_berhenti', 'DATE NULL'], ['ikut_iuran', 'TINYINT(1) NOT NULL DEFAULT 1'], ['iuran_berhenti', 'DATE NULL']];
   for (const [nama, def] of kolW) {

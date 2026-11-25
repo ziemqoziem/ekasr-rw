@@ -1,6 +1,6 @@
 const db = require('../db');
 const { fail } = require('./http');
-const { basisAwal, totalKas, totalRentang } = require('./kas');
+const { basisAwal, createKasMemo } = require('./kas');
 const { bangunKonteks, hitungSaldo } = require('./util');
 const I = require('./iuran');
 const P = require('./periode');
@@ -84,9 +84,10 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
       "SELECT tanggal, kategori, uraian, nominal FROM pengeluaran WHERE status = 'sah' AND tanggal BETWEEN ? AND ? ORDER BY tanggal, created_at", [dari, sampai]);
     out.sewa = sewa.rows.map((r) => ({ tanggal: d10(r.tanggal), rt: r.rt, uraian: r.uraian, nominal: num(r.nominal) }));
     out.pengeluaran = kel.rows.map((r) => ({ tanggal: d10(r.tanggal), kategori: r.kategori, uraian: r.uraian, nominal: num(r.nominal) }));
-    const t = await totalRentang(dari, sampai);
-    const awalK = basis ? basis.awal : await (async () => { const x = await totalKas(P.addDays(p.mulai, -1)); return { jimpitan: x.jimpitan, iuran_wajib: x.iuran, sewa_aset: x.sewa, umum: x.umum }; })();
-    const akhir = await totalKas(sampai);
+    const memo = createKasMemo();
+    const t = await memo.totalRentang(dari, sampai);
+    const awalK = basis ? basis.awal : await (async () => { const x = await memo.totalKas(P.addDays(p.mulai, -1)); return { jimpitan: x.jimpitan, iuran_wajib: x.iuran, sewa_aset: x.sewa, umum: x.umum }; })();
+    const akhir = await memo.totalKas(sampai);
     const ks = await db.query("SELECT sumber, COALESCE(SUM(nominal), 0) AS n FROM pengeluaran WHERE status = 'sah' AND tanggal BETWEEN ? AND ? GROUP BY sumber", [dari, sampai]);
     const kelS = { jimpitan: 0, iuran_wajib: 0, sewa_aset: 0, umum: 0 };
     for (const x of ks.rows) kelS[x.sumber] = num(x.n);

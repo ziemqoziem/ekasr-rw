@@ -55,6 +55,7 @@ module.exports = route({
         );
       }
       await db.query('INSERT INTO tutup_buku (tahun, ditutup_oleh, catatan) VALUES (?, ?, ?)', [tahun, user.username, catatan]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'TUTUP_BUKU', `Tutup buku ${tahun}: saldo akhir Rp ${akhir.saldo} (jimpitan ${akhir.jimpitan}, iuran ${akhir.iuran}, sewa ${akhir.sewa}, umum ${akhir.umum}).`, req);
       return { tahun, saldo_akhir: akhir.saldo, saldo_awal_berikut: nilai };
     }
@@ -69,6 +70,7 @@ module.exports = route({
       if (!ditutup.length || ditutup[ditutup.length - 1] !== tahun) throw fail(400, 'Hanya tutup buku tahun terakhir yang dapat dibuka kembali.');
       await db.query('DELETE FROM tutup_buku WHERE tahun = ?', [tahun]);
       await db.query("DELETE FROM saldo_awal WHERE tahun = ? AND asal = 'tutup_buku'", [tahun + 1]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BUKA_TUTUP_BUKU', `Membuka kembali tutup buku ${tahun}; saldo awal ${tahun + 1} hasil tutup buku dihapus.`, req);
       return { tahun };
     }
