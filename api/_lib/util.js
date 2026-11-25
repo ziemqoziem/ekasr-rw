@@ -134,27 +134,54 @@ function hitungSaldo(wargaList, ctx) {
   return out;
 }
 
-// Total setoran sah per warga yang dihitung: sejak mulai hitung, ditambah seluruh cicilan tunggakan lama (warisan model lama)
+// Total setoran sah per warga: cicilan tunggakan lama (semua tanggal) + setoran rutin sejak mulai hitung.
+// Dipisah agar index (status, …) terpakai; OR tunggal sulit dioptimalkan optimizer.
 async function loadBayarMap(mulaiHitung) {
-  const r = await db.query(
-    `SELECT warga_id, SUM(nominal) AS n FROM setoran
-     WHERE status = 'sah' AND (tipe = 'tunggakan_lama' OR tanggal >= ?) GROUP BY warga_id`,
-    [mulaiHitung]
-  );
-  return new Map(r.rows.map((x) => [x.warga_id, Number(x.n)]));
+  const [lama, rutin] = await Promise.all([
+    db.query(
+      "SELECT warga_id, SUM(nominal) AS n FROM setoran WHERE status = 'sah' AND tipe = 'tunggakan_lama' GROUP BY warga_id"
+    ),
+    db.query(
+      "SELECT warga_id, SUM(nominal) AS n FROM setoran WHERE status = 'sah' AND tipe = 'rutin' AND tanggal >= ? GROUP BY warga_id",
+      [mulaiHitung]
+    )
+  ]);
+  const m = new Map();
+  for (const x of lama.rows) m.set(x.warga_id, Number(x.n));
+  for (const x of rutin.rows) m.set(x.warga_id, (m.get(x.warga_id) || 0) + Number(x.n));
+  return m;
 }
 async function loadLamaMap() {
   const r = await db.query("SELECT warga_id, SUM(nominal) AS n FROM tunggakan_lama WHERE status = 'aktif' GROUP BY warga_id");
   return new Map(r.rows.map((x) => [x.warga_id, Number(x.n)]));
 }
 
-// Konteks hitung siap pakai (tarif harian, mulai hitung, peta bayar & lama)
+let ctxCache = null;
+let ctxCacheAt = 0;
+const CTX_TTL_MS = Number(process.env.KONTEKS_CACHE_TTL_MS || 20000);
+
+function invalidateKonteks() {
+  ctxCache = null;
+  ctxCacheAt = 0;
+}
+
+// Konteks hitung siap pakai (tarif harian, mulai hitung, peta bayar & lama) — cache singkat per proses
 async function bangunKonteks() {
+  if (ctxCache && Date.now() - ctxCacheAt < CTX_TTL_MS) return ctxCache;
   const today = P.todayWIB();
   const pengaturan = await getPengaturan();
   const mulaiHitung = pengaturan.mulai_hitung || today;
   const tarifBy = await loadTarif();
-  return { today, mulaiHitung, pengaturan, tarif: tarifBy.harian, tarifNow: tarifPada(tarifBy, 'harian', today), bayar: await loadBayarMap(mulaiHitung), lama: await loadLamaMap() };
+  const [bayar, lama] = await Promise.all([loadBayarMap(mulaiHitung), loadLamaMap()]);
+  ctxCache = {
+    today, mulaiHitung, pengaturan, tarif: tarifBy.harian,
+    tarifNow: tarifPada(tarifBy, 'harian', today), bayar, lama
+  };
+  ctxCacheAt = Date.now();
+  return ctxCache;
 }
 
-module.exports = { batasProgram, getPengaturan, catat, loadTarif, tarifPada, newId, jatuhTempo, kewajiban, hitungSaldo, bangunKonteks };
+module.exports = {
+  batasProgram, getPengaturan, catat, loadTarif, tarifPada, newId, jatuhTempo, kewajiban,
+  hitungSaldo, bangunKonteks, invalidateKonteks
+};

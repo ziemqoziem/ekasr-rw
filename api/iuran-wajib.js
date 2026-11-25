@@ -64,9 +64,23 @@ module.exports = route({
         enam.unshift({ mulai: p.mulai, akhir: p.akhir });
         if (!awalTagih && enam.length >= 6) break;
       }
-      const semuaSetor = await db.query("SELECT warga_id, id, tanggal, nominal FROM iuran_wajib WHERE status = 'sah' ORDER BY tanggal, created_at");
+      // Batasi ke warga di papan + sejak awal penagihan (hindari full-table scan)
       const sm = new Map();
-      for (const x of semuaSetor.rows) { if (!sm.has(x.warga_id)) sm.set(x.warga_id, []); sm.get(x.warga_id).push({ id: x.id, tanggal: String(x.tanggal).slice(0, 10), nominal: x.nominal }); }
+      const idWarga = wr.rows.map((w) => w.id);
+      if (idWarga.length) {
+        const tglMin = awalTagih || ctx.iuranMulai || '2020-01-01';
+        const ph = idWarga.map(() => '?').join(',');
+        const semuaSetor = await db.query(
+          `SELECT warga_id, id, tanggal, nominal FROM iuran_wajib
+           WHERE status = 'sah' AND tanggal >= ? AND warga_id IN (${ph})
+           ORDER BY tanggal, created_at`,
+          [tglMin, ...idWarga]
+        );
+        for (const x of semuaSetor.rows) {
+          if (!sm.has(x.warga_id)) sm.set(x.warga_id, []);
+          sm.get(x.warga_id).push({ id: x.id, tanggal: String(x.tanggal).slice(0, 10), nominal: x.nominal });
+        }
+      }
 
       const cnt = { lunas: 0, sebagian: 0, belum: 0, luar: 0 };
       let totalKurang = 0, masukPeriode = 0;

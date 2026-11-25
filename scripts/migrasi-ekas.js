@@ -150,6 +150,28 @@ if (process.env.DB_SOCKET) { cfg.socketPath = process.env.DB_SOCKET; delete cfg.
     await db.query("INSERT INTO pengaturan (kunci, nilai) VALUES ('migrasi_idx_status_tgl', '1')");
   }
 
+  // 2j) Index sekunder: setoran terbaru dashboard, filter warga aktif+RT, tipe setoran, tunggakan lama
+  const [sudahIdx2] = await db.query("SELECT 1 FROM pengaturan WHERE kunci = 'migrasi_idx_v2'");
+  if (!sudahIdx2.length) {
+    const idx2 = [
+      ['setoran', 'idx_setoran_status_created', '(status, created_at)'],
+      ['setoran', 'idx_setoran_status_tipe_tgl', '(status, tipe, tanggal)'],
+      ['warga', 'idx_warga_aktif_rt', '(aktif, rt)'],
+      ['tunggakan_lama', 'idx_tl_status_warga', '(status, warga_id)']
+    ];
+    for (const [tabel, nama, kol] of idx2) {
+      const [ada] = await db.query(
+        'SELECT 1 FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ? LIMIT 1',
+        [DB_NAME, tabel, nama]
+      );
+      if (!ada.length) {
+        await db.query(`ALTER TABLE \`${tabel}\` ADD INDEX \`${nama}\` ${kol}`);
+        log.push(`index ${tabel}.${nama} ditambahkan`);
+      }
+    }
+    await db.query("INSERT INTO pengaturan (kunci, nilai) VALUES ('migrasi_idx_v2', '1')");
+  }
+
   // 2d) Warga: pilihan program iuran (jimpitan / iuran kas); semua warga bawaan wajib keduanya
   const kolW = [['ikut_jimpitan', 'TINYINT(1) NOT NULL DEFAULT 1'], ['jimpitan_berhenti', 'DATE NULL'], ['ikut_iuran', 'TINYINT(1) NOT NULL DEFAULT 1'], ['iuran_berhenti', 'DATE NULL']];
   for (const [nama, def] of kolW) {

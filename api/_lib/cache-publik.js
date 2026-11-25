@@ -19,6 +19,8 @@ function setPublik(payload) {
 function invalidatePublik() {
   data = null;
   at = 0;
+  try { require('./util').invalidateKonteks(); } catch (_) { /* ignore */ }
+  try { require('./iuran').invalidateKonteksIuran(); } catch (_) { /* ignore */ }
 }
 
 module.exports = { getPublik, setPublik, invalidatePublik, TTL_MS };

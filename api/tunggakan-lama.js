@@ -43,6 +43,7 @@ module.exports = route({
             else throw e;
           }
         }
+        require('./_lib/cache-publik').invalidatePublik();
         await catat(user, 'IMPOR_TUNGGAKAN', `Impor tunggakan lama: ${ok.length} berhasil, ${gagal.length} gagal.`, req);
         return { berhasil: ok.length, gagal };
       }
@@ -58,6 +59,7 @@ module.exports = route({
          VALUES (?, ?, ?, ?, 'manual', ?)`,
         [wid, tahun, nominal, ket, user.username]
       );
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'TUNGGAKAN_LAMA', `Menambah tunggakan lama ${w.nama} tahun ${tahun} Rp ${nominal}.`, req);
       return { id: r.insertId };
     }
@@ -73,6 +75,7 @@ module.exports = route({
       )).rows[0];
       if (!t) throw fail(404, 'Tunggakan lama tidak ditemukan.');
       await db.query("UPDATE tunggakan_lama SET status = 'batal' WHERE id = ?", [id]);
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BATAL_TUNGGAKAN_LAMA', `Membatalkan tunggakan lama #${id} (${t.nama}, Rp ${t.nominal}).`, req);
       return { id };
     }

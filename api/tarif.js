@@ -23,6 +23,7 @@ module.exports = route({
         "INSERT INTO tarif (jenis, nominal, berlaku_mulai) VALUES ('harian', ?, ?) ON DUPLICATE KEY UPDATE nominal = VALUES(nominal)",
         [nominal, mulai]
       );
+      require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'TARIF', `Tarif harian Rp ${nominal} berlaku mulai ${mulai}.`, req);
       return { tarif: (await db.query(SQL_LIST)).rows };
     }

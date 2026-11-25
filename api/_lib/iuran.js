@@ -52,23 +52,44 @@ async function loadTarifIuran() {
 // Nominal iuran yang berlaku pada tanggal; periode sebelum tarif pertama (mis. kumpulan pertama yang mulai sehari sebelum tanggal berlaku tarif) memakai tarif pertama
 const nominalPada = (tarif, tgl) => tarif.reduce((n, t) => (t.mulai <= tgl ? t.nominal : n), tarif.length ? tarif[0].nominal : 0);
 
-async function loadBayarIuran() {
+async function loadBayarIuran(iuranMulai) {
+  // Batasi ke sejak awal periode penagihan pertama (bukan full-table) agar index status+tanggal terpakai
+  if (iuranMulai) {
+    const sejak = periodePertama(iuranMulai).mulai;
+    const r = await db.query(
+      "SELECT warga_id, SUM(nominal) AS n FROM iuran_wajib WHERE status = 'sah' AND tanggal >= ? GROUP BY warga_id",
+      [sejak]
+    );
+    return new Map(r.rows.map((x) => [x.warga_id, Number(x.n)]));
+  }
   const r = await db.query("SELECT warga_id, SUM(nominal) AS n FROM iuran_wajib WHERE status = 'sah' GROUP BY warga_id");
   return new Map(r.rows.map((x) => [x.warga_id, Number(x.n)]));
 }
 
+let ctxIuranCache = null;
+let ctxIuranAt = 0;
+const CTX_IURAN_TTL_MS = Number(process.env.KONTEKS_CACHE_TTL_MS || 20000);
+
+function invalidateKonteksIuran() {
+  ctxIuranCache = null;
+  ctxIuranAt = 0;
+}
+
 // Konteks hitung: aktif bila tanggal mulai penagihan & tarif sudah diisi admin
 async function bangunKonteksIuran() {
+  if (ctxIuranCache && Date.now() - ctxIuranAt < CTX_IURAN_TTL_MS) return ctxIuranCache;
   const today = P.todayWIB();
   const ps = await db.query("SELECT nilai FROM pengaturan WHERE kunci = 'iuran_mulai'");
   const iuranMulai = ps.rows[0] && ps.rows[0].nilai ? String(ps.rows[0].nilai).slice(0, 10) : null;
   const tarif = await loadTarifIuran();
   const nominalNow = nominalPada(tarif, today);
-  return {
+  ctxIuranCache = {
     today, iuranMulai, tarif, nominalNow,
     aktif: !!iuranMulai && nominalNow > 0,
-    bayar: await loadBayarIuran()
+    bayar: await loadBayarIuran(iuranMulai)
   };
+  ctxIuranAt = Date.now();
+  return ctxIuranCache;
 }
 
 /**
@@ -149,5 +170,5 @@ async function simpanIuran({ user, warga, tanggal, nominal, metode, catatan, aba
 
 module.exports = {
   METODE, simpanIuran, SIKLUS, pasaran, namaHari, weton, periodeDari, periodeBerikut, periodeSebelum, periodePertama, periodeTerakhir,
-  nominalPada, loadTarifIuran, bangunKonteksIuran, hitungIuran
+  nominalPada, loadTarifIuran, bangunKonteksIuran, hitungIuran, invalidateKonteksIuran
 };

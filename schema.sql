@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS warga (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_warga_rt (rt),
   INDEX idx_warga_jenis (jenis),
-  INDEX idx_warga_aktif (aktif)
+  INDEX idx_warga_aktif (aktif),
+  INDEX idx_warga_aktif_rt (aktif, rt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS tarif (
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS tunggakan_lama (
   dibuat_oleh VARCHAR(50) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_tl_warga (warga_id),
+  INDEX idx_tl_status_warga (status, warga_id),
   CONSTRAINT fk_tl_warga FOREIGN KEY (warga_id) REFERENCES warga(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -90,6 +92,8 @@ CREATE TABLE IF NOT EXISTS setoran (
   INDEX idx_setoran_periode (periode_kunci),
   INDEX idx_setoran_status_tgl (status, tanggal),
   INDEX idx_setoran_status_warga_tgl (status, warga_id, tanggal),
+  INDEX idx_setoran_status_created (status, created_at),
+  INDEX idx_setoran_status_tipe_tgl (status, tipe, tanggal),
   CONSTRAINT fk_setoran_warga FOREIGN KEY (warga_id) REFERENCES warga(id),
   CONSTRAINT fk_setoran_tl FOREIGN KEY (tunggakan_id) REFERENCES tunggakan_lama(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
