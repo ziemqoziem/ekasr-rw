@@ -2621,3 +2621,16 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 /* Pager mini di dalam dialog riwayat */
 .rj-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); }
 .rj-pager .btn { min-width: 36px; }
+
+/* Riwayat jimpitan per bulan (dialog publik): daftar bertumpuk, tanpa scroll horizontal */
+dialog:has(.rw-dlg) { overflow-x: hidden; }
+.rw-dlg { min-width: 0; max-width: 100%; }
+.rj-list { display: flex; flex-direction: column; gap: 8px; }
+.rj-row { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-2); }
+.rj-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.rj-saldo { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+.rj-saldo b { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.rj-sub { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--border); font-size: 0.78rem; color: var(--text-muted); }
+.rj-sub b { color: var(--text); font-variant-numeric: tabular-nums; }
+.rj-pager select { min-height: 32px; padding: 2px 8px; width: auto; }
+.rj-pager { flex-wrap: wrap; }

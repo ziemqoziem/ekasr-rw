@@ -189,39 +189,29 @@
         </article>`;
     }
 
-    // Riwayat setor jimpitan publik: satu dialog — status, riwayat bulanan (saldo akhir bulan) dan riwayat setoran, masing-masing berhalaman
+    // Riwayat setor jimpitan publik: satu dialog, riwayat per bulan (semua pola setor), berhalaman 5/10, tanpa scroll horizontal
     const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const HAL = 6;
     let RJ = null;
-    const pagerJ = (t, total, hal) => {
-        const n = Math.max(1, Math.ceil(total / HAL));
-        if (n <= 1) return '';
-        return `<div class="rj-pager"><button type="button" class="btn sm" data-act="riwayatHal" data-t="${t}" data-d="-1" ${hal <= 0 ? 'disabled' : ''}>‹</button><span>Halaman ${hal + 1} / ${n}</span><button type="button" class="btn sm" data-act="riwayatHal" data-t="${t}" data-d="1" ${hal >= n - 1 ? 'disabled' : ''}>›</button></div>`;
-    };
     function isiRiwayat() {
         const r = RJ.r;
+        const n = Math.max(1, Math.ceil(r.bulanan.length / RJ.size));
+        RJ.hal = Math.max(0, Math.min(n - 1, RJ.hal));
         const lencana = { kurang: '<span class="badge red">kurang</span>', titipan: '<span class="badge green">titipan</span>', lunas: '<span class="badge green">lunas</span>' };
-        const b = r.bulanan.slice(RJ.pb * HAL, RJ.pb * HAL + HAL);
-        $('#rjB').innerHTML = r.bulanan.length ? `<div class="tbl-wrap"><table><thead><tr><th>Bulan</th><th class="r">Kewajiban</th><th class="r">Setoran</th><th class="r">Saldo akhir bulan</th><th>Status</th></tr></thead><tbody>
-            ${b.map((x) => `<tr><td style="white-space:nowrap"><b>${BLN[Number(x.bulan.slice(5, 7)) - 1]} ${x.bulan.slice(0, 4)}</b><div class="small muted">${x.berjalan ? 'berjalan, s.d. ' : 'per '}${tglP(x.tanggal)}</div></td>
-                <td class="r num">${rp(x.kewajiban)}</td><td class="r num">${x.setoran ? rp(x.setoran) : '-'}</td>
-                <td class="r num"><b style="color:${x.saldo < 0 ? '#f43f5e' : '#10b981'}">${x.saldo < 0 ? '− ' + rp(-x.saldo) : rp(x.saldo)}</b></td><td>${lencana[x.status]}</td></tr>`).join('')}
-            </tbody></table></div>${pagerJ('b', r.bulanan.length, RJ.pb)}` : '<div class="empty">Belum ada data bulanan.</div>';
-        const t = r.transaksi.slice(RJ.pt * HAL, RJ.pt * HAL + HAL);
-        $('#rjT').innerHTML = r.transaksi.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
-            ${t.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div>${pagerJ('t', r.transaksi.length, RJ.pt)}`
-            : '<div class="empty">Belum ada setoran.</div>';
+        const b = r.bulanan.slice(RJ.hal * RJ.size, RJ.hal * RJ.size + RJ.size);
+        $('#rjB').innerHTML = r.bulanan.length ? `<div class="rj-list">${b.map((x) => `<div class="rj-row">
+                <div class="rj-top"><div><b>${BLN[Number(x.bulan.slice(5, 7)) - 1]} ${x.bulan.slice(0, 4)}</b><div class="small muted">${x.berjalan ? 'berjalan, s.d. ' : 'per '}${tglP(x.tanggal)}</div></div>
+                    <div class="rj-saldo"><b style="color:${x.saldo < 0 ? '#f43f5e' : '#10b981'}">${x.saldo < 0 ? '− ' + rp(-x.saldo) : rp(x.saldo)}</b>${lencana[x.status]}</div></div>
+                <div class="rj-sub"><span>Kewajiban <b>${rp(x.kewajiban)}</b></span><span>Setoran <b>${x.setoran ? rp(x.setoran) : '-'}</b></span></div></div>`).join('')}</div>
+            <div class="rj-pager"><label class="small muted" for="rjSize">Per halaman</label><select id="rjSize" data-change="riwayatUkuran"><option value="5" ${RJ.size === 5 ? 'selected' : ''}>5</option><option value="10" ${RJ.size === 10 ? 'selected' : ''}>10</option></select>
+                <button type="button" class="btn sm" data-act="riwayatHal" data-d="-1" ${RJ.hal <= 0 ? 'disabled' : ''} aria-label="Sebelumnya">‹</button><span>${RJ.hal + 1} / ${n}</span><button type="button" class="btn sm" data-act="riwayatHal" data-d="1" ${RJ.hal >= n - 1 ? 'disabled' : ''} aria-label="Berikutnya">›</button></div>
+            <p class="small muted" style="margin-top:8px">Saldo akhir bulan bersifat kumulatif: setoran sejak awal dikurangi seluruh kewajiban sampai akhir bulan itu.${r.tunggakan_lama ? ` Termasuk tunggakan lama ${rp(r.tunggakan_lama)}.` : ''}</p>`
+            : '<div class="empty">Belum ada data bulanan.</div>';
     }
-    App.actions.riwayatHal = (el) => {
-        if (!RJ) return;
-        const k = el.dataset.t === 'b' ? 'pb' : 'pt';
-        const total = el.dataset.t === 'b' ? RJ.r.bulanan.length : RJ.r.transaksi.length;
-        RJ[k] = Math.max(0, Math.min(Math.ceil(total / HAL) - 1, RJ[k] + Number(el.dataset.d)));
-        isiRiwayat();
-    };
+    App.actions.riwayatHal = (el) => { if (!RJ) return; RJ.hal += Number(el.dataset.d); isiRiwayat(); };
+    App.changes.riwayatUkuran = (el) => { if (!RJ) return; RJ.size = Number(el.value) === 10 ? 10 : 5; RJ.hal = 0; isiRiwayat(); };
     App.actions.riwayatPublik = async (el) => {
         const r = await App.api('/api/riwayat-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
-        RJ = { r, pb: 0, pt: 0 };
+        RJ = { r, hal: 0, size: RJ ? RJ.size : 5 };
         const kurang = Math.max(0, -r.saldo), lebih = Math.max(0, r.saldo);
         const status = kurang > 0
             ? `<div class="rw-status bad"><span class="rw-ic">!</span><div><small>Kekurangan</small><b>${rp(kurang)}</b><em>≈ ${r.tarif_harian > 0 ? Math.ceil(kurang / r.tarif_harian) : 0} hari · dihitung sejak ${tglP(r.mulai_hitung)}</em></div></div>`
@@ -229,12 +219,9 @@
         App.dialog(`
             <div class="rw-dlg">
                 <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
-                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · riwayat setor jimpitan (${esc(r.warga.jenis)})</div></div></div>
+                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · riwayat setor jimpitan per bulan</div></div></div>
                 ${status}
-                <h4 class="rw-sub">Riwayat bulanan <small>saldo kumulatif akhir bulan</small></h4>
                 <div id="rjB"></div>
-                <h4 class="rw-sub">Riwayat setoran <small>${r.transaksi.length} terakhir</small></h4>
-                <div id="rjT"></div>
                 <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>
             </div>`);
         isiRiwayat();
