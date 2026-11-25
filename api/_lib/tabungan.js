@@ -31,13 +31,19 @@ const siapTabel = () => siap || (siap = (async () => {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   const k = await db.query("SELECT 1 AS ada FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'warga' AND COLUMN_NAME = 'ikut_tabungan'");
   if (!k.rows.length) await db.query('ALTER TABLE warga ADD COLUMN ikut_tabungan TINYINT(1) NOT NULL DEFAULT 0');
-  // Hak akses bawaan (sekali saja, saat izin belum pernah ada): admin/bendahara RW melihat, Pengurus RT mencatat
+  // Hak akses bawaan (sekali saja, saat izin belum pernah ada): admin & bendahara RW hanya melihat
   const ada = await db.query("SELECT 1 AS ada FROM peran_izin WHERE izin LIKE 'tabungan.%' LIMIT 1");
   if (!ada.rows.length) {
-    const beri = [['admin', 'tabungan.lihat'], ['bendahara_rw', 'tabungan.lihat'], ['pengurus_rt', 'tabungan.lihat'], ['pengurus_rt', 'tabungan.tulis']];
+    const beri = [['admin', 'tabungan.lihat'], ['bendahara_rw', 'tabungan.lihat'], ['pengurus_rt', 'tabungan.lihat']];
     for (const [p, i] of beri) {
       await db.query('INSERT IGNORE INTO peran_izin (peran, izin) SELECT ?, ? FROM peran WHERE kode = ?', [p, i, p]);
     }
+  }
+  // Peran khusus "Pengurus Tabungan" (mencatat tabungan): dibuat sekali bila belum ada
+  const ada2 = await db.query("SELECT (SELECT COUNT(*) FROM peran) AS n, (SELECT COUNT(*) FROM peran WHERE kode = 'pengurus_tabungan') AS ada");
+  if (Number(ada2.rows[0].n) > 0 && !Number(ada2.rows[0].ada)) {
+    await db.query("INSERT INTO peran (kode, nama, keterangan, sistem, batas_rt, dana_pengeluaran) VALUES ('pengurus_tabungan', 'Pengurus Tabungan', 'Mencatat tabungan warga (setor, tarik, batalkan) untuk semua RT; hanya menu Tabungan', 1, 0, 'umum')");
+    for (const i of ['tabungan.lihat', 'tabungan.tulis']) await db.query("INSERT IGNORE INTO peran_izin (peran, izin) VALUES ('pengurus_tabungan', ?)", [i]);
   }
 })().catch((e) => { siap = null; throw e; }));
 

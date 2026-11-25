@@ -58,9 +58,13 @@ const BAWAAN = {
     nama: 'Bendahara Jimpitan', keterangan: 'Mencatat jimpitan (semua RT) dan pengeluaran dari dana jimpitan',
     batas_rt: 0, dana_pengeluaran: 'jimpitan', izin: ['jimpitan.lihat', 'jimpitan.tulis', 'pengeluaran.lihat', 'pengeluaran.tulis', 'laporan.lihat', 'dashboard.lihat']
   },
+  pengurus_tabungan: {
+    nama: 'Pengurus Tabungan', keterangan: 'Mencatat tabungan warga (setor, tarik, batalkan) untuk semua RT; hanya menu Tabungan',
+    batas_rt: 0, izin: ['tabungan.lihat', 'tabungan.tulis']
+  },
   pengurus_rt: {
     nama: 'Pengurus RT', keterangan: 'Mencatat iuran wajib & melihat warga di RT-nya saja; melihat dashboard RT',
-    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'tabungan.lihat', 'tabungan.tulis', 'warga.lihat', 'dashboard.lihat']
+    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'tabungan.lihat', 'warga.lihat', 'dashboard.lihat']
   }
 };
 const PERAN_SISTEM = Object.keys(BAWAAN);

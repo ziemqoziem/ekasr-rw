@@ -38,18 +38,16 @@
     App.today = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
     App.ymd = (v) => String(v || '').slice(0, 10);
     App.BULAN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    App.BULAN_PENDEK = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    // Format tampilan seragam: dd-mm-yyyy
     App.tglId = (s) => {
         const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
-        return m ? `${m[3]}/${m[2]}/${m[1]}` : '-';
+        return m ? `${m[3]}-${m[2]}-${m[1]}` : '-';
     };
-    // Tanggal panjang: 13-Januari-2026
-    App.tglPanjang = (s) => {
-        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
-        return m ? `${m[3]}-${App.BULAN_ID[Number(m[2]) - 1]}-${m[1]}` : '-';
-    };
-    // Label filter kumpulan seragam: K1 - 13-Januari-2026
+    App.tglPanjang = App.tglId;
+    // Label filter kumpulan: K1 - 13-01-2026
     App.labelKumpulan = (no, tgl, opt) => {
-        let s = `K${no} - ${App.tglPanjang(tgl)}`;
+        let s = `K${no} - ${App.tglId(tgl)}`;
         if (opt && opt.hari_ini) s += ' · hari ini';
         else if (opt && opt.berjalan) s += ' · berjalan';
         else if (opt && opt.belum_tiba) s += ' · belum tiba';
@@ -148,7 +146,7 @@
     // Peran "dibatasi RT" (mis. Pengurus RT): data yang tampil hanya milik RT pada akunnya
     App.rtKunci = () => !!(App.user && App.user.batas_rt);
     App.has = (...izin) => !!App.user && Array.isArray(App.user.izin) && izin.some((i) => App.user.izin.includes(i));
-    App.ROLE_LABEL = { admin: 'Admin Sistem', bendahara_rw: 'Bendahara RW', bendahara_jimpitan: 'Bendahara Jimpitan', pengurus_rt: 'Pengurus RT' };
+    App.ROLE_LABEL = { admin: 'Admin Sistem', bendahara_rw: 'Bendahara RW', bendahara_jimpitan: 'Bendahara Jimpitan', pengurus_rt: 'Pengurus RT', pengurus_tabungan: 'Pengurus Tabungan' };
 
     const ICONS = {
         home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
