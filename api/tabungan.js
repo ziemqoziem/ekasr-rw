@@ -31,20 +31,6 @@ module.exports = route({
     fn: async (req, res, user) => {
       await T.siapTabel();
       const q = req.query || {};
-      // Riwayat transaksi satu warga (untuk dialog): 100 terakhir, termasuk yang dibatalkan
-      if (q.warga_id) {
-        const w = await ambilWarga(int(q.warga_id, 'Warga', { min: 1 }));
-        cekRtWarga(user, w.rt);
-        const tx = await db.query(
-          `SELECT id, tanggal, jenis, nominal, metode, petugas, catatan, status, alasan_batal FROM tabungan
-           WHERE warga_id = ? ORDER BY tanggal DESC, created_at DESC LIMIT 100`, [w.id]
-        );
-        const sd = (await T.saldoWarga([w.id])).get(w.id) || { saldo: 0, setor: 0, tarik: 0 };
-        return {
-          warga: { id: w.id, nama: w.nama, rt: w.rt }, ...sd,
-          transaksi: tx.rows.map((x) => ({ ...x, nominal: Number(x.nominal), tanggal: String(x.tanggal).slice(0, 10) }))
-        };
-      }
       const today = P.todayWIB();
       const daftar = daftarPeriode(today);
       const sekarang = I.periodeDari(today);
@@ -59,6 +45,27 @@ module.exports = route({
         mulai: periode.mulai, akhir: periode.akhir, weton: I.weton(periode.mulai),
         berjalan: !!(meta && meta.berjalan) || periode.mulai === sekarang.mulai, no: meta ? meta.no : null
       };
+      // Riwayat transaksi satu warga (dialog): sampai akhir kumpulan terpilih, dengan saldo berjalan
+      if (q.warga_id) {
+        const w = await ambilWarga(int(q.warga_id, 'Warga', { min: 1 }));
+        cekRtWarga(user, w.rt);
+        const tx = await db.query(
+          `SELECT id, tanggal, jenis, nominal, metode, petugas, catatan, status, alasan_batal FROM tabungan
+           WHERE warga_id = ? AND tanggal <= ? ORDER BY tanggal ASC, created_at ASC`, [w.id, periode.akhir]
+        );
+        let run = 0;
+        const semua = tx.rows.map((x) => {
+          const nominal = Number(x.nominal), tanggal = String(x.tanggal).slice(0, 10);
+          if (x.status === 'sah') run += x.jenis === 'setor' ? nominal : -nominal;
+          return { ...x, nominal, tanggal, saldo_akhir: run, dalam_periode: tanggal >= periode.mulai };
+        });
+        const sd = (await T.saldoWarga([w.id], periode.akhir)).get(w.id) || { saldo: 0, setor: 0, tarik: 0 };
+        const aktual = (await T.saldoWarga([w.id])).get(w.id) || { saldo: 0 };
+        return {
+          warga: { id: w.id, nama: w.nama, rt: w.rt }, periode: info, ...sd, saldo_aktual: aktual.saldo,
+          transaksi: semua.reverse().slice(0, 150)
+        };
+      }
       // Kolom riwayat: kumpulan terpilih dan sebelumnya (maks 12), urut lama → baru
       const kolom = daftar.filter((x) => x.mulai <= periode.mulai).slice(0, MAKS_KOLOM).reverse()
         .map((x) => ({ mulai: x.mulai, akhir: x.akhir, no: x.no, terpilih: x.mulai === periode.mulai }));
@@ -69,7 +76,7 @@ module.exports = route({
       if (rt) { where.push('w.rt = ?'); params.push(rt); }
       const wr = await db.query(`SELECT w.id, w.nama, w.rt, w.jenis, w.no_hp, w.ikut_tabungan FROM warga w WHERE ${where.join(' AND ')} ORDER BY w.rt, w.id`, params);
       const ids = wr.rows.map((w) => w.id);
-      const saldo = ids.length ? await T.saldoWarga(ids) : new Map();
+      const saldo = ids.length ? await T.saldoWarga(ids, periode.akhir) : new Map();   // saldo s.d. akhir kumpulan terpilih
       const tm = new Map();
       if (ids.length && kolom.length) {
         const tx = await db.query(

@@ -47,13 +47,15 @@ const siapTabel = () => siap || (siap = (async () => {
   }
 })().catch((e) => { siap = null; throw e; }));
 
-// Saldo (setor − tarik) per warga; `idWarga` opsional
-async function saldoWarga(idWarga) {
-  const ph = idWarga && idWarga.length ? ` AND warga_id IN (${idWarga.map(() => '?').join(',')})` : '';
+// Saldo (setor − tarik) per warga sampai tanggal `sampai` (YYYY-MM-DD, opsional = semua); `idWarga` opsional
+async function saldoWarga(idWarga, sampai) {
+  const kond = ["status = 'sah'"], prm = [];
+  if (sampai) { kond.push('tanggal <= ?'); prm.push(sampai); }
+  if (idWarga && idWarga.length) { kond.push(`warga_id IN (${idWarga.map(() => '?').join(',')})`); prm.push(...idWarga); }
   const r = await db.query(
     `SELECT warga_id, SUM(CASE WHEN jenis = 'setor' THEN nominal ELSE -nominal END) AS saldo,
             SUM(CASE WHEN jenis = 'setor' THEN nominal ELSE 0 END) AS setor, SUM(CASE WHEN jenis = 'tarik' THEN nominal ELSE 0 END) AS tarik
-     FROM tabungan WHERE status = 'sah'${ph} GROUP BY warga_id`, idWarga && idWarga.length ? idWarga : []
+     FROM tabungan WHERE ${kond.join(' AND ')} GROUP BY warga_id`, prm
   );
   return new Map(r.rows.map((x) => [x.warga_id, { saldo: Number(x.saldo), setor: Number(x.setor), tarik: Number(x.tarik) }]));
 }

@@ -3147,3 +3147,15 @@ dialog:has(.rw-dlg) { overflow-x: hidden; }
     .tb-frame .tb-filter > div:first-child, .tb-frame .tb-filter > div:nth-child(3) { grid-column: 1 / -1; }
     .tb-frame .savebar.savebar-atas { padding: 8px 10px; }
 }
+
+/* Tabungan: aksi satu baris di tabel desktop, dialog riwayat */
+@media (min-width: 641px) { .tb-frame .tbl-tab .tb-input { flex-wrap: nowrap; } .tb-frame .tbl-tab td.c-nom { text-align: right; } }
+.tb-frame .tbl-tab .c-nom .btn { white-space: nowrap; }
+.tbl-tb-riw { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.tbl-tb-riw th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); padding: 8px 6px; border-bottom: 1px solid var(--border); }
+.tbl-tb-riw th.r { text-align: right; }
+.tbl-tb-riw td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl-tb-riw tr.tb-dalam td { background: rgba(20, 184, 166, 0.10); }
+.tbl-tb-riw tr.tb-batal td { opacity: 0.6; }
+.tb-dlg .tbl-wrap { max-height: 46vh; overflow: auto; }
+@media (max-width: 640px) { .tbl-tb-riw { font-size: 0.78rem; } .tbl-tb-riw td, .tbl-tb-riw th { padding: 7px 4px; } .tb-dlg .rk-baris { grid-template-columns: 1fr 1fr 1fr; } }

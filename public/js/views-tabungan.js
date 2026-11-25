@@ -78,7 +78,7 @@
             <div class="stat good"><small>Sudah menabung</small><b>${s.sudah}</b></div>
             <div class="stat bad"><small>Belum menabung</small><b>${s.belum}</b></div>
             <div class="stat"><small>Disetor kumpulan ini</small><b>${rp(s.setor_periode)}</b></div>
-            <div class="stat"><small>Total saldo tabungan</small><b>${rp(s.saldo_total)}</b></div></div>
+            <div class="stat"><small>Total saldo s.d. K${r.periode.no}</small><b>${rp(s.saldo_total)}</b></div></div>
             <p class="small muted mb-md">Tabungan adalah titipan warga, <b>bukan</b> pemasukan kas RW. Penarikan periode ini: <b>${rp(s.tarik_periode)}</b></p>`;
         const cari = ($('#tCari').value || '').trim().toLowerCase();
         const rows = r.warga.filter((w) => (!cari || w.nama.toLowerCase().includes(cari)) && (!TS.status || w.status === TS.status));
@@ -97,7 +97,7 @@
             <button class="btn sm ghost" data-act="tabunganBatalPilih" data-id="${w.id}">Batal</button></div>`;
         const tombolAwal = (w) => `<div class="tb-input"><button class="btn sm" data-act="tabunganIsiDef" data-id="${w.id}" title="Isi ${rp(DEF)}">+${kom(DEF)}</button>
             <button class="btn sm ghost" data-act="tabunganTambah" data-id="${w.id}">+ Tambah</button>
-            <button class="btn sm ghost" data-act="tabunganTarik" data-id="${w.id}" ${w.saldo > 0 ? '' : 'disabled'} title="Tarik tabungan">Tarik</button></div>`;
+            <button class="btn sm ghost" data-act="tabunganTarik" data-id="${w.id}" ${w.saldo > 0 && TS.data.periode.berjalan ? '' : 'disabled'} title="${TS.data.periode.berjalan ? 'Tarik tabungan' : 'Penarikan hanya pada kumpulan berjalan'}">Tarik</button></div>`;
 
         if (window.innerWidth <= 640) {
             const kartu = pg.items.map((w) => {
@@ -108,7 +108,7 @@
                     <div class="iu-top">
                         ${tulis ? `<input type="checkbox" data-change="tabunganCek" data-id="${w.id}" aria-label="Setor tabungan ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled' : ''}>` : ''}
                         <div class="iu-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span><div class="small muted">${esc(LABEL[w.status])}</div></div>
-                        <button class="link-setor iu-sum" data-act="tabunganRiwayat" data-id="${w.id}"><small>Saldo</small>${rp(w.saldo)}</button>
+                        <button class="link-setor iu-sum" data-act="tabunganRiwayat" data-id="${w.id}"><small>Saldo K${r.periode.no}</small>${rp(w.saldo)}</button>
                     </div>
                     <div class="iu-riw">${chip}</div>${aksi}</div>`;
             }).join('');
@@ -131,15 +131,15 @@
             const cek = tulis ? `<td class="c-cek"><input type="checkbox" data-change="tabunganCek" data-id="${w.id}" aria-label="Setor tabungan ${esc(w.nama)}" ${kunci || dipilih ? 'checked' : ''} ${kunci ? 'disabled title="Sudah menabung pada kumpulan ini"' : ''}></td>` : '';
             const nom = !tulis ? '' : `<td class="c-nom">${dipilih ? isiNominal(w) : tombolAwal(w)}</td>`;
             return `<tr class="st-${kunci ? 'lunas' : 'belum'}${kunci ? ' terbayar' : ''}${dipilih ? ' dipilih' : ''}" data-row="${w.id}">${cek}
-                <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>${sel_}
-                <td class="r num c-sum"><button class="link-setor" data-act="tabunganRiwayat" data-id="${w.id}" title="Lihat riwayat / batalkan">${rp(w.saldo)}</button></td>${nom}</tr>`;
+                <td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
+                <td class="r num c-sum"><button class="link-setor" data-act="tabunganRiwayat" data-id="${w.id}" title="Riwayat setor tabungan s.d. K${r.periode.no}">${rp(w.saldo)}</button></td>${sel_}${nom}</tr>`;
         }).join('');
         const kepalaPer = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no} · ${esc(tgl(k.mulai))}">K${k.no}</th>`).join('');
         $('#tList').innerHTML = rows.length ? `<div class="tbl-wrap tbl-satu"><table class="tbl-iuran tbl-tab"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="tabunganCekSemua" aria-label="Centang semua yang belum menabung" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
-            <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Saldo</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
+            <th class="c-nama">Nama (RT)</th><th class="r c-sum" title="Saldo sampai akhir kumpulan terpilih">Saldo K${r.periode.no}</th>${kepalaPer}${tulis ? '<th class="c-nom r">Aksi</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
-            <p class="small muted tb-note">K = kumpulan RW. ✓ menabung · – belum menabung. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Saldo” untuk riwayat, pembatalan, atau penarikan.</p>`
+            <p class="small muted tb-note">K = kumpulan RW. ✓ menabung · – belum menabung. Kolom berwarna = kumpulan terpilih. Saldo dihitung sampai akhir kumpulan terpilih. Klik saldo untuk riwayat setor tabungan, pembatalan, atau penarikan.</p>`
             : vKosong();
         barSimpan();
     }
@@ -264,23 +264,31 @@
         try { await simpan(items); } finally { btn.disabled = false; }
     };
 
-    // Riwayat transaksi satu warga (+ batalkan)
+    // Dialog riwayat setor tabungan satu warga: sampai akhir kumpulan terpilih, dengan saldo berjalan
     App.actions.tabunganRiwayat = async (el) => {
-        const r = await App.api('/api/tabungan?warga_id=' + encodeURIComponent(el.dataset.id));
+        const r = await App.api('/api/tabungan?' + App.qs({ warga_id: el.dataset.id, periode: TS.periode }));
         const tulis = App.has('tabungan.tulis');
-        const baris = r.transaksi.map((x) => `<tr class="${x.status === 'batal' ? 'batal' : ''}"><td>${esc(tgl(x.tanggal))}</td>
-            <td>${x.jenis === 'tarik' ? '<span class="badge red">Tarik</span>' : '<span class="badge green">Setor</span>'}${x.status === 'batal' ? ` <span class="badge">batal</span><div class="small muted">${esc(x.alasan_batal || '')}</div>` : ''}</td>
-            <td class="r num">${x.jenis === 'tarik' ? '− ' : ''}${rp(x.nominal)}</td>
+        const p = r.periode;
+        const baris = r.transaksi.map((x) => `<tr class="${x.status === 'batal' ? 'tb-batal' : ''}${x.dalam_periode ? ' tb-dalam' : ''}">
+            <td class="nowrap">${esc(tgl(x.tanggal))}</td>
+            <td>${x.jenis === 'tarik' ? '<span class="badge red">Tarik</span>' : '<span class="badge green">Setor</span>'}${x.status === 'batal' ? ` <span class="badge">batal</span><div class="small muted">${esc(x.alasan_batal || '')}</div>` : ''}${x.catatan ? `<div class="small muted">${esc(x.catatan)}</div>` : ''}</td>
+            <td class="r num">${x.status === 'batal' ? '<s>' : ''}${x.jenis === 'tarik' ? '− ' : '+ '}${rp(x.nominal)}${x.status === 'batal' ? '</s>' : ''}</td>
+            <td class="r num"><b>${rp(x.saldo_akhir)}</b></td>
             ${tulis ? `<td class="r">${x.status === 'sah' ? `<button class="btn sm danger" data-act="tabunganBatal" data-id="${esc(x.id)}" data-nama="${esc(r.warga.nama)}">Batalkan</button>` : ''}</td>` : ''}</tr>`).join('');
         App.dialog(`
-            <h3>Tabungan — ${esc(r.warga.nama)} (RT ${esc(r.warga.rt)})</h3>
-            <div class="grid cols-3 grid-stats mb-md">
-                <div class="stat good"><small>Saldo</small><b>${rp(r.saldo)}</b></div>
-                <div class="stat"><small>Total setor</small><b>${rp(r.setor)}</b></div>
-                <div class="stat"><small>Total tarik</small><b>${rp(r.tarik)}</b></div></div>
-            <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
-            ${baris || `<tr><td colspan="4" class="muted">Belum ada transaksi.</td></tr>`}</tbody></table></div>
-            <div class="dlg-actions">${tulis && r.saldo > 0 ? `<button type="button" class="btn" data-act="tabunganTarik" data-id="${r.warga.id}">Tarik tabungan</button>` : ''}<button type="button" class="btn" data-act="closeDialog">Tutup</button></div>`);
+            <div class="rw-dlg tb-dlg">
+                <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
+                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · riwayat setor tabungan s.d. K${p.no} (${esc(tgl(p.akhir))})</div></div></div>
+                <div class="rk-baris spaced">
+                    <div class="stat rk-c1"><small>Saldo s.d. K${p.no}</small><b>${rp(r.saldo)}</b></div>
+                    <div class="stat rk-c2"><small>Total setor</small><b>${rp(r.setor)}</b></div>
+                    <div class="stat rk-c3"><small>Total tarik</small><b>${rp(r.tarik)}</b></div></div>
+                ${p.berjalan ? '' : `<p class="small muted">Menampilkan posisi pada akhir kumpulan yang dipilih. Saldo saat ini <b>${rp(r.saldo_aktual)}</b>.</p>`}
+                <div class="tbl-wrap"><table class="tbl-tb-riw"><thead><tr><th>Tanggal</th><th>Jenis</th><th class="r">Nominal</th><th class="r">Saldo</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
+                ${baris || `<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>`}</tbody></table></div>
+                <p class="small muted">Baris bertanda hijau muda = transaksi pada ${esc(App.labelKumpulan(p.no, p.mulai))}. Maks. 150 transaksi terbaru.</p>
+                <div class="dlg-actions">${tulis && r.saldo > 0 && p.berjalan ? `<button type="button" class="btn" data-act="tabunganTarik" data-id="${r.warga.id}">Tarik tabungan</button>` : ''}<button type="button" class="btn" data-act="closeDialog">Tutup</button></div>
+            </div>`);
     };
 
     App.actions.tabunganTarik = (el) => {
