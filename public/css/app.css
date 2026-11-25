@@ -2617,3 +2617,7 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 .rw-kump-btn .rw-k { cursor: default; min-width: 52px; padding: 7px 12px; }
 .rw-kump-btn .rw-k:hover { transform: none; }
 .rw-kump-btn .rw-k b { font-size: 0.85rem; }
+
+/* Pager mini di dalam dialog riwayat */
+.rj-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); }
+.rj-pager .btn { min-width: 36px; }

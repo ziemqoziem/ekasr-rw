@@ -6,7 +6,7 @@ const P = require('./_lib/periode');
 /**
  * Riwayat jimpitan PUBLIK satu warga (nama + RT persis, dari hasil cek tunggakan):
  *   bulanan   = per bulan: kewajiban, setoran, saldo kumulatif pada akhir bulan (bulan berjalan sampai hari ini)
- *   transaksi = 30 setoran sah terakhir (tanggal + nominal, tanpa petugas/catatan)
+ *   transaksi = 200 setoran sah terakhir (tanggal + nominal, tanpa petugas/catatan)
  * Dibatasi per IP dan ikut saklar cek_tunggakan_publik.
  */
 const WINDOW_MS = 10 * 60 * 1000;
@@ -79,7 +79,7 @@ module.exports = route({
         warga: { nama: w.nama, rt: w.rt, jenis: w.jenis },
         tarif_harian: ctx.tarifNow, mulai_hitung: ctx.mulaiHitung, saldo, tunggakan_lama: lama,
         bulanan: bulan.reverse(),
-        transaksi: bayar.slice(-30).reverse()
+        transaksi: bayar.slice(-200).reverse()
       };
     }
   }
