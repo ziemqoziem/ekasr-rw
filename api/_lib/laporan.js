@@ -111,7 +111,7 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
       `SELECT id, nama, rt, jenis, mulai_iuran, berhenti_pada, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti
        FROM warga WHERE ${where.join(' AND ')} ORDER BY rt, nama`, params)).rows;
 
-    // Jimpitan per tanggal cut off kumpulan: kewajiban jatuh tempo (termasuk tunggakan lama) − setoran sampai cut off
+    // Jimpitan per tanggal cut off kumpulan: seluruh kewajiban sampai cut off (termasuk tunggakan lama), tanpa melihat pola setor − setoran sampai cut off
     const ctx0 = await bangunKonteks();
     const byr = await db.query(
       `SELECT warga_id, SUM(nominal) AS n FROM setoran
@@ -125,8 +125,10 @@ async function bangunLaporan(p, today, { rt, keuangan, warga }) {
       const sd = saldo.get(w.id);
       if (!sd) continue;
       wajibJ += 1;
-      J.set(w.id, { kew: sd.lama + sd.kewajiban_tempo, setor: sd.terbayar, kurang: sd.kurang });
-      if (sd.kurang > 0) { nJ += 1; totJ += sd.kurang; }
+      // Kewajiban dihitung penuh sampai tanggal cut off kumpulan (pola setor harian/mingguan/bulanan diabaikan)
+      const kurangJ = Math.max(0, -sd.saldo);
+      J.set(w.id, { kew: sd.lama + sd.kewajiban_berjalan, setor: sd.terbayar, kurang: kurangJ });
+      if (kurangJ > 0) { nJ += 1; totJ += kurangJ; }
     }
     out.status_jimpitan = { warga_aktif: wajibJ, menunggak: nJ, lunas: wajibJ - nJ, total_tunggakan: totJ };
 
