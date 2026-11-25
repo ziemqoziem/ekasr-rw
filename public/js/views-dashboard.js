@@ -73,8 +73,18 @@
         if (!App.user) { root.innerHTML = '<div class="card empty">Silakan masuk terlebih dahulu.</div>'; return; }
         if (!DS.bulan) DS.bulan = App.today().slice(0, 7);
         if (App.rtKunci()) DS.rt = App.user.rt || '';
+        const nama = App.user.nama || App.user.username || 'Pengurus';
+        const jam = new Date().getHours();
+        const salam = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 18 ? 'Selamat sore' : 'Selamat malam';
         root.innerHTML = `
-            <div class="row between"><h2 class="title">Beranda</h2><span class="small muted" id="dStamp"></span></div>
+            <header class="db-hero">
+                <div class="db-hero-copy">
+                    <p class="db-eyebrow">${esc(salam)}</p>
+                    <h2 class="db-title">${esc(nama)}</h2>
+                    <p class="db-sub">Ringkasan operasional RW · <span id="dStamp">…</span></p>
+                </div>
+                <div class="db-hero-glow" aria-hidden="true"></div>
+            </header>
             <div class="card dash-controls no-print">
                 <div class="filters">
                     <div><label class="f" for="dBulan">Bulan</label><input type="month" id="dBulan" value="${esc(DS.bulan)}" max="${App.today().slice(0, 7)}" data-change="dashFilter"></div>
@@ -91,7 +101,7 @@
         $('#dBody').innerHTML = App.loading();
         const r = await App.api('/api/dashboard?' + App.qs({ bulan: DS.bulan, rt: DS.rt }));
         DS.data = r;
-        $('#dStamp').textContent = `Diperbarui ${new Date(r.dibuat).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+        $('#dStamp').textContent = `diperbarui ${new Date(r.dibuat).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
         tampil();
     }
     App.changes.dashFilter = async () => {
@@ -115,23 +125,75 @@
     }
 
     /* ================= RINGKASAN ================= */
+    function trxCard(o) {
+        return `<article class="trx-card tone-${esc(o.tone || 'teal')}">
+            <div class="trx-ic" aria-hidden="true">${o.ic || '◆'}</div>
+            <div class="trx-body">
+                <div class="trx-label">${esc(o.label)}</div>
+                <div class="trx-value">${o.value}</div>
+                <div class="trx-meta">${o.meta || ''}</div>
+            </div>
+        </article>`;
+    }
+
     function vRingkasan(d, reg) {
         const k = d.kpi;
+        const tx = d.transaksi || {};
         const bl = labelBulan(d.bulan);
         const nmLalu = BULAN[(Number(d.bulan.slice(5, 7)) + 10) % 12].slice(0, 3);
-        const rtTxt = d.rt ? ` · RT ${d.rt}` : ' · semua RT';
+        const rtTxt = d.rt ? `RT ${d.rt}` : 'Semua RT';
+        const wargaTotal = k.warga_total != null ? k.warga_total : k.warga_aktif;
+
+        const j = tx.jimpitan || { total: k.setoran_bulan, jumlah: 0 };
+        const iu = tx.iuran_wajib || { total: 0, jumlah: 0 };
+        const tb = tx.tabungan || { setor: 0, tarik: 0, netto: 0, jumlah: 0 };
+        const pl = tx.pemasukan_lain || { total: 0, jumlah: 0 };
+        const kg = tx.pengeluaran || { total: 0, jumlah: 0 };
+
+        const trxCards = [
+            trxCard({ tone: 'teal', ic: '◎', label: 'Jimpitan', value: rp(j.total), meta: `${j.jumlah || 0} trx · ${esc(bl)}` }),
+            trxCard({ tone: 'sky', ic: '◈', label: 'Iuran wajib', value: rp(iu.total), meta: `${iu.jumlah || 0} trx` }),
+            trxCard({ tone: 'violet', ic: '◇', label: 'Tabungan', value: rp(tb.netto || 0), meta: `setor ${compact(tb.setor || 0)} · tarik ${compact(tb.tarik || 0)} · ${tb.jumlah || 0} trx` }),
+            ...(d.keuangan ? [
+                trxCard({ tone: 'amber', ic: '✦', label: 'Pemasukan lain', value: rp(pl.total), meta: `${pl.jumlah || 0} trx` }),
+                trxCard({ tone: 'rose', ic: '▾', label: 'Pengeluaran', value: rp(kg.total || (d.kas && d.kas.pengeluaran_bulan) || 0), meta: `${kg.jumlah || 0} trx` })
+            ] : [])
+        ];
 
         const tiles = [
-            tile({ hero: true, label: `Setoran ${bl}${rtTxt}`, value: rp(k.setoran_bulan), delta: delta(k.setoran_bulan, k.setoran_lalu, true, nmLalu), spark: K.spark(d.harian.map((x) => x.total), WARNA.setoran, 120, 34), sub: '30 hari terakhir' }),
-            d.kas
-                ? tile({ label: 'Saldo kas', value: rp(d.kas.saldo), tone: d.kas.saldo < 0 ? 'bad' : 'good', sub: `Saldo jimpitan ${compact(d.kas.sumber.jimpitan)} · Bendahara RW ${compact(d.kas.sumber.iuran_wajib + d.kas.sumber.sewa_aset)}${d.kas.sumber.umum ? ' · umum ' + compact(d.kas.sumber.umum) : ''} · keluar ${compact(d.kas.total_keluar)}` })
-                : tile({ label: 'Warga aktif', value: String(k.warga_aktif), sub: `${k.warga_menyetor} sudah menyetor bulan ini` }),
-            tile({ label: 'Partisipasi bulan ini', value: `${k.partisipasi}%`, meter: k.partisipasi, sub: `${k.warga_menyetor} dari ${k.warga_aktif} warga` }),
+            tile({
+                hero: true,
+                label: `Transaksi masuk ${bl}`,
+                value: rp((tx.masuk != null ? tx.masuk : j.total + iu.total + pl.total)),
+                delta: delta(k.setoran_bulan, k.setoran_lalu, true, nmLalu),
+                spark: K.spark(d.harian.map((x) => x.total), WARNA.setoran, 120, 34),
+                sub: `${esc(rtTxt)} · jimpitan + iuran${d.keuangan ? ' + pemasukan lain' : ''}`
+            }),
+            tile({
+                label: 'Warga terdaftar',
+                value: String(wargaTotal),
+                sub: `ikut jimpitan ${k.warga_aktif} · menyetor ${k.warga_menyetor}`
+            }),
+            tile({ label: 'Partisipasi jimpitan', value: `${k.partisipasi}%`, meter: k.partisipasi, sub: `${k.warga_menyetor} dari ${k.warga_aktif} warga` }),
             tile({ label: 'Total tunggakan', value: rp(k.tunggakan_total), tone: k.tunggakan_total > 0 ? 'bad' : 'good', sub: `${k.warga_menunggak} warga · lama ${compact(k.tunggakan_lama)} · titipan ${compact(k.titipan_total || 0)}` }),
             d.kas
-                ? tile({ label: 'Pengeluaran bulan ini', value: rp(d.kas.pengeluaran_bulan), delta: delta(d.kas.pengeluaran_bulan, d.kas.pengeluaran_lalu, false, nmLalu) })
+                ? tile({ label: 'Saldo kas', value: rp(d.kas.saldo), tone: d.kas.saldo < 0 ? 'bad' : 'good', sub: `jimpitan ${compact(d.kas.sumber.jimpitan)} · bendahara ${compact(d.kas.sumber.iuran_wajib + d.kas.sumber.sewa_aset)}${d.kas.sumber.umum ? ' · umum ' + compact(d.kas.sumber.umum) : ''}` })
                 : null
         ].filter(Boolean);
+
+        const wrt = (d.warga_per_rt || []).map((r) => {
+            const max = Math.max(...(d.warga_per_rt || []).map((x) => x.aktif), 1);
+            const pct = Math.round((r.aktif / max) * 100);
+            return `<article class="wrt-card">
+                <div class="wrt-top"><span class="wrt-rt">RT ${esc(r.rt)}</span><b class="wrt-n">${r.aktif}</b></div>
+                <div class="wrt-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+                <div class="wrt-meta">
+                    <span title="Jimpitan">J ${r.jimpitan}</span>
+                    <span title="Iuran">I ${r.iuran}</span>
+                    <span title="Tabungan">T ${r.tabungan}</span>
+                </div>
+            </article>`;
+        }).join('');
 
         // Tren 12 bulan
         const lbl = d.tren.map((t) => K.bulanPendek(t.bulan));
@@ -143,7 +205,6 @@
             d.tren.map((t) => [labelBulan(t.bulan), rp(t.setoran), ...(d.keuangan ? [rp(t.pengeluaran)] : [])])
         );
 
-        // Gauge kepatuhan periode berjalan
         const gauges = d.kepatuhan.length
             ? d.kepatuhan.map((g) => K.gauge({
                 value: g.total ? Math.round((g.sudah / g.total) * 100) : 0,
@@ -154,7 +215,6 @@
         const gaugeTbl = tbl([{ h: 'Jenis' }, { h: 'Periode' }, { h: 'Sudah', r: 1 }, { h: 'Total', r: 1 }],
             d.kepatuhan.map((g) => [cap(g.jenis), esc(g.periode), g.sudah, g.total]));
 
-        // Donut jenis, pie metode, donut tunggakan
         const jenisParts = d.per_jenis.map((x) => ({ name: cap(x.jenis), value: x.total, color: WARNA.jenis[x.jenis] }));
         const metodeParts = d.per_metode.map((x) => ({ name: cap(x.metode), value: x.total, color: WARNA.metode[x.metode] }));
         const tungParts = [{ name: 'Tunggakan berjalan', value: k.tunggakan_rutin, color: WARNA.tunggakan.rutin }, { name: 'Tunggakan lama', value: k.tunggakan_lama, color: WARNA.tunggakan.lama }];
@@ -165,7 +225,6 @@
         reg.tung = () => K.donut({ parts: tungParts, centerTop: compact(sumT), centerBottom: 'tunggakan', aria: 'Komposisi tunggakan' });
         const partTbl = (parts) => tbl([{ h: 'Kategori' }, { h: 'Nominal', r: 1 }], parts.map((p) => [esc(p.name), rp(p.value)]));
 
-        // Area harian
         reg.harian = (w) => K.area({
             color: WARNA.setoran,
             points: d.harian.map((x) => ({ label: `${Number(x.tanggal.slice(8))} ${K.bulanPendek(x.tanggal)}`, tip: App.tglId(x.tanggal), y: x.total })),
@@ -173,14 +232,18 @@
         }, w);
         const harianTbl = tbl([{ h: 'Tanggal' }, { h: 'Setoran', r: 1 }], d.harian.slice().reverse().map((x) => [App.tglId(x.tanggal), rp(x.total)]));
 
-        // Kartu setoran terbaru
-        const terbaru = d.terbaru.length ? d.terbaru.map((s) => `
-            <li class="feed-item"><span class="feed-dot" aria-hidden="true"></span>
-                <div class="grow"><b>${esc(s.nama)}</b> <span class="small muted">RT ${esc(s.rt)}</span>
-                <div class="small muted">${App.tglId(s.tanggal)}${s.tipe === 'tunggakan_lama' ? ' · Tunggakan lama' : (s.periode_kunci && s.periode_kunci !== s.tanggal ? ' · ' + esc(s.periode_kunci) : '')} · ${esc(s.metode)}</div></div>
-                <b class="num">${rp(s.nominal)}</b></li>`).join('') : '<li class="empty">Belum ada setoran.</li>';
+        const feedSrc = (d.feed && d.feed.length) ? d.feed : (d.terbaru || []).map((s) => ({
+            jenis: 'jimpitan', judul: s.nama, meta: `RT ${s.rt} · jimpitan`, tanggal: s.tanggal, nominal: s.nominal, arah: 'masuk'
+        }));
+        const feedTone = { jimpitan: 'teal', iuran: 'sky', tabungan: 'violet', pemasukan: 'amber', pengeluaran: 'rose' };
+        const feed = feedSrc.length ? feedSrc.map((s) => `
+            <li class="feed-item feed-${esc(feedTone[s.jenis] || 'teal')}">
+                <span class="feed-dot" aria-hidden="true"></span>
+                <div class="grow"><b>${esc(s.judul)}</b>
+                <div class="small muted">${App.tglId(s.tanggal)} · ${esc(s.meta || '')}</div></div>
+                <b class="num ${s.arah === 'keluar' ? 'bad' : 'good'}">${s.arah === 'keluar' ? '−' : '+'}${rp(s.nominal)}</b></li>`).join('')
+            : '<li class="empty">Belum ada transaksi.</li>';
 
-        // Panel "Perlu tindakan": hal operasional yang butuh perhatian pengurus sekarang
         const t = d.tindakan;
         const aksi = [];
         if (t.harian_belum > 0) {
@@ -205,7 +268,15 @@
 
         return `
             ${panelAksi}
+            <section class="db-section">
+                <div class="db-sec-head"><h3>Transaksi ${esc(bl)}</h3><p class="small muted">Ringkasan nominal & jumlah transaksi</p></div>
+                <div class="trx-grid">${trxCards.join('')}</div>
+            </section>
             <div class="kpi-grid n${tiles.length}">${tiles.join('')}</div>
+            <section class="db-section">
+                <div class="db-sec-head"><h3>Warga per RT</h3><p class="small muted">Aktif · Jimpitan · Iuran · Tabungan</p></div>
+                <div class="wrt-grid">${wrt || '<div class="card empty">Belum ada warga aktif.</div>'}</div>
+            </section>
             ${chartCard('tren', 'Tren setoran 12 bulan', d.keuangan ? 'Setoran dibanding pengeluaran' : 'Total setoran per bulan', trenTbl, 'mb')}
             <section class="card chart-card"><div class="cc-head"><div><h3>Warga bebas tunggakan</h3><p class="small muted">Persentase warga yang saldonya tidak kurang pada jatuh tempo polanya</p></div>
                 <button class="btn sm" data-act="dTabel" data-t="gauge">Tabel</button></div>
@@ -217,20 +288,31 @@
             </div>
             <div class="dash-grid g-2-1">
                 ${chartCard('harian', 'Setoran harian', '30 hari terakhir', harianTbl)}
-                <section class="card"><h3>Setoran terbaru</h3><ul class="feed">${terbaru}</ul></section>
+                <section class="card feed-card"><h3>Aktivitas terbaru</h3><ul class="feed">${feed}</ul></section>
             </div>`;
     }
 
     /* ================= PER RT ================= */
     function vRt(d, reg) {
         const bl = labelBulan(d.bulan);
-        const cards = d.per_rt.map((r) => {
-            const persen = r.aktif ? Math.round((r.menyetor / r.aktif) * 100) : 0;
-            return `<section class="card rt-card"><div class="row between"><h3>RT ${esc(r.rt)}</h3><span class="badge blue">${r.aktif} warga</span></div>
-                ${K.gauge({ value: persen, label: 'Partisipasi', sub: `${r.menyetor} dari ${r.aktif} menyetor`, detail: `${r.menyetor} dari ${r.aktif} warga RT ${r.rt}` })}
-                <dl class="mini"><div><dt>Setoran</dt><dd>${rp(r.setoran)}</dd></div>
-                <div><dt>Tunggakan</dt><dd class="${r.tunggakan_rutin + r.tunggakan_lama > 0 ? 'bad' : ''}">${rp(r.tunggakan_rutin + r.tunggakan_lama)}</dd></div>
-                <div><dt>Menunggak</dt><dd>${r.warga_menunggak} warga</dd></div></dl></section>`;
+        const wrtMap = Object.fromEntries((d.warga_per_rt || []).map((r) => [r.rt, r]));
+        const perRtMap = Object.fromEntries(d.per_rt.map((r) => [r.rt, r]));
+        const rtList = [...new Set([...(d.warga_per_rt || []).map((r) => r.rt), ...d.per_rt.map((r) => r.rt)])].sort();
+        const cards = rtList.map((kode) => {
+            const r = perRtMap[kode] || { rt: kode, aktif: 0, menyetor: 0, setoran: 0, tunggakan_rutin: 0, tunggakan_lama: 0, warga_menunggak: 0 };
+            const w = wrtMap[kode] || { aktif: r.aktif, jimpitan: r.aktif, iuran: 0, tabungan: 0 };
+            const aktifJ = r.aktif || w.jimpitan || 0;
+            const persen = aktifJ ? Math.round((r.menyetor / aktifJ) * 100) : 0;
+            return `<section class="card rt-card"><div class="row between"><h3>RT ${esc(kode)}</h3><span class="badge blue">${w.aktif} warga</span></div>
+                ${K.gauge({ value: persen, label: 'Partisipasi jimpitan', sub: `${r.menyetor} dari ${aktifJ} menyetor`, detail: `${r.menyetor} dari ${aktifJ} warga RT ${kode}` })}
+                <dl class="mini">
+                <div><dt>Warga</dt><dd>${w.aktif}</dd></div>
+                <div><dt>Jimpitan</dt><dd>${w.jimpitan}</dd></div>
+                <div><dt>Iuran</dt><dd>${w.iuran}</dd></div>
+                <div><dt>Tabungan</dt><dd>${w.tabungan}</dd></div>
+                <div><dt>Setoran</dt><dd>${rp(r.setoran || 0)}</dd></div>
+                <div><dt>Tunggakan</dt><dd class="${(r.tunggakan_rutin + r.tunggakan_lama) > 0 ? 'bad' : ''}">${rp((r.tunggakan_rutin || 0) + (r.tunggakan_lama || 0))}</dd></div>
+                </dl></section>`;
         }).join('');
 
         const setoranItems = d.per_rt.map((r) => ({ name: `RT ${r.rt}`, value: r.setoran, color: C.s[0], sub: `${r.jml} transaksi` }));

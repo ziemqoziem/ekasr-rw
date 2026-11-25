@@ -42,12 +42,28 @@ module.exports = route({
       const bulanLalu = P.addDays(awal, -1).slice(0, 7);
       const [awalLalu, akhirLalu] = P.rangeOf('bulanan', bulanLalu);
 
-      /* ---- warga aktif per RT & jenis ---- */
+      /* ---- warga aktif (jimpitan) per RT & jenis — untuk partisipasi/tunggakan ---- */
       const wr = await db.query(
         `SELECT w.rt, w.jenis, COUNT(*) AS n FROM warga w WHERE w.aktif = 1 AND (w.ikut_jimpitan = 1 OR w.jimpitan_berhenti IS NOT NULL)${rtSql} GROUP BY w.rt, w.jenis ORDER BY w.rt, w.jenis`,
         rtPar
       );
       const wargaAktif = wr.rows.reduce((a, r) => a + num(r.n), 0);
+
+      /* ---- ringkasan warga per RT (semua program) ---- */
+      try { await require('./_lib/tabungan').siapTabel(); } catch (_) { /* opsional */ }
+      const wrAll = await db.query(
+        `SELECT w.rt,
+            COUNT(*) AS aktif,
+            SUM(CASE WHEN w.ikut_jimpitan = 1 OR w.jimpitan_berhenti IS NOT NULL THEN 1 ELSE 0 END) AS jimpitan,
+            SUM(CASE WHEN w.ikut_iuran = 1 OR w.iuran_berhenti IS NOT NULL THEN 1 ELSE 0 END) AS iuran,
+            SUM(CASE WHEN COALESCE(w.ikut_tabungan, 0) = 1 THEN 1 ELSE 0 END) AS tabungan
+         FROM warga w WHERE w.aktif = 1${rtSql} GROUP BY w.rt ORDER BY w.rt`,
+        rtPar
+      );
+      const wargaPerRt = wrAll.rows.map((r) => ({
+        rt: r.rt, aktif: num(r.aktif), jimpitan: num(r.jimpitan), iuran: num(r.iuran), tabungan: num(r.tabungan)
+      }));
+      const wargaTotal = wargaPerRt.reduce((a, r) => a + r.aktif, 0);
 
       /* ---- setoran bulan terpilih: per RT, jenis, metode, tipe ---- */
       const sb = await db.query(
@@ -195,23 +211,111 @@ module.exports = route({
         };
       }
 
-      /* ---- setoran terbaru ---- */
+      /* ---- transaksi bulan: jimpitan, iuran, tabungan, pemasukan lain, pengeluaran ---- */
+      const hitungTrx = async (sql, prm) => {
+        const r = (await db.query(sql, prm)).rows[0] || {};
+        return { total: num(r.total), jumlah: num(r.jumlah) };
+      };
+      const trxJimpitan = { total: setoranBulan, jumlah: Object.values(rtMap).reduce((a, r) => a + (r.jml || 0), 0) };
+      const trxIuran = await hitungTrx(
+        `SELECT COALESCE(SUM(i.nominal), 0) AS total, COUNT(*) AS jumlah
+         FROM iuran_wajib i JOIN warga w ON w.id = i.warga_id
+         WHERE i.status = 'sah' AND i.tanggal BETWEEN ? AND ?${rtSql}`,
+        [awal, akhir, ...rtPar]
+      );
+      let trxTabungan = { setor: 0, tarik: 0, netto: 0, jumlah: 0 };
+      try {
+        const tb = await db.query(
+          `SELECT t.jenis, COALESCE(SUM(t.nominal), 0) AS total, COUNT(*) AS jumlah
+           FROM tabungan t JOIN warga w ON w.id = t.warga_id
+           WHERE t.status = 'sah' AND t.tanggal BETWEEN ? AND ?${rtSql} GROUP BY t.jenis`,
+          [awal, akhir, ...rtPar]
+        );
+        for (const x of tb.rows) {
+          if (x.jenis === 'setor') { trxTabungan.setor = num(x.total); trxTabungan.jumlah += num(x.jumlah); }
+          if (x.jenis === 'tarik') { trxTabungan.tarik = num(x.total); trxTabungan.jumlah += num(x.jumlah); }
+        }
+        trxTabungan.netto = trxTabungan.setor - trxTabungan.tarik;
+      } catch (_) { /* tabel belum ada */ }
+      const trxSewa = await hitungTrx(
+        `SELECT COALESCE(SUM(s.nominal), 0) AS total, COUNT(*) AS jumlah
+         FROM sewa_aset s
+         WHERE s.status = 'sah' AND s.tanggal BETWEEN ? AND ?${rt ? ' AND (s.rt = ? OR s.rt IS NULL)' : ''}`,
+        rt ? [awal, akhir, rt] : [awal, akhir]
+      );
+      let trxKeluar = { total: 0, jumlah: 0 };
+      if (keuangan) {
+        trxKeluar = await hitungTrx(
+          `SELECT COALESCE(SUM(nominal), 0) AS total, COUNT(*) AS jumlah
+           FROM pengeluaran WHERE status = 'sah' AND tanggal BETWEEN ? AND ?`,
+          [awal, akhir]
+        );
+      }
+      const transaksi = {
+        jimpitan: trxJimpitan,
+        iuran_wajib: trxIuran,
+        tabungan: trxTabungan,
+        pemasukan_lain: trxSewa,
+        pengeluaran: trxKeluar,
+        masuk: trxJimpitan.total + trxIuran.total + trxSewa.total,
+        keluar: trxKeluar.total
+      };
+
+      /* ---- setoran terbaru + feed gabungan ---- */
       const baru = await db.query(
         `SELECT s.id, w.nama, w.rt, s.tanggal, s.tipe, s.periode_kunci, s.nominal, s.metode, s.petugas, s.created_at
          FROM setoran s JOIN warga w ON w.id = s.warga_id
          WHERE s.status = 'sah'${rtSql} ORDER BY s.created_at DESC, s.id DESC LIMIT 8`,
         rtPar
       );
+      const feed = [];
+      for (const r of baru.rows.slice(0, 5)) {
+        feed.push({
+          jenis: 'jimpitan', judul: r.nama, meta: `RT ${r.rt} · jimpitan`,
+          tanggal: String(r.tanggal).slice(0, 10), nominal: num(r.nominal), arah: 'masuk'
+        });
+      }
+      try {
+        const fi = await db.query(
+          `SELECT w.nama, w.rt, i.tanggal, i.nominal, i.created_at FROM iuran_wajib i JOIN warga w ON w.id = i.warga_id
+           WHERE i.status = 'sah'${rtSql} ORDER BY i.created_at DESC LIMIT 4`, rtPar
+        );
+        for (const r of fi.rows) feed.push({ jenis: 'iuran', judul: r.nama, meta: `RT ${r.rt} · iuran wajib`, tanggal: String(r.tanggal).slice(0, 10), nominal: num(r.nominal), arah: 'masuk' });
+      } catch (_) { /* abaikan */ }
+      try {
+        const ft = await db.query(
+          `SELECT w.nama, w.rt, t.tanggal, t.jenis, t.nominal, t.created_at FROM tabungan t JOIN warga w ON w.id = t.warga_id
+           WHERE t.status = 'sah'${rtSql} ORDER BY t.created_at DESC LIMIT 4`, rtPar
+        );
+        for (const r of ft.rows) feed.push({ jenis: 'tabungan', judul: r.nama, meta: `RT ${r.rt} · tabungan ${r.jenis}`, tanggal: String(r.tanggal).slice(0, 10), nominal: num(r.nominal), arah: r.jenis === 'tarik' ? 'keluar' : 'masuk' });
+      } catch (_) { /* abaikan */ }
+      if (keuangan) {
+        try {
+          const fk = await db.query(
+            `SELECT tanggal, uraian, nominal, created_at FROM pengeluaran WHERE status = 'sah' ORDER BY created_at DESC LIMIT 3`
+          );
+          for (const r of fk.rows) feed.push({ jenis: 'pengeluaran', judul: r.uraian, meta: 'pengeluaran', tanggal: String(r.tanggal).slice(0, 10), nominal: num(r.nominal), arah: 'keluar' });
+        } catch (_) { /* abaikan */ }
+        try {
+          const fs = await db.query(
+            `SELECT tanggal, uraian, nominal, rt, created_at FROM sewa_aset WHERE status = 'sah' ORDER BY created_at DESC LIMIT 3`
+          );
+          for (const r of fs.rows) feed.push({ jenis: 'pemasukan', judul: r.uraian, meta: r.rt ? `RT ${r.rt} · pemasukan lain` : 'pemasukan lain', tanggal: String(r.tanggal).slice(0, 10), nominal: num(r.nominal), arah: 'masuk' });
+        } catch (_) { /* abaikan */ }
+      }
+      feed.sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)));
 
       return {
         bulan, rt, dibuat: new Date().toISOString(), keuangan,
         kpi: {
           setoran_bulan: setoranBulan, setoran_lalu: setoranLalu,
-          warga_aktif: wargaAktif, warga_menyetor: menyetorTotal,
+          warga_aktif: wargaAktif, warga_total: wargaTotal, warga_menyetor: menyetorTotal,
           partisipasi: wargaAktif ? Math.round((menyetorTotal / wargaAktif) * 100) : 0,
           tunggakan_total: tRutin + tLama, tunggakan_rutin: tRutin, tunggakan_lama: tLama, warga_menunggak: menunggak,
           titipan_total: titipan, warga_titipan: wargaTitipan
         },
+        transaksi,
+        warga_per_rt: wargaPerRt,
         tindakan,
         tren, harian, kepatuhan,
         per_rt: Object.values(rtMap).sort((a, b) => a.rt.localeCompare(b.rt)),
@@ -220,7 +324,8 @@ module.exports = route({
         per_tipe: Object.entries(perTipe).map(([tipe, total]) => ({ tipe, total })),
         top_tunggakan: daftarTunggak.slice(0, 10),
         kas,
-        terbaru: baru.rows.map((r) => ({ ...r, tanggal: String(r.tanggal).slice(0, 10) }))
+        terbaru: baru.rows.map((r) => ({ ...r, tanggal: String(r.tanggal).slice(0, 10) })),
+        feed: feed.slice(0, 10)
       };
     }
   }
