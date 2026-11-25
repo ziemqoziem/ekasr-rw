@@ -2600,3 +2600,8 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 .rk-urut button + button { border-left: 1px solid var(--border); }
 .rk-urut button:hover { color: var(--text); }
 .rk-urut button.aktif { background: linear-gradient(135deg, #4f46e5, #0891b2); color: #fff; }
+
+/* Dua tombol riwayat pada kartu jimpitan (cek publik) */
+.cek-aksi-dua { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
+.cek-aksi-dua .cek-aksi { margin-top: 0; padding-left: 8px; padding-right: 8px; }
+@media (max-width: 420px) { .cek-aksi-dua { grid-template-columns: 1fr; } }

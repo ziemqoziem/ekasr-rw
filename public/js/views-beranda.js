@@ -176,7 +176,8 @@
         const iuranKurang = h.iuran && h.iuran.kurang > 0;
         const ok = h.status !== 'menunggak' && !iuranKurang;
         // Kartu jimpitan (biru) memuat tombol kalender di dalamnya; kartu iuran wajib (ungu)
-        const tombol = h.jimpitan_wajib === false ? '' : `<button class="btn sm cek-aksi" data-act="kalenderPublik" data-nama="${esc(h.nama)}" data-rt="${esc(h.rt)}">${App.icon('cal')} Lihat kalender jimpitan</button>`;
+        const dt = `data-nama="${esc(h.nama)}" data-rt="${esc(h.rt)}" data-jenis="${esc(h.jenis)}"`;
+        const tombol = h.jimpitan_wajib === false ? '' : `<div class="cek-aksi-dua"><button class="btn sm cek-aksi" data-act="riwayatPublik" data-tab="${h.jenis === 'harian' ? 'b' : 't'}" ${dt}>${App.icon('book')} Riwayat</button><button class="btn sm cek-aksi" data-act="riwayatPublik" data-tab="b" ${dt}>${App.icon('chart')} Riwayat bulanan</button></div>`;
         const pj = panelJimpitan(h).replace('class="cek-panel ', 'class="cek-panel cek-jimpitan ').replace(/<\/div>$/, tombol + '</div>');
         const pi = panelIuran(h).replace('class="cek-panel ', 'class="cek-panel cek-iuran ');
         return `<article class="cek-result ${ok ? 'ok' : 'warn'}">
@@ -186,6 +187,40 @@
             <div class="cek-grid">${pj}${pi}</div>
         </article>`;
     }
+
+    // Riwayat jimpitan publik: tab Bulanan (saldo akhir bulan) dan Transaksi (setoran terakhir)
+    const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    App.actions.riwayatPublik = async (el) => {
+        const r = await App.api('/api/riwayat-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
+        const kurang = Math.max(0, -r.saldo), lebih = Math.max(0, r.saldo);
+        const status = kurang > 0
+            ? `<div class="rw-status bad"><span class="rw-ic">!</span><div><small>Kekurangan</small><b>${rp(kurang)}</b><em>≈ ${r.tarif_harian > 0 ? Math.ceil(kurang / r.tarif_harian) : 0} hari · dihitung sejak ${tglP(r.mulai_hitung)}</em></div></div>`
+            : `<div class="rw-status good"><span class="rw-ic">${lebih > 0 ? '+' : '✓'}</span><div><small>${lebih > 0 ? 'Kelebihan (titipan)' : 'Status'}</small><b>${lebih > 0 ? rp(lebih) : 'Lunas'}</b><em>Jimpitan ${rp(r.tarif_harian)}/hari sejak ${tglP(r.mulai_hitung)}</em></div></div>`;
+        const lencana = { kurang: '<span class="badge red">kurang</span>', titipan: '<span class="badge green">titipan</span>', lunas: '<span class="badge green">lunas</span>' };
+        const bulanan = r.bulanan.length ? `<div class="tbl-wrap"><table><thead><tr><th>Bulan</th><th class="r">Kewajiban</th><th class="r">Setoran</th><th class="r">Saldo akhir bulan</th><th>Status</th></tr></thead><tbody>
+            ${r.bulanan.map((x) => `<tr><td style="white-space:nowrap"><b>${BLN[Number(x.bulan.slice(5, 7)) - 1]} ${x.bulan.slice(0, 4)}</b><div class="small muted">${x.berjalan ? 'berjalan, s.d. ' : 'per '}${tglP(x.tanggal)}</div></td>
+                <td class="r num">${rp(x.kewajiban)}</td><td class="r num">${x.setoran ? rp(x.setoran) : '-'}</td>
+                <td class="r num"><b style="color:${x.saldo < 0 ? '#f43f5e' : '#10b981'}">${x.saldo < 0 ? '− ' + rp(-x.saldo) : rp(x.saldo)}</b></td><td>${lencana[x.status]}</td></tr>`).join('')}
+            </tbody></table></div><p class="small muted" style="margin-top:8px">Saldo akhir bulan bersifat kumulatif: setoran sejak awal dikurangi seluruh kewajiban sampai akhir bulan itu.${r.tunggakan_lama ? ` Termasuk tunggakan lama ${rp(r.tunggakan_lama)}.` : ''}</p>`
+            : '<div class="empty">Belum ada data bulanan.</div>';
+        const transaksi = r.transaksi.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
+            ${r.transaksi.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin-top:8px">30 setoran terakhir.</p>`
+            : '<div class="empty">Belum ada setoran.</div>';
+        const tabB = el.dataset.tab !== 't';
+        App.dialog(`
+            <div class="rw-dlg">
+                <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
+                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · jimpitan ${esc(r.warga.jenis)}</div></div></div>
+                ${status}
+                <div class="subtabs rw-tabs">
+                    <button type="button" class="tab ${tabB ? 'active' : ''}" data-act="riwTab" data-nilai="b">Bulanan</button>
+                    <button type="button" class="tab ${tabB ? '' : 'active'}" data-act="riwTab" data-nilai="t">Transaksi</button>
+                </div>
+                <div class="rw-pane" data-pane="b" ${tabB ? '' : 'hidden'}>${bulanan}</div>
+                <div class="rw-pane" data-pane="t" ${tabB ? 'hidden' : ''}>${transaksi}</div>
+                <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>
+            </div>`);
+    };
 
     // Reset pencarian: kosongkan nama, RT, dan hasil
     App.actions.cekReset = () => {
