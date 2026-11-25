@@ -9,6 +9,8 @@ const KATALOG = [
   { kelompok: 'Jimpitan', izin: 'jimpitan.tulis', label: 'Mencatat jimpitan', info: 'Setor, setor massal, batalkan setoran' },
   { kelompok: 'Iuran Wajib', izin: 'iuran.lihat', label: 'Melihat iuran wajib', info: 'Papan per periode kumpulan' },
   { kelompok: 'Iuran Wajib', izin: 'iuran.tulis', label: 'Mencatat iuran wajib', info: 'Bayar, simpan massal, batalkan' },
+  { kelompok: 'Tabungan', izin: 'tabungan.lihat', label: 'Melihat tabungan warga', info: 'Papan per periode kumpulan & saldo' },
+  { kelompok: 'Tabungan', izin: 'tabungan.tulis', label: 'Mencatat tabungan warga', info: 'Setor, tarik, simpan massal, batalkan' },
   { kelompok: 'Pemasukan Lainnya', izin: 'sewa.lihat', label: 'Melihat pemasukan lainnya', info: 'Penerimaan (sewa aset, donasi, dll.) & laporan per periode' },
   { kelompok: 'Pemasukan Lainnya', izin: 'sewa.tulis', label: 'Mencatat pemasukan lainnya', info: 'Tambah / batalkan penerimaan' },
   { kelompok: 'Kas', izin: 'pengeluaran.lihat', label: 'Melihat pengeluaran', info: '' },
@@ -28,7 +30,7 @@ const SEMUA_IZIN = KATALOG.map((k) => k.izin);
 
 // Izin yang otomatis ikut (mencatat → harus bisa melihat)
 const DEPEN = {
-  'jimpitan.tulis': ['jimpitan.lihat'], 'iuran.tulis': ['iuran.lihat'], 'sewa.tulis': ['sewa.lihat'],
+  'jimpitan.tulis': ['jimpitan.lihat'], 'iuran.tulis': ['iuran.lihat'], 'tabungan.tulis': ['tabungan.lihat'], 'sewa.tulis': ['sewa.lihat'],
   'pengeluaran.tulis': ['pengeluaran.lihat'], 'warga.kelola': ['warga.lihat'],
   'tutupbuku.tulis': ['kas.lihat'], 'tutupbuku.buka': ['kas.lihat'], 'saldokas.kelola': ['kas.lihat']
 };
@@ -58,7 +60,7 @@ const BAWAAN = {
   },
   pengurus_rt: {
     nama: 'Pengurus RT', keterangan: 'Mencatat iuran wajib & melihat warga di RT-nya saja; melihat dashboard RT',
-    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'warga.lihat', 'dashboard.lihat']
+    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'tabungan.lihat', 'tabungan.tulis', 'warga.lihat', 'dashboard.lihat']
   }
 };
 const PERAN_SISTEM = Object.keys(BAWAAN);
@@ -79,6 +81,7 @@ async function siap(paksa) {
   if (!paksa && cache && Date.now() - cacheAt < TTL) return;
   try {
     const db = require('../db');
+    try { await require('./tabungan').siapTabel(); } catch (_) { /* tabungan opsional; jangan ganggu hak akses lain */ }
     const p = await db.query('SELECT kode, nama, keterangan, sistem, batas_rt, dana_pengeluaran FROM peran');
     if (!p.rows.length) { cache = dariBawaan(); }
     else {

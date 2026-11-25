@@ -139,6 +139,23 @@ CREATE TABLE IF NOT EXISTS tarif_iuran (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Setiap baris = satu pembayaran iuran wajib, nominal BEBAS; dialokasikan ke periode tertua dulu (lihat api/_lib/iuran.js)
+CREATE TABLE IF NOT EXISTS tabungan (
+  id VARCHAR(40) PRIMARY KEY,
+  warga_id INT NOT NULL,
+  tanggal DATE NOT NULL,
+  jenis ENUM('setor','tarik') NOT NULL DEFAULT 'setor',
+  nominal INT NOT NULL,
+  metode ENUM('tunai','transfer') NOT NULL DEFAULT 'tunai',
+  petugas VARCHAR(50) NOT NULL,
+  catatan VARCHAR(255) NULL,
+  status ENUM('sah','batal') NOT NULL DEFAULT 'sah',
+  alasan_batal VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_tab_warga (warga_id, status, tanggal),
+  INDEX idx_tab_tgl (status, tanggal),
+  CONSTRAINT fk_tab_warga FOREIGN KEY (warga_id) REFERENCES warga(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS iuran_wajib (
   id VARCHAR(40) PRIMARY KEY,
   warga_id INT NOT NULL,

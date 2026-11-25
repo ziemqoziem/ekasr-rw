@@ -156,6 +156,7 @@
         alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
         users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
         chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+        piggy: '<path d="M19 10c0-3.3-3.1-6-7-6S5 6.7 5 10c0 1.7.8 3.2 2 4.3V18h3v-1.5c.6.1 1.3.2 2 .2s1.4-.1 2-.2V18h3v-3.7c1.2-1.1 2-2.6 2-4.3z"/><path d="M19 10h2v3h-2"/><circle cx="15" cy="9.5" r=".6"/><path d="M10 7.5h3"/>',
         wallet: '<path d="M20 7h-7m7 10h-7M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><circle cx="16" cy="12" r="1"/>',
         book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
         tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
@@ -302,6 +303,7 @@
         const G1 = 'Pencatatan', G2 = 'Pantau & Laporan', G3 = 'Data & Sistem';
         if (ada('jimpitan.lihat')) t.push({ id: 'setoran', label: 'Setor Jimpitan', icon: 'cash', group: G1 });
         if (ada('iuran.lihat')) t.push({ id: 'iuran', label: 'Iuran Wajib', icon: 'wallet', group: G1 });
+        if (ada('tabungan.lihat')) t.push({ id: 'tabungan', label: 'Tabungan', icon: 'piggy', group: G1 });
         if (ada('sewa.lihat')) t.push({ id: 'pemasukanlain', label: 'Pemasukan Lainnya', icon: 'tag', group: G1 });
         if (ada('pengeluaran.lihat')) t.push({ id: 'pengeluaran', label: 'Pengeluaran', icon: 'out', group: G1 });
         if (ada('jimpitan.lihat')) {
