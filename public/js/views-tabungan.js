@@ -27,18 +27,18 @@
             <div id="tPapan" ${TS.tab === 'rekap' ? 'hidden' : ''}>
             <div id="tRingkas"></div>
             ${App.rtKunci() || !tulis ? `<p class="small hint-rt">${App.rtKunci() ? `<b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b> ` : ''}${tulis ? '' : '<b>Anda hanya dapat melihat.</b> Pencatatan tabungan dilakukan Pengurus RT.'}</p>` : ''}
-            <div class="card">
-                <div class="filters">
+            <div class="card tb-frame">
+                <div class="filters tb-filter">
                     <div class="full-m" id="tPerWrap"></div>
                     <div><label class="f" for="tSt">Status</label><select id="tSt" data-change="tabunganFilter">
                         ${[['', 'Semua'], ['belum', 'Belum menabung'], ['sudah', 'Sudah menabung']].map(([v, l]) => `<option value="${v}" ${TS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div><label class="f" for="tCari">Cari nama</label><input id="tCari" placeholder="Ketik nama…" value="${esc(TS.q)}" data-input="tabunganCari" maxlength="60"></div>
                     ${tulis ? `<div><label class="f" for="tTgl">Tanggal setor</label><input type="date" id="tTgl" value="${esc(TS.tanggal)}" max="${App.today()}" data-change="tabunganTgl"></div>` : ''}
                 </div>
+                <div class="savebar savebar-atas tb-bar" id="tBar"></div>
+                <div id="tPg"></div>
+                <div id="tList" class="list tb-list"></div>
             </div>
-            <div class="savebar savebar-atas" id="tBar"></div>
-            <div id="tPg"></div>
-            <div id="tList" class="list"></div>
             </div>
             <div id="tRekap" ${TS.tab === 'rekap' ? '' : 'hidden'}></div>`;
         await muat();
@@ -92,13 +92,13 @@
         const kolomSemua = r.kolom || [];
         TS.ukuranKey = window.innerWidth <= 640 ? 'm' : Math.floor(window.innerWidth / 40);
 
-        const isiNominal = (w) => `<input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal tabungan ${esc(w.nama)}" data-input="tabunganNominal" data-id="${w.id}" value="${TS.nominal.get(w.id) || ''}">
+        const isiNominal = (w) => `<div class="tb-input"><input type="number" inputmode="numeric" min="1" step="1" placeholder="Rp 0" aria-label="Nominal tabungan ${esc(w.nama)}" data-input="tabunganNominal" data-id="${w.id}" value="${TS.nominal.get(w.id) || ''}">
             <button class="btn sm" data-act="tabunganTambahDef" data-id="${w.id}" title="Tambah ${rp(DEF)}">+${kom(DEF)}</button>
             <button class="btn sm primary" data-act="tabunganSimpanSatu" data-id="${w.id}">Simpan</button>
-            <button class="btn sm ghost" data-act="tabunganBatalPilih" data-id="${w.id}">Batal</button>`;
-        const tombolAwal = (w) => `<button class="btn sm" data-act="tabunganIsiDef" data-id="${w.id}" title="Isi ${rp(DEF)}">+${kom(DEF)}</button>
+            <button class="btn sm ghost" data-act="tabunganBatalPilih" data-id="${w.id}">Batal</button></div>`;
+        const tombolAwal = (w) => `<div class="tb-input"><button class="btn sm" data-act="tabunganIsiDef" data-id="${w.id}" title="Isi ${rp(DEF)}">+${kom(DEF)}</button>
             <button class="btn sm ghost" data-act="tabunganTambah" data-id="${w.id}">+ Tambah</button>
-            <button class="btn sm ghost" data-act="tabunganTarik" data-id="${w.id}" ${w.saldo > 0 ? '' : 'disabled'} title="Tarik tabungan">Tarik</button>`;
+            <button class="btn sm ghost" data-act="tabunganTarik" data-id="${w.id}" ${w.saldo > 0 ? '' : 'disabled'} title="Tarik tabungan">Tarik</button></div>`;
 
         if (window.innerWidth <= 640) {
             const kartu = pg.items.map((w) => {
@@ -115,7 +115,7 @@
             }).join('');
             $('#tList').innerHTML = rows.length ? `<div class="iu-m">
                 ${tulis ? `<label class="iu-all"><input type="checkbox" data-change="tabunganCekSemua" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}> Centang semua yang belum menabung (${bisaPilih.length})</label>` : ''}
-                ${kartu}<p class="small muted pad-sm">K = kumpulan RW. ✓ menabung · – belum menabung. Warna menyala = kumpulan terpilih. Ketuk saldo untuk riwayat.</p></div>`
+                ${kartu}<p class="small muted tb-note">K = kumpulan RW. ✓ menabung · – belum menabung. Warna menyala = kumpulan terpilih. Ketuk saldo untuk riwayat.</p></div>`
                 : vKosong();
             barSimpan();
             return;
@@ -136,11 +136,11 @@
                 <td class="r num c-sum"><button class="link-setor" data-act="tabunganRiwayat" data-id="${w.id}" title="Lihat riwayat / batalkan">${rp(w.saldo)}</button></td>${nom}</tr>`;
         }).join('');
         const kepalaPer = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no} · ${esc(tgl(k.mulai))}">K${k.no}</th>`).join('');
-        $('#tList').innerHTML = rows.length ? `<div class="card tbl-card"><div class="tbl-wrap tbl-satu"><table class="tbl-iuran"><thead><tr>
+        $('#tList').innerHTML = rows.length ? `<div class="tbl-wrap tbl-satu"><table class="tbl-iuran tbl-tab"><thead><tr>
             ${tulis ? `<th class="c-cek"><input type="checkbox" data-change="tabunganCekSemua" aria-label="Centang semua yang belum menabung" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}></th>` : ''}
             <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Saldo</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
-            <p class="small muted pad-note">K = kumpulan RW. ✓ menabung · – belum menabung. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Saldo” untuk riwayat, pembatalan, atau penarikan.</p></div>`
+            <p class="small muted tb-note">K = kumpulan RW. ✓ menabung · – belum menabung. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Saldo” untuk riwayat, pembatalan, atau penarikan.</p>`
             : vKosong();
         barSimpan();
     }
