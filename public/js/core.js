@@ -168,6 +168,7 @@
         moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
         user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
         check: '<polyline points="20 6 9 17 4 12"/>',
+        info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
         x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
         search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
         reset: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
@@ -271,18 +272,74 @@
         if (v) v.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
-    /* ---------- toast & dialog ---------- */
+    /* ---------- toast (ringkas) & notify popup (utama) & dialog form ---------- */
+    const NFY = {
+        ok: { title: 'Berhasil', icon: 'check', btn: 'Mengerti' },
+        err: { title: 'Terjadi kesalahan', icon: 'alert', btn: 'Tutup' },
+        info: { title: 'Informasi', icon: 'info', btn: 'Mengerti' },
+        warn: { title: 'Perhatian', icon: 'alert', btn: 'Mengerti' },
+        welcome: { title: 'Selamat datang', icon: 'check', btn: 'Mulai' }
+    };
+
     App.toast = function (msg, type) {
         const box = App.$('#toasts');
         if (!box) return;
         const el = document.createElement('div');
-        el.className = 'toast ' + (type === 'err' ? 'err' : 'ok');
-        const iconSvg = type === 'err' ? App.icon('alert') : App.icon('check');
-        el.innerHTML = `<span style="width:16px;height:16px;flex:none;display:flex">${iconSvg}</span><span style="flex:1">${App.esc(msg)}</span>`;
+        el.className = 'toast ' + (type === 'err' ? 'err' : type === 'warn' ? 'warn' : 'ok');
+        const iconSvg = type === 'err' || type === 'warn' ? App.icon('alert') : App.icon('check');
+        el.innerHTML = `<span class="toast-ico">${iconSvg}</span><span class="toast-msg">${App.esc(msg)}</span>`;
         box.appendChild(el);
-        setTimeout(() => el.remove(), type === 'err' ? 6000 : 3500);
+        setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 280); }, type === 'err' ? 5500 : 3200);
     };
-    App.fail = (e) => App.toast(e && e.message ? e.message : String(e), 'err');
+
+    /** Popup notifikasi modern. App.notify(msg) | App.notify(msg, 'err') | App.notify({ type, title, message, button }) */
+    App.notify = function (msgOrOpts, type) {
+        const opts = msgOrOpts && typeof msgOrOpts === 'object'
+            ? msgOrOpts
+            : { message: msgOrOpts, type: type || 'info' };
+        const kind = opts.type || 'info';
+        const meta = NFY[kind] || NFY.info;
+        const title = opts.title || meta.title;
+        const message = opts.message != null ? String(opts.message) : '';
+        const btn = opts.button || meta.btn;
+        const root = App.$('#nfyRoot');
+        if (!root) { App.toast(message || title, kind === 'err' ? 'err' : 'ok'); return; }
+        root.hidden = false;
+        root.setAttribute('role', 'alertdialog');
+        root.setAttribute('aria-modal', 'true');
+        root.setAttribute('aria-labelledby', 'nfyTitle');
+        root.innerHTML = `
+            <div class="nfy-backdrop" data-act="closeNotify"></div>
+            <div class="nfy-card nfy-${App.esc(kind)}" role="document">
+                <div class="nfy-glow" aria-hidden="true"></div>
+                <div class="nfy-ico" aria-hidden="true">${App.icon(meta.icon)}</div>
+                <h3 id="nfyTitle">${App.esc(title)}</h3>
+                ${message ? `<p class="nfy-msg">${App.esc(message)}</p>` : ''}
+                <div class="nfy-actions">
+                    <button type="button" class="btn primary nfy-btn" data-act="closeNotify" autofocus>${App.esc(btn)}</button>
+                </div>
+            </div>`;
+        document.body.classList.add('nfy-open');
+        const b = App.$('.nfy-btn', root);
+        if (b) setTimeout(() => b.focus(), 40);
+        return root;
+    };
+    App.closeNotify = () => {
+        const root = App.$('#nfyRoot');
+        if (!root || root.hidden) return;
+        const card = App.$('.nfy-card', root);
+        if (card) card.classList.add('nfy-out');
+        setTimeout(() => {
+            root.hidden = true;
+            root.innerHTML = '';
+            document.body.classList.remove('nfy-open');
+        }, 180);
+    };
+    App.actions.closeNotify = () => App.closeNotify();
+    App.fail = (e) => {
+        const msg = e && e.message ? e.message : String(e);
+        App.notify({ type: 'err', title: 'Terjadi kesalahan', message: msg });
+    };
 
     App.dialog = function (html) {
         const d = App.$('#dlg');
@@ -363,7 +420,11 @@
     App.actions.sbToggle = () => SB.toggle();
     App.actions.sbMini = () => SB.mini();
     App.actions.sbClose = () => SB.tutup();
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') SB.tutup(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (App.$('#nfyRoot') && !App.$('#nfyRoot').hidden) { App.closeNotify(); return; }
+        SB.tutup();
+    });
     window.addEventListener('resize', () => { if (!SB.mobile()) SB.drawer = false; SB.apply(); });
 
     App.go = function (tab) {
@@ -426,18 +487,25 @@
     /* ---------- login / logout ---------- */
     App.actions.loginDialog = () => {
         const d = App.dialog(`
-            <h3>Masuk E-Kas</h3>
-            <p class="small muted" style="margin-bottom:16px">Silakan masukkan username dan password akun Anda.</p>
-            <form data-form="login" autocomplete="on">
-                <div class="form-grid">
-                    <div class="full"><label class="f" for="lu">Username</label><input id="lu" name="username" autocomplete="username" required maxlength="50" placeholder="Username akun"></div>
-                    <div class="full"><label class="f" for="lp">Password</label><input id="lp" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="••••••••"></div>
+            <div class="dlg-auth">
+                <div class="dlg-auth-head">
+                    <div class="dlg-auth-mark" aria-hidden="true">${App.icon('wallet')}</div>
+                    <div>
+                        <h3>Masuk E-Kas</h3>
+                        <p class="small muted">Gunakan akun pengurus untuk mengelola kas RW.</p>
+                    </div>
                 </div>
-                <div class="dlg-actions">
-                    <button type="button" class="btn" data-act="closeDialog">Batal</button>
-                    <button type="submit" class="btn primary">Masuk</button>
-                </div>
-            </form>`);
+                <form data-form="login" autocomplete="on">
+                    <div class="form-grid">
+                        <div class="full"><label class="f" for="lu">Username</label><input id="lu" name="username" autocomplete="username" required maxlength="50" placeholder="Username akun"></div>
+                        <div class="full"><label class="f" for="lp">Password</label><input id="lp" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="••••••••"></div>
+                    </div>
+                    <div class="dlg-actions">
+                        <button type="button" class="btn" data-act="closeDialog">Batal</button>
+                        <button type="submit" class="btn primary">Masuk</button>
+                    </div>
+                </form>
+            </div>`);
         setTimeout(() => App.$('#lu', d) && App.$('#lu', d).focus(), 40);
     };
     App.actions.closeDialog = () => App.closeDialog();
@@ -454,13 +522,26 @@
             App.user = r.user;
             store('set', 'jimpitan_token', r.token);
             App.closeDialog();
-            App.toast(`Selamat datang, ${r.user.nama}.`);
+            const peran = r.user.role_nama || App.ROLE_LABEL[r.user.role] || r.user.role;
+            App.notify({
+                type: 'welcome',
+                title: 'Selamat datang',
+                message: `Halo, ${r.user.nama}. Anda masuk sebagai ${peran}${r.user.rt ? ' · RT ' + r.user.rt : ''}.`,
+                button: 'Mulai'
+            });
             // Semua peran (admin, bendahara, RT) langsung ke Beranda/Dashboard setelah login.
             App.tab = 'beranda';
             App.render();
         } catch (e) {
-            App.fail(e);
+            App.notify({
+                type: 'err',
+                title: 'Gagal masuk',
+                message: (e && e.message) ? e.message : 'Username atau password tidak sesuai.',
+                button: 'Coba lagi'
+            });
             btn.disabled = false;
+            const pw = App.$('#lp', f);
+            if (pw) { pw.focus(); pw.select(); }
         }
     };
 
@@ -469,7 +550,9 @@
         App.user = null;
         store('del', 'jimpitan_token');
         App.tab = 'beranda';
-        if (!silent) App.toast('Anda telah keluar.');
+        if (!silent) {
+            App.notify({ type: 'info', title: 'Anda telah keluar', message: 'Sesi berakhir. Silakan masuk lagi bila ingin mengelola data.', button: 'Tutup' });
+        }
         App.render();
     };
     App.actions.logout = () => App.logout(false);

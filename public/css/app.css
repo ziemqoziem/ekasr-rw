@@ -1641,7 +1641,7 @@ dialog:has(.dlg-warga) { width: min(560px, calc(100% - 24px)); padding: 22px 22p
     .chk-extra { margin-left: 0; }
 }
 
-/* Toasts */
+/* Toasts (ringkas, bawah) */
 .toasts {
     position: fixed;
     left: 50%;
@@ -1656,7 +1656,7 @@ dialog:has(.dlg-warga) { width: min(560px, calc(100% - 24px)); padding: 22px 22p
 }
 .toast {
     padding: 13px 16px;
-    border-radius: var(--radius);
+    border-radius: 14px;
     font-size: 0.86rem;
     font-weight: 500;
     background: var(--panel-solid);
@@ -1668,20 +1668,107 @@ dialog:has(.dlg-warga) { width: min(560px, calc(100% - 24px)); padding: 22px 22p
     align-items: center;
     gap: 10px;
 }
+.toast.out { animation: toastOut 260ms var(--ease) forwards; }
+.toast-ico { width: 18px; height: 18px; flex: none; display: flex; }
+.toast-ico svg { width: 18px; height: 18px; }
+.toast-msg { flex: 1; min-width: 0; }
 @keyframes toastIn {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
 }
-.toast.ok {
-    border-color: var(--green-border);
-    background: var(--panel-solid);
-    color: var(--green);
+@keyframes toastOut {
+    to { opacity: 0; transform: translateY(8px) scale(0.98); }
 }
-.toast.err {
-    border-color: var(--red-border);
-    background: var(--panel-solid);
-    color: var(--red);
+.toast.ok { border-color: var(--green-border); color: var(--green); }
+.toast.err { border-color: var(--red-border); color: var(--red); }
+.toast.warn { border-color: var(--amber-border); color: var(--amber); }
+
+/* Popup notifikasi modern (welcome / error / info) */
+.nfy-root {
+    position: fixed; inset: 0; z-index: 200;
+    display: grid; place-items: center;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
 }
+.nfy-root[hidden] { display: none; }
+.nfy-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(2, 10, 12, 0.72);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    animation: nfyFade 200ms var(--ease);
+}
+.nfy-card {
+    position: relative; z-index: 1;
+    width: min(400px, 100%);
+    padding: 28px 24px 22px;
+    border-radius: 22px;
+    border: 1px solid var(--border-hover);
+    background: var(--panel-solid);
+    color: var(--text);
+    box-shadow: var(--shadow-xl), 0 24px 48px rgba(0, 0, 0, 0.28);
+    text-align: center;
+    overflow: hidden;
+    animation: nfyIn 280ms var(--ease);
+}
+.nfy-card.nfy-out { animation: nfyOut 180ms var(--ease) forwards; }
+.nfy-glow {
+    position: absolute; left: 50%; top: -40px; width: 180px; height: 180px;
+    transform: translateX(-50%); border-radius: 50%; pointer-events: none;
+    filter: blur(40px); opacity: 0.45;
+}
+.nfy-ok .nfy-glow, .nfy-welcome .nfy-glow { background: #10b981; }
+.nfy-err .nfy-glow { background: #f43f5e; }
+.nfy-warn .nfy-glow { background: #f59e0b; }
+.nfy-info .nfy-glow { background: #0d9488; }
+.nfy-ico {
+    width: 64px; height: 64px; margin: 0 auto 16px;
+    border-radius: 20px; display: grid; place-items: center;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+.nfy-ico svg { width: 30px; height: 30px; }
+.nfy-ok .nfy-ico, .nfy-welcome .nfy-ico { background: linear-gradient(135deg, #10b981, #059669); }
+.nfy-err .nfy-ico { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.nfy-warn .nfy-ico { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.nfy-info .nfy-ico { background: linear-gradient(135deg, #0d9488, #0891b2); }
+.nfy-card h3 {
+    margin: 0 0 8px; font-size: 1.28rem; font-weight: 800;
+    letter-spacing: -0.4px; color: var(--text);
+}
+.nfy-msg {
+    margin: 0 0 20px; font-size: 0.92rem; line-height: 1.5;
+    color: var(--text-muted);
+}
+.nfy-actions { display: flex; justify-content: center; }
+.nfy-btn { min-width: 140px; min-height: 44px; border-radius: 12px; }
+body.nfy-open { overflow: hidden; }
+@keyframes nfyFade {
+    from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes nfyIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.94); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes nfyOut {
+    to { opacity: 0; transform: translateY(10px) scale(0.96); }
+}
+
+/* Dialog login modern */
+dialog:has(.dlg-auth) { width: min(420px, calc(100% - 24px)); padding: 22px; }
+.dlg-auth-head {
+    display: flex; align-items: center; gap: 14px;
+    margin: 0 0 18px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+.dlg-auth-head h3 { margin: 0 0 4px; font-size: 1.2rem; }
+.dlg-auth-head p { margin: 0; }
+.dlg-auth-mark {
+    width: 48px; height: 48px; flex: none; border-radius: 14px;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, #0d9488, #0891b2);
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
+}
+.dlg-auth-mark svg { width: 22px; height: 22px; }
 
 .loading {
     text-align: center;
@@ -1788,7 +1875,7 @@ dialog:has(.dlg-warga) { width: min(560px, calc(100% - 24px)); padding: 22px 22p
         background: #ffffff !important;
         color: #000000 !important;
     }
-    .bg, .topbar, .tabs, .no-print, .toasts, dialog, .theme-btn {
+    .bg, .topbar, .tabs, .no-print, .toasts, .nfy-root, dialog, .theme-btn {
         display: none !important;
     }
     .print-only {
