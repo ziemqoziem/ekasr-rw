@@ -304,7 +304,9 @@
     };
 
     /* ================= REKAP IURAN per kumpulan RW ================= */
-    const RKI = (App.stRekapIuran = { periode: '', data: null, cari: '' });
+    const RKI = (App.stRekapIuran = { periode: '', data: null, cari: '', urut: 'nominal_desc' });
+    const URUT = [['nominal_desc', 'Nominal ↓'], ['nominal_asc', 'Nominal ↑'], ['nama', 'Nama A–Z']];
+    const urutkan = (list) => list.slice().sort((a, b) => (RKI.urut === 'nominal_desc' ? b.total - a.total : RKI.urut === 'nominal_asc' ? a.total - b.total : 0) || a.nama.localeCompare(b.nama, 'id'));
 
     async function muatRekap() {
         const el = $('#iRekap');
@@ -341,16 +343,18 @@
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
-                <div class="filters"><div class="grow"><label class="f" for="rkiCari">Cari nama</label><input id="rkiCari" placeholder="Ketik nama…" value="${esc(RKI.cari)}" data-input="rekapIuranCari" maxlength="60"></div></div>
+                <div class="filters"><div class="grow"><label class="f" for="rkiCari">Cari nama</label><input id="rkiCari" placeholder="Ketik nama…" value="${esc(RKI.cari)}" data-input="rekapIuranCari" maxlength="60"></div>
+                    <div><label class="f">Urutkan</label><div class="rk-urut" role="group" aria-label="Urutkan rincian">${URUT.map(([v, l]) => `<button type="button" class="${RKI.urut === v ? 'aktif' : ''}" data-act="rekapIuranUrut" data-nilai="${v}">${l}</button>`).join('')}</div></div></div>
                 ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
                 ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, r.rt.findIndex((g) => g.rt === rt)) % 3) + 1}">
                     <header><b>RT ${esc(rt)}</b><span>${rp(list.reduce((a, w) => a + w.total, 0))}</span></header>
-                    <ul>${list.map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
+                    <ul>${urutkan(list).map((w) => `<li><span>${esc(w.nama)}</span><b>${rp(w.total)}</b></li>`).join('')}</ul>
                     <footer><span>${list.length} warga</span><b>${rp(list.reduce((a, w) => a + w.total, 0))}</b></footer></section>`).join('')}
                 </div>`
                 : '<div class="empty" style="margin-top:10px">Belum ada iuran diterima pada kumpulan ini.</div>'}
             </div>`;
     }
+    App.actions.rekapIuranUrut = (el) => { RKI.urut = el.dataset.nilai; gambarRekap(); };
     App.changes.rekapIuranPeriode = async (el) => { RKI.periode = el.value; await muatRekap(); };
     App.changes.rekapIuranCari = (inp) => {
         RKI.cari = inp.value;

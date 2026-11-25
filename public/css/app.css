@@ -2593,3 +2593,10 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 .tb-buka { border: 0; background: transparent; color: #f43f5e; font-size: 0.74rem; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
 .tb-cap { text-align: left; padding: 12px 14px 4px; font-weight: 700; font-size: 0.95rem; }
 @media (max-width: 720px) { .tb-steps { grid-template-columns: 1fr 1fr; } }
+
+/* Tombol urut rincian rekap */
+.rk-urut { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--panel-2); }
+.rk-urut button { border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 0.8rem; font-weight: 600; padding: 8px 12px; min-height: 40px; cursor: pointer; white-space: nowrap; }
+.rk-urut button + button { border-left: 1px solid var(--border); }
+.rk-urut button:hover { color: var(--text); }
+.rk-urut button.aktif { background: linear-gradient(135deg, #4f46e5, #0891b2); color: #fff; }
