@@ -84,6 +84,17 @@ module.exports = route({
       const p = (await db.query('SELECT id, status, tanggal, kategori, uraian, nominal, bukti, sumber FROM pengeluaran WHERE id = ?', [id])).rows[0];
       if (!p) throw fail(404, 'Pengeluaran tidak ditemukan.');
       if (!bolehUbah(user, p)) throw fail(403, `Pengeluaran ini berasal dari ${NAMA_DANA[p.sumber]} dan tidak dapat diubah oleh peran Anda.`);
+      // Batalkan (tidak dihapus; alasan tercatat dan tidak lagi dihitung di kas)
+      if (b.aksi === 'batal') {
+        const alasan = str(b.alasan, 'Alasan pembatalan', { min: 3, max: 255, required: true });
+        if (p.status === 'batal') throw fail(400, 'Sudah dibatalkan.');
+        await pastikanTerbuka(String(p.tanggal).slice(0, 10));
+        await db.query("UPDATE pengeluaran SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
+        try { require('./_lib/cache-publik').invalidatePublik(); } catch (_) { /* opsional */ }
+        await catat(user, 'BATAL_PENGELUARAN', `Membatalkan pengeluaran ${id} ("${p.uraian}", Rp ${p.nominal}, ${NAMA_DANA[p.sumber]}): ${alasan}`, req);
+        return { id };
+      }
+      if (p.status === 'batal') throw fail(400, 'Pengeluaran yang sudah dibatalkan tidak dapat diubah.');
       const today = P.todayWIB();
       const tanggal = b.tanggal !== undefined ? String(b.tanggal) : String(p.tanggal).slice(0, 10);
       if (!P.validDate(tanggal)) throw fail(400, 'Tanggal tidak valid.');

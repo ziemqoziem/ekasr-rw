@@ -220,7 +220,7 @@
                     <td>${esc(p.kategori)}</td>
                     <td><span class="badge">${esc(DANA_PENDEK[p.sumber] || 'Umum')}</span></td>
                     <td class="r num"><b>${rp(p.nominal)}</b></td>
-                    ${tulis ? `<td class="r nowrap">${p.boleh_ubah && p.status !== 'batal' ? `<button class="btn sm" data-act="pengeluaranForm" data-id="${esc(p.id)}">Ubah</button> <button class="btn sm danger" data-act="pengeluaranHapus" data-id="${esc(p.id)}">Hapus</button>` : ''}</td>` : ''}</tr>`).join('')}
+                    ${tulis ? `<td class="r nowrap">${p.boleh_ubah ? `<div class="aksi-ico">${p.status !== 'batal' ? `<button type="button" class="btn-ico ico-edit" data-act="pengeluaranForm" data-id="${esc(p.id)}" title="Ubah" aria-label="Ubah pengeluaran">${App.icon('edit')}</button><button type="button" class="btn-ico ico-batal" data-act="pengeluaranBatal" data-id="${esc(p.id)}" title="Batalkan" aria-label="Batalkan pengeluaran">${App.icon('ban')}</button>` : ''}<button type="button" class="btn-ico ico-hapus" data-act="pengeluaranHapus" data-id="${esc(p.id)}" title="Hapus permanen" aria-label="Hapus pengeluaran">${App.icon('trash')}</button></div>` : ''}</td>` : ''}</tr>`).join('')}
                 </tbody><tfoot><tr><td colspan="4"><b>Total halaman ini</b></td><td class="r num"><b>${rp(pg.items.filter((p) => p.status === 'sah').reduce((a, p) => a + p.nominal, 0))}</b></td>${tulis ? '<td></td>' : ''}</tr></tfoot></table></div></div>`
             : '<div class="card empty">Belum ada pengeluaran.</div>'}`;
     }
@@ -256,6 +256,27 @@
         else await App.api('/api/pengeluaran', { method: 'POST', body });
         App.closeDialog();
         App.toast(f.dataset.id ? 'Pengeluaran diperbarui.' : 'Pengeluaran tercatat.');
+        await loadPengeluaran();
+    };
+    App.actions.pengeluaranBatal = (el) => {
+        const e = PG.data.find((x) => x.id === el.dataset.id);
+        App.dialog(`
+            <h3>Batalkan pengeluaran</h3>
+            <p class="small muted mb-md">${e ? esc(e.uraian) + ' — ' + rp(e.nominal) + ' (' + App.tglId(e.tanggal) + ')' : ''}<br>
+            Data tetap tampil (redup) beserta alasannya, tetapi tidak lagi dihitung di saldo kas.</p>
+            <form data-form="pengeluaranBatal" data-id="${esc(el.dataset.id)}">
+                <label class="f" for="pbAlasan">Alasan pembatalan</label>
+                <input id="pbAlasan" name="alasan" required minlength="3" maxlength="255" placeholder="mis. salah catat">
+                <div class="dlg-actions">
+                    <button type="button" class="btn" data-act="closeDialog">Kembali</button>
+                    <button type="submit" class="btn danger">Batalkan</button>
+                </div>
+            </form>`);
+    };
+    App.forms.pengeluaranBatal = async (f) => {
+        await App.api('/api/pengeluaran', { method: 'PUT', body: { id: f.dataset.id, aksi: 'batal', alasan: f.alasan.value } });
+        App.closeDialog();
+        App.toast('Pengeluaran dibatalkan.');
         await loadPengeluaran();
     };
     App.actions.pengeluaranHapus = (el) => {
