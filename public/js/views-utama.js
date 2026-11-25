@@ -576,7 +576,8 @@
                 <td style="white-space:normal;min-width:160px"><b>${esc(w.nama)}</b> <span class="small muted">#${w.id}</span>${w.aktif ? '' : ' <span class="badge red">nonaktif</span>'}</td>
                 <td>${esc(w.rt)}</td><td>${jenisBadge(w.jenis)}</td><td class="nowrap">${esc(w.no_hp || '-')}</td>
                 <td style="white-space:normal">${w.ikut_jimpitan ? '<span class="badge green">Jimpitan</span>' : `<span class="badge amber">${w.jimpitan_berhenti ? 'Jimpitan s.d. ' + App.tglId(w.jimpitan_berhenti) : 'Bebas jimpitan'}</span>`}
-                    ${w.ikut_iuran ? '<span class="badge green">Iuran kas</span>' : `<span class="badge amber">${w.iuran_berhenti ? 'Iuran kas s.d. ' + App.tglId(w.iuran_berhenti) : 'Bebas iuran kas'}</span>`}</td>
+                    ${w.ikut_iuran ? '<span class="badge green">Iuran kas</span>' : `<span class="badge amber">${w.iuran_berhenti ? 'Iuran kas s.d. ' + App.tglId(w.iuran_berhenti) : 'Bebas iuran kas'}</span>`}
+                    ${w.ikut_tabungan ? '<span class="badge blue">Tabungan</span>' : ''}</td>
                 <td class="r nowrap">
                     ${App.has('jimpitan.lihat') ? `<button class="btn sm" data-act="riwayatWarga" data-id="${w.id}">Riwayat</button>` : ''}
                     ${kelola ? `<button class="btn sm" data-act="wargaForm" data-id="${w.id}">Ubah</button>` : ''}</td></tr>`).join('')}
@@ -594,39 +595,80 @@
 
     App.actions.wargaForm = (el) => {
         const w = el.dataset.id ? WS.list.find((x) => x.id === Number(el.dataset.id)) : null;
-        const v = w || { nama: '', rt: WS.rt || '007', jenis: 'bulanan', no_hp: '', alamat: '', mulai_iuran: '', catatan: '', aktif: 1 };
+        const v = w || { nama: '', rt: WS.rt || '007', jenis: 'bulanan', no_hp: '', alamat: '', mulai_iuran: '', catatan: '', aktif: 1, ikut_jimpitan: 1, ikut_iuran: 1, ikut_tabungan: 0 };
+        const cek = (on) => on ? 'checked' : '';
         App.dialog(`
-            <h3>${w ? 'Ubah warga #' + w.id : 'Tambah warga'}</h3>
-            <form data-form="warga" data-id="${w ? w.id : ''}">
-                <div class="form-grid">
-                    <div class="full"><label class="f" for="fwNama">Nama</label><input id="fwNama" name="nama" value="${esc(v.nama)}" required minlength="2" maxlength="150"></div>
-                    <div><label class="f" for="fwRt">RT</label><select id="fwRt" name="rt">${optRt(v.rt, false)}</select></div>
-                    <div><label class="f" for="fwJenis">Jenis setoran</label><select id="fwJenis" name="jenis">${JENIS.map((j) => `<option value="${j}" ${v.jenis === j ? 'selected' : ''}>${j}</option>`).join('')}</select></div>
-                    <div><label class="f" for="fwHp">No HP / WhatsApp</label><input id="fwHp" name="no_hp" value="${esc(v.no_hp || '')}" inputmode="tel" maxlength="20" placeholder="08xxxxxxxxxx"></div>
-                    <div><label class="f" for="fwMulai">Mulai iuran (opsional)</label><input type="date" id="fwMulai" name="mulai_iuran" value="${esc(App.ymd(v.mulai_iuran))}"></div>
-                    <div class="full" style="margin-top:6px"><b class="small">Kewajiban iuran</b>
-                        <p class="small muted">Tidak semua warga wajib iuran kas. Jika dicabut: kosongkan tanggal = <b>bebas sejak awal</b>; isi tanggal = <b>wajib sampai tanggal itu</b> (tunggakan sebelumnya tetap tercatat).</p></div>
-                    <div class="full row"><input type="checkbox" id="fwIJ" name="ikut_jimpitan" data-change="wargaIkut" ${v.ikut_jimpitan === 0 ? '' : 'checked'}><label for="fwIJ">Wajib <b>iuran jimpitan</b></label></div>
-                    <div class="full" id="fwJBox" style="${v.ikut_jimpitan === 0 ? '' : 'display:none'}"><label class="f" for="fwJB">Jimpitan: wajib sampai tanggal (kosong = bebas sejak awal)</label><input type="date" id="fwJB" name="jimpitan_berhenti" value="${esc(App.ymd(v.jimpitan_berhenti))}"></div>
-                    <div class="full row"><input type="checkbox" id="fwII" name="ikut_iuran" data-change="wargaIkut" ${v.ikut_iuran === 0 ? '' : 'checked'}><label for="fwII">Wajib <b>iuran kas</b> (iuran wajib per kumpulan RW)</label></div>
-                    <div class="full" id="fwIBox" style="${v.ikut_iuran === 0 ? '' : 'display:none'}"><label class="f" for="fwIB">Iuran kas: wajib sampai tanggal (kosong = bebas sejak awal)</label><input type="date" id="fwIB" name="iuran_berhenti" value="${esc(App.ymd(v.iuran_berhenti))}"></div>
-                    <div class="full"><label class="f" for="fwAlamat">Alamat</label><input id="fwAlamat" name="alamat" value="${esc(v.alamat || '')}" maxlength="200"></div>
-                    <div class="full"><label class="f" for="fwCat">Catatan</label><input id="fwCat" name="catatan" value="${esc(v.catatan || '')}" maxlength="255"></div>
-                    ${w ? `<div class="full row"><input type="checkbox" id="fwAktif" name="aktif" ${v.aktif ? 'checked' : ''}><label for="fwAktif">Warga aktif (hilangkan centang bila pindah/berhenti; riwayat tetap tersimpan)</label></div>` : ''}
-                </div>
-                <div class="dlg-actions">
-                    <button type="button" class="btn" data-act="closeDialog">Batal</button>
-                    <button type="submit" class="btn primary">Simpan</button>
-                </div>
-            </form>`);
+            <div class="dlg-warga">
+                <header class="dlg-warga-head">
+                    <div class="dlg-warga-ava">${esc((v.nama || '?').trim().charAt(0).toUpperCase())}</div>
+                    <div>
+                        <h3>${w ? 'Ubah warga' : 'Tambah warga'}</h3>
+                        <p class="small muted">${w ? `#${w.id} · RT ${esc(v.rt)}` : 'Data warga baru'}</p>
+                    </div>
+                </header>
+                <form data-form="warga" data-id="${w ? w.id : ''}">
+                    <section class="dlg-sec">
+                        <h4 class="dlg-sec-t">Identitas</h4>
+                        <div class="form-grid">
+                            <div class="full"><label class="f" for="fwNama">Nama</label><input id="fwNama" name="nama" value="${esc(v.nama)}" required minlength="2" maxlength="150" autocomplete="name"></div>
+                            <div><label class="f" for="fwRt">RT</label><select id="fwRt" name="rt">${optRt(v.rt, false)}</select></div>
+                            <div><label class="f" for="fwJenis">Jenis setoran</label><select id="fwJenis" name="jenis">${JENIS.map((j) => `<option value="${j}" ${v.jenis === j ? 'selected' : ''}>${j}</option>`).join('')}</select></div>
+                            <div><label class="f" for="fwHp">No HP / WhatsApp</label><input id="fwHp" name="no_hp" value="${esc(v.no_hp || '')}" inputmode="tel" maxlength="20" placeholder="08xxxxxxxxxx"></div>
+                            <div><label class="f" for="fwMulai">Mulai iuran</label><input type="date" id="fwMulai" name="mulai_iuran" value="${esc(App.ymd(v.mulai_iuran))}"></div>
+                            <div class="full"><label class="f" for="fwAlamat">Alamat</label><input id="fwAlamat" name="alamat" value="${esc(v.alamat || '')}" maxlength="200"></div>
+                            <div class="full"><label class="f" for="fwCat">Catatan</label><input id="fwCat" name="catatan" value="${esc(v.catatan || '')}" maxlength="255"></div>
+                        </div>
+                    </section>
+                    <section class="dlg-sec">
+                        <h4 class="dlg-sec-t">Program</h4>
+                        <div class="chk-grid">
+                            <label class="chk-card">
+                                <input type="checkbox" id="fwIJ" name="ikut_jimpitan" data-change="wargaIkut" ${cek(v.ikut_jimpitan !== 0)}>
+                                <span class="chk-card-b"><b>Jimpitan</b><small>Iuran harian / mingguan / bulanan</small></span>
+                            </label>
+                            <div class="chk-extra" id="fwJBox" ${v.ikut_jimpitan === 0 ? '' : 'hidden'}>
+                                <label class="f" for="fwJB">Wajib sampai tanggal</label>
+                                <input type="date" id="fwJB" name="jimpitan_berhenti" value="${esc(App.ymd(v.jimpitan_berhenti))}">
+                            </div>
+                            <label class="chk-card">
+                                <input type="checkbox" id="fwII" name="ikut_iuran" data-change="wargaIkut" ${cek(v.ikut_iuran !== 0)}>
+                                <span class="chk-card-b"><b>Iuran kas</b><small>Per kumpulan RW</small></span>
+                            </label>
+                            <div class="chk-extra" id="fwIBox" ${v.ikut_iuran === 0 ? '' : 'hidden'}>
+                                <label class="f" for="fwIB">Wajib sampai tanggal</label>
+                                <input type="date" id="fwIB" name="iuran_berhenti" value="${esc(App.ymd(v.iuran_berhenti))}">
+                            </div>
+                            <label class="chk-card">
+                                <input type="checkbox" id="fwIT" name="ikut_tabungan" ${cek(!!v.ikut_tabungan)}>
+                                <span class="chk-card-b"><b>Tabungan</b><small>Ikut program tabungan</small></span>
+                            </label>
+                        </div>
+                    </section>
+                    ${w ? `<section class="dlg-sec dlg-sec-status">
+                        <label class="chk-card chk-card-status">
+                            <input type="checkbox" id="fwAktif" name="aktif" ${cek(!!v.aktif)}>
+                            <span class="chk-card-b"><b>Warga aktif</b><small>Nonaktifkan jika pindah / berhenti</small></span>
+                        </label>
+                    </section>` : ''}
+                    <div class="dlg-actions">
+                        <button type="button" class="btn" data-act="closeDialog">Batal</button>
+                        <button type="submit" class="btn primary">Simpan</button>
+                    </div>
+                </form>
+            </div>`);
     };
     App.changes.wargaIkut = (cb) => {
         const box = $(cb.name === 'ikut_jimpitan' ? '#fwJBox' : '#fwIBox');
-        if (box) box.style.display = cb.checked ? 'none' : '';
+        if (box) box.hidden = !!cb.checked;
     };
     App.forms.warga = async (f) => {
-        const body = { nama: f.nama.value, rt: f.rt.value, jenis: f.jenis.value, no_hp: f.no_hp.value, alamat: f.alamat.value, mulai_iuran: f.mulai_iuran.value, catatan: f.catatan.value,
-            ikut_jimpitan: f.ikut_jimpitan.checked, jimpitan_berhenti: f.jimpitan_berhenti.value, ikut_iuran: f.ikut_iuran.checked, iuran_berhenti: f.iuran_berhenti.value };
+        const body = {
+            nama: f.nama.value, rt: f.rt.value, jenis: f.jenis.value, no_hp: f.no_hp.value, alamat: f.alamat.value,
+            mulai_iuran: f.mulai_iuran.value, catatan: f.catatan.value,
+            ikut_jimpitan: f.ikut_jimpitan.checked, jimpitan_berhenti: f.jimpitan_berhenti.value,
+            ikut_iuran: f.ikut_iuran.checked, iuran_berhenti: f.iuran_berhenti.value,
+            ikut_tabungan: f.ikut_tabungan.checked
+        };
         if (f.dataset.id) {
             body.id = Number(f.dataset.id);
             body.aktif = f.aktif.checked;

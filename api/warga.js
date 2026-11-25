@@ -4,7 +4,13 @@ const { punya } = require('./_lib/izin');
 const { catat } = require('./_lib/util');
 const P = require('./_lib/periode');
 
-const COLS = 'id, nama, rt, jenis, no_hp, alamat, mulai_iuran, berhenti_pada, aktif, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti, catatan';
+const COLS = 'id, nama, rt, jenis, no_hp, alamat, mulai_iuran, berhenti_pada, aktif, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti, ikut_tabungan, catatan';
+
+function bacaBool(b, key, curDefault) {
+  const asBool = (v) => v === true || v === 1 || v === '1' || v === 'true';
+  if (b[key] !== undefined) return asBool(b[key]) ? 1 : 0;
+  return curDefault ? 1 : 0;
+}
 
 function bersihHp(v) {
   const s = str(v, 'No HP', { max: 20 }).replace(/[\s-]/g, '');
@@ -67,11 +73,12 @@ module.exports = route({
       const catatan = str(b.catatan, 'Catatan', { max: 255 }) || null;
       const [ikutJ, sampaiJ] = bacaProgram(b, 'ikut_jimpitan', 'jimpitan_berhenti', {});
       const [ikutI, sampaiI] = bacaProgram(b, 'ikut_iuran', 'iuran_berhenti', {});
+      const ikutT = bacaBool(b, 'ikut_tabungan', 0);
       const next = (await db.query('SELECT COALESCE(MAX(id), 0) + 1 AS n FROM warga')).rows[0].n;
       await db.query(
-        `INSERT INTO warga (id, nama, rt, jenis, no_hp, alamat, mulai_iuran, catatan, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [next, nama, rt, jenis, noHp, alamat, mulai, catatan, ikutJ, sampaiJ, ikutI, sampaiI]
+        `INSERT INTO warga (id, nama, rt, jenis, no_hp, alamat, mulai_iuran, catatan, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti, ikut_tabungan)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [next, nama, rt, jenis, noHp, alamat, mulai, catatan, ikutJ, sampaiJ, ikutI, sampaiI, ikutT]
       );
       await catat(user, 'TAMBAH_WARGA', `Menambah warga #${next} ${nama} (RT ${rt}, ${jenis}).`, req);
       const row = await db.query(`SELECT ${COLS} FROM warga WHERE id = ?`, [next]);
@@ -96,14 +103,15 @@ module.exports = route({
       // Warga nonaktif: kewajiban harian berhenti pada tanggal itu; diaktifkan lagi → kewajiban berlanjut
       const [ikutJ, sampaiJ] = bacaProgram(b, 'ikut_jimpitan', 'jimpitan_berhenti', cur);
       const [ikutI, sampaiI] = bacaProgram(b, 'ikut_iuran', 'iuran_berhenti', cur);
+      const ikutT = bacaBool(b, 'ikut_tabungan', cur.ikut_tabungan);
       const berhenti = aktif ? null : (cur.berhenti_pada ? String(cur.berhenti_pada).slice(0, 10) : P.todayWIB());
       await db.query(
         `UPDATE warga SET nama = ?, rt = ?, jenis = ?, no_hp = ?, alamat = ?, mulai_iuran = ?, catatan = ?, aktif = ?, berhenti_pada = ?,
-         ikut_jimpitan = ?, jimpitan_berhenti = ?, ikut_iuran = ?, iuran_berhenti = ?, updated_at = NOW()
+         ikut_jimpitan = ?, jimpitan_berhenti = ?, ikut_iuran = ?, iuran_berhenti = ?, ikut_tabungan = ?, updated_at = NOW()
          WHERE id = ?`,
-        [nama, rt, jenis, noHp, alamat, mulai, catatan, aktif, berhenti, ikutJ, sampaiJ, ikutI, sampaiI, id]
+        [nama, rt, jenis, noHp, alamat, mulai, catatan, aktif, berhenti, ikutJ, sampaiJ, ikutI, sampaiI, ikutT, id]
       );
-      await catat(user, 'UBAH_WARGA', `Mengubah warga #${id} ${nama} (RT ${rt}, ${jenis}, ${aktif ? 'aktif' : 'nonaktif'}; jimpitan ${ikutJ ? 'wajib' : (sampaiJ ? 'sampai ' + sampaiJ : 'bebas')}, iuran kas ${ikutI ? 'wajib' : (sampaiI ? 'sampai ' + sampaiI : 'bebas')}).`, req);
+      await catat(user, 'UBAH_WARGA', `Mengubah warga #${id} ${nama} (RT ${rt}, ${jenis}, ${aktif ? 'aktif' : 'nonaktif'}; jimpitan ${ikutJ ? 'wajib' : (sampaiJ ? 'sampai ' + sampaiJ : 'bebas')}, iuran kas ${ikutI ? 'wajib' : (sampaiI ? 'sampai ' + sampaiI : 'bebas')}, tabungan ${ikutT ? 'ya' : 'tidak'}).`, req);
       const row = await db.query(`SELECT ${COLS} FROM warga WHERE id = ?`, [id]);
       return { warga: row.rows[0] };
     }

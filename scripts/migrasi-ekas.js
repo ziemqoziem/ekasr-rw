@@ -172,8 +172,12 @@ if (process.env.DB_SOCKET) { cfg.socketPath = process.env.DB_SOCKET; delete cfg.
     await db.query("INSERT INTO pengaturan (kunci, nilai) VALUES ('migrasi_idx_v2', '1')");
   }
 
-  // 2d) Warga: pilihan program iuran (jimpitan / iuran kas); semua warga bawaan wajib keduanya
-  const kolW = [['ikut_jimpitan', 'TINYINT(1) NOT NULL DEFAULT 1'], ['jimpitan_berhenti', 'DATE NULL'], ['ikut_iuran', 'TINYINT(1) NOT NULL DEFAULT 1'], ['iuran_berhenti', 'DATE NULL']];
+  // 2d) Warga: pilihan program iuran (jimpitan / iuran kas); semua warga bawaan wajib keduanya; tabungan opsional
+  const kolW = [
+    ['ikut_jimpitan', 'TINYINT(1) NOT NULL DEFAULT 1'], ['jimpitan_berhenti', 'DATE NULL'],
+    ['ikut_iuran', 'TINYINT(1) NOT NULL DEFAULT 1'], ['iuran_berhenti', 'DATE NULL'],
+    ['ikut_tabungan', 'TINYINT(1) NOT NULL DEFAULT 0']
+  ];
   for (const [nama, def] of kolW) {
     const [ada] = await db.query("SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'warga' AND column_name = ?", [DB_NAME, nama]);
     if (!ada.length) { await db.query(`ALTER TABLE warga ADD COLUMN ${nama} ${def}`); log.push(`kolom warga.${nama} ditambahkan`); }
