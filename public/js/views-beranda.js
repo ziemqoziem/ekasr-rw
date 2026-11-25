@@ -127,7 +127,7 @@
     };
 
     /* ---------- cek status iuran (jimpitan + iuran wajib) ---------- */
-    const tglP = (t) => (t ? `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}` : '-');
+    const tglP = (t) => App.tglId(t);
     function panel(judul, ikon, badge, total, isi, kelas) {
         return `<div class="cek-panel ${kelas || ''}"><div class="row between"><b>${ikon} ${esc(judul)}</b>${badge}</div>${total}${isi}</div>`;
     }

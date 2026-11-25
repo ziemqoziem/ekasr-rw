@@ -124,14 +124,14 @@
             <div class="card"><h3>Nominal iuran wajib per periode kumpulan</h3>
                 <form data-form="tarifIuran"><div class="filters">
                     <div><label class="f" for="tiN">Nominal per periode (Rp)</label><input type="number" id="tiN" name="nominal" min="1" required inputmode="numeric"></div>
-                    <div><label class="f" for="tiT">Berlaku mulai</label><input type="date" id="tiT" name="berlaku_mulai" value="${hariIni}" required></div>
+                    <div>${App.htmlDPick({ id: 'tiT', name: 'berlaku_mulai', label: 'Berlaku mulai', value: hariIni, required: true })}</div>
                     <div><button class="btn primary" type="submit">Simpan nominal</button></div>
                 </div></form>
                 <p class="small muted">Satu periode = satu kumpulan RW (<b>Selasa Kliwon</b> / malam Rabu Legi, tiap 35 hari). Bila ada perubahan kebijakan, tambahkan nominal baru dengan tanggal berlaku baru; periode yang sudah berjalan tetap memakai nominal lamanya.</p>
             </div>
             <div class="card"><h3>Mulai penagihan</h3>
                 <form data-form="iuranMulai" class="row">
-                    <div><label class="f" for="imT">Tagih mulai kumpulan (Selasa Kliwon) pertama pada/setelah tanggal</label><input type="date" id="imT" name="iuran_mulai" value="${esc(p.iuran_mulai || '')}"></div>
+                    <div>${App.htmlDPick({ id: 'imT', name: 'iuran_mulai', label: 'Tagih mulai kumpulan (Selasa Kliwon) pertama pada/setelah tanggal', value: p.iuran_mulai || '' })}</div>
                     <button class="btn" type="submit" class="form-inline-end">Simpan</button>
                 </form>
                 <p class="small muted">Wajib diisi agar halaman Iuran Wajib aktif. Semua KK aktif wajib membayar; warga yang baru mulai iuran ditagih sejak kumpulan setelah tanggal mulainya.</p>
@@ -295,7 +295,7 @@
             <div class="card"><h3>Tambah / ubah tarif harian</h3>
                 <form data-form="tarif"><div class="filters">
                     <div><label class="f" for="trN">Nominal per hari (Rp)</label><input type="number" id="trN" name="nominal" min="1" required inputmode="numeric"></div>
-                    <div><label class="f" for="trT">Berlaku mulai</label><input type="date" id="trT" name="berlaku_mulai" value="${hariIni}" required></div>
+                    <div>${App.htmlDPick({ id: 'trT', name: 'berlaku_mulai', label: 'Berlaku mulai', value: hariIni, required: true })}</div>
                     <div><button class="btn primary" type="submit">Simpan tarif</button></div>
                 </div></form>
                 <p class="small muted">Kewajiban dihitung <b>harian untuk semua warga</b> (hari kalender). Setoran boleh berapa pun; sisa menjadi titipan dan kekurangan menjadi tunggakan.
@@ -322,7 +322,7 @@
                 <p>Kewajiban harian dihitung mulai <b>${App.tglId(p.mulai_hitung)}</b>. Saldo warga berjalan terus tanpa perlu "tutup tahun": kekurangan otomatis menjadi tunggakan dan saldo lebih otomatis menutup hari berikutnya.
                 Setoran bertanggal <b>sebelum</b> tanggal ini tidak dihitung ke saldo.</p>
                 <form data-form="mulaiHitung" class="row mt-md">
-                    <div><label class="f" for="mhT">Ubah tanggal mulai hitung</label><input type="date" id="mhT" name="mulai_hitung" value="${esc(p.mulai_hitung || '')}" required></div>
+                    <div>${App.htmlDPick({ id: 'mhT', name: 'mulai_hitung', label: 'Ubah tanggal mulai hitung', value: p.mulai_hitung || '', required: true })}</div>
                     <button class="btn" type="submit" class="form-inline-end">Simpan</button>
                 </form>
             </div>

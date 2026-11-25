@@ -72,7 +72,7 @@
             <h3>${e ? 'Ubah pemasukan lainnya' : 'Catat pemasukan lainnya'}</h3>
             <form data-form="pemasukanlain" data-id="${e ? esc(e.id) : ''}">
                 <div class="form-grid">
-                    <div><label class="f" for="swTgl">Tanggal</label><input type="date" id="swTgl" name="tanggal" value="${esc(v.tanggal)}" max="${App.today()}" required></div>
+                    <div>${App.htmlDPick({ id: 'swTgl', name: 'tanggal', label: 'Tanggal', value: v.tanggal, max: App.today(), required: true })}</div>
                     <div><label class="f" for="swJenis">Jenis</label><select id="swJenis" name="jenis">${Object.entries(JENIS).map(([k, l]) => `<option value="${k}" ${v.jenis === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div class="full"><label class="f" for="swUr">Uraian</label><input id="swUr" name="uraian" value="${esc(v.uraian)}" required minlength="3" maxlength="200" placeholder="mis. Sewa tenda & kursi / Donasi warga"></div>
                     <div><label class="f" for="swNom">Nominal (Rp)</label><input type="number" id="swNom" name="nominal" value="${esc(v.nominal)}" min="1" required inputmode="numeric"></div>

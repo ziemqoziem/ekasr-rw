@@ -71,7 +71,7 @@
         const tag = (x) => (x.hari_ini ? '<i>hari ini</i>' : x.berjalan || x.belum_tiba ? '<i>berjalan</i>' : '');
         const meta = (x) => x.all
             ? `<span class="k-pick-meta"><b>${App.esc(x.judul || 'Semua periode')}</b></span>`
-            : `<span class="k-pick-meta"><b>${App.esc(App.tglPanjang(x.tgl))}</b>${tag(x)}</span>`;
+            : `<span class="k-pick-meta"><b>${App.esc(App.tglId(x.tgl))}</b>${tag(x)}</span>`;
         const badge = (x) => x.all
             ? `<span class="k-pick-badge k-pick-all">Σ</span>`
             : `<span class="k-pick-badge">K${App.esc(x.no)}</span>`;
@@ -101,6 +101,7 @@
         if (!pick) return;
         const akanBuka = !pick.classList.contains('open');
         document.querySelectorAll('[data-kpick].open').forEach((p) => { if (p !== pick) tutupKPick(p); });
+        document.querySelectorAll('[data-dpick].open').forEach(tutupDPick);
         if (!akanBuka) { tutupKPick(pick); return; }
         pick.classList.add('open');
         const drop = pick.querySelector('.k-pick-drop');
@@ -132,13 +133,183 @@
         const fn = App.changes[pick.dataset.change];
         if (fn) Promise.resolve(fn({ value: val }, null)).catch(App.fail);
     };
+
+    /* ---------- Date picker modern (dd-mm-yyyy) ---------- */
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const parseYmd = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(App.ymd(s));
+        return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
+    };
+    const tutupDPick = (pick) => {
+        if (!pick) return;
+        pick.classList.remove('open');
+        const drop = pick.querySelector('.d-pick-drop');
+        const btn = pick.querySelector('.d-pick-btn');
+        if (drop) {
+            drop.hidden = true;
+            drop.style.position = ''; drop.style.left = ''; drop.style.top = '';
+            drop.style.width = ''; drop.style.zIndex = '';
+        }
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    };
+    App.dPickVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? (el.dataset.nilai || '') : '';
+    };
+    function isiKalenderDPick(pick) {
+        const drop = pick.querySelector('.d-pick-drop');
+        if (!drop) return;
+        const view = pick.dataset.view || (pick.dataset.nilai || App.today()).slice(0, 7);
+        const [vy, vm] = view.split('-').map(Number);
+        const sel = pick.dataset.nilai || '';
+        const min = pick.dataset.min || '';
+        const max = pick.dataset.max || '';
+        const today = App.today();
+        const first = new Date(Date.UTC(vy, vm - 1, 1));
+        const offset = (first.getUTCDay() + 6) % 7;
+        const days = new Date(Date.UTC(vy, vm, 0)).getUTCDate();
+        const cells = [];
+        for (let i = 0; i < offset; i++) cells.push('<span class="d-pick-empty"></span>');
+        for (let d = 1; d <= days; d++) {
+            const ymd = `${vy}-${pad2(vm)}-${pad2(d)}`;
+            const disabled = (min && ymd < min) || (max && ymd > max);
+            const cls = [
+                'd-pick-day',
+                ymd === sel ? 'on' : '',
+                ymd === today ? 'today' : '',
+                disabled ? 'off' : ''
+            ].filter(Boolean).join(' ');
+            cells.push(disabled
+                ? `<span class="${cls}">${d}</span>`
+                : `<button type="button" class="${cls}" data-act="dPickDay" data-nilai="${ymd}">${d}</button>`);
+        }
+        drop.innerHTML = `
+            <div class="d-pick-nav">
+                <button type="button" class="d-pick-nav-btn" data-act="dPickShift" data-n="-1" aria-label="Bulan sebelumnya">‹</button>
+                <b>${App.esc(App.BULAN_ID[vm - 1])} ${vy}</b>
+                <button type="button" class="d-pick-nav-btn" data-act="dPickShift" data-n="1" aria-label="Bulan berikutnya">›</button>
+            </div>
+            <div class="d-pick-week">${['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((h) => `<span>${h}</span>`).join('')}</div>
+            <div class="d-pick-grid">${cells.join('')}</div>
+            <div class="d-pick-foot">
+                <button type="button" class="btn sm ghost" data-act="dPickClear" ${pick.dataset.required === '1' ? 'disabled' : ''}>Kosongkan</button>
+                <button type="button" class="btn sm primary" data-act="dPickToday">Hari ini</button>
+            </div>`;
+    }
+    App.htmlDPick = (cfg) => {
+        const id = cfg.id;
+        const val = App.ymd(cfg.value || '');
+        const label = cfg.label || 'Tanggal';
+        const change = cfg.change || '';
+        const name = cfg.name || '';
+        const min = cfg.min || '';
+        const max = cfg.max || '';
+        const req = cfg.required ? '1' : '';
+        const view = (val || App.today()).slice(0, 7);
+        const tampil = val ? App.tglId(val) : 'Pilih tanggal';
+        return `<div class="d-pick" id="${App.esc(id)}" data-dpick data-nilai="${App.esc(val)}" data-view="${App.esc(view)}" data-min="${App.esc(min)}" data-max="${App.esc(max)}" data-change="${App.esc(change)}" data-required="${req}">
+            ${label ? `<span class="f" id="${App.esc(id)}L">${App.esc(label)}</span>` : ''}
+            <button type="button" class="d-pick-btn" data-act="dPickToggle" aria-expanded="false" aria-haspopup="dialog" aria-labelledby="${App.esc(id)}L">
+                <span class="d-pick-ico" aria-hidden="true">${App.icon('cal')}</span>
+                <span class="d-pick-val${val ? '' : ' kosong'}">${App.esc(tampil)}</span>
+                <span class="d-pick-chev" aria-hidden="true"></span>
+            </button>
+            <div class="d-pick-drop" hidden></div>
+            ${name ? `<input type="hidden" name="${App.esc(name)}" value="${App.esc(val)}" ${cfg.required ? 'required' : ''}>` : ''}
+        </div>`;
+    };
+    function posisiDPickDrop(pick) {
+        const drop = pick.querySelector('.d-pick-drop');
+        const btnEl = pick.querySelector('.d-pick-btn');
+        if (!drop || !btnEl) return;
+        const dalamDlg = !!pick.closest('dialog');
+        if (!dalamDlg) {
+            drop.style.position = ''; drop.style.left = ''; drop.style.top = '';
+            drop.style.width = ''; drop.style.zIndex = '';
+            return;
+        }
+        const r = btnEl.getBoundingClientRect();
+        const w = Math.max(r.width, 280);
+        let left = r.left;
+        if (left + w > window.innerWidth - 12) left = Math.max(12, window.innerWidth - w - 12);
+        let top = r.bottom + 8;
+        drop.hidden = false;
+        const h = drop.offsetHeight || 320;
+        if (top + h > window.innerHeight - 12) top = Math.max(12, r.top - h - 8);
+        drop.style.position = 'fixed';
+        drop.style.left = left + 'px';
+        drop.style.top = top + 'px';
+        drop.style.width = w + 'px';
+        drop.style.zIndex = '320';
+    }
+    App.actions.dPickToggle = (btn) => {
+        const pick = btn.closest('[data-dpick]');
+        if (!pick) return;
+        const akanBuka = !pick.classList.contains('open');
+        document.querySelectorAll('[data-dpick].open').forEach((p) => { if (p !== pick) tutupDPick(p); });
+        document.querySelectorAll('[data-kpick].open').forEach(tutupKPick);
+        if (!akanBuka) { tutupDPick(pick); return; }
+        if (!pick.dataset.view) pick.dataset.view = (pick.dataset.nilai || App.today()).slice(0, 7);
+        isiKalenderDPick(pick);
+        pick.classList.add('open');
+        const drop = pick.querySelector('.d-pick-drop');
+        if (drop) drop.hidden = false;
+        posisiDPickDrop(pick);
+        btn.setAttribute('aria-expanded', 'true');
+    };
+    App.actions.dPickShift = (btn) => {
+        const pick = btn.closest('[data-dpick]');
+        if (!pick) return;
+        const n = Number(btn.dataset.n) || 0;
+        const [y, m] = (pick.dataset.view || App.today().slice(0, 7)).split('-').map(Number);
+        const d = new Date(Date.UTC(y, m - 1 + n, 1));
+        pick.dataset.view = `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
+        isiKalenderDPick(pick);
+        posisiDPickDrop(pick);
+    };
+    function setDPickVal(pick, val) {
+        pick.dataset.nilai = val || '';
+        if (val) pick.dataset.view = val.slice(0, 7);
+        const label = pick.querySelector('.d-pick-val');
+        if (label) {
+            label.textContent = val ? App.tglId(val) : 'Pilih tanggal';
+            label.classList.toggle('kosong', !val);
+        }
+        const hid = pick.querySelector('input[type="hidden"]');
+        if (hid) hid.value = val || '';
+        tutupDPick(pick);
+        const fn = App.changes[pick.dataset.change];
+        if (fn) Promise.resolve(fn({ value: val || '' }, null)).catch(App.fail);
+    }
+    App.actions.dPickDay = (btn) => {
+        const pick = btn.closest('[data-dpick]');
+        if (!pick) return;
+        setDPickVal(pick, btn.dataset.nilai);
+    };
+    App.actions.dPickToday = (btn) => {
+        const pick = btn.closest('[data-dpick]');
+        if (!pick) return;
+        let t = App.today();
+        if (pick.dataset.min && t < pick.dataset.min) t = pick.dataset.min;
+        if (pick.dataset.max && t > pick.dataset.max) t = pick.dataset.max;
+        setDPickVal(pick, t);
+    };
+    App.actions.dPickClear = (btn) => {
+        const pick = btn.closest('[data-dpick]');
+        if (!pick || pick.dataset.required === '1') return;
+        setDPickVal(pick, '');
+    };
+
     document.addEventListener('click', (e) => {
         if (e.target.closest('[data-kpick]')) return;
+        if (e.target.closest('[data-dpick]')) return;
         document.querySelectorAll('[data-kpick].open').forEach(tutupKPick);
+        document.querySelectorAll('[data-dpick].open').forEach(tutupDPick);
     });
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         document.querySelectorAll('[data-kpick].open').forEach(tutupKPick);
+        document.querySelectorAll('[data-dpick].open').forEach(tutupDPick);
     });
     App.loading = (t) => `<div class="loading"><span class="small muted">${App.esc(t || 'Memuat data…')}</span></div>`;
     App.can = (...roles) => !!App.user && roles.includes(App.user.role);

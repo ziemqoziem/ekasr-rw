@@ -4,8 +4,7 @@
     const App = window.App;
     const { esc, rp, $ } = App;
 
-    const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
+    const tgl = (t) => App.tglId(t);
     const IS = (App.stIuran = { periode: '', rt: '', status: '', q: '', tanggal: '', data: null, nominal: new Map(), tab: 'papan' });
     const RTS = ['007', '008', '009'];
     const LABEL = { lunas: 'Lunas', sebagian: 'Sebagian', belum: 'Belum bayar', luar: 'Belum ditagih' };
@@ -27,7 +26,7 @@
                     <div><label class="f" for="iSt">Status</label><select id="iSt" data-change="iuranFilter">
                         ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${IS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div><label class="f" for="iCari">Cari nama</label><input id="iCari" placeholder="Ketik nama…" value="${esc(IS.q)}" data-input="iuranCari" maxlength="60"></div>
-                    ${App.has('iuran.tulis') ? `<div><label class="f" for="iTgl">Tanggal diterima</label><input type="date" id="iTgl" value="${esc(IS.tanggal)}" max="${App.today()}" data-change="iuranTgl"></div>` : ''}
+                    ${App.has('iuran.tulis') ? `<div>${App.htmlDPick({ id: 'iTgl', label: 'Tanggal diterima', value: IS.tanggal, max: App.today(), change: 'iuranTgl', required: true })}</div>` : ''}
                 </div>
             </div>
             <div class="savebar savebar-atas" id="iBar"></div>
@@ -190,7 +189,7 @@
         IS.status = ($('#iSt') && $('#iSt').value) || IS.status;
         await muat();
     };
-    App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
+    App.changes.iuranTgl = () => { IS.tanggal = App.dPickVal('iTgl') || App.today(); };
     App.changes.iuranCari = () => { IS.q = $('#iCari').value; App.pgReset('iuran'); tampil(); };
     // Sudah setor = lunas untuk kumpulan ini atau ada setoran bertanggal di periode ini
     // Label ringkas nominal default (mis. 5000 → 5rb)

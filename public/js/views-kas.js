@@ -3,8 +3,7 @@
     'use strict';
     const App = window.App;
     const { esc, rp, $ } = App;
-    const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
+    const tgl = (t) => App.tglId(t);
     const KS = (App.stKas = { sub: 'buku', dari: '', sampai: '', sumber: '', data: null });
     const SUMBER = { jimpitan: ['Jimpitan', 'blue'], iuran_wajib: ['Iuran Wajib', 'green'], sewa_aset: ['Pemasukan Lainnya', 'amber'], pengeluaran: ['Pengeluaran', 'red'] };
     const stat = (cls, l, v, ket, warna) => `<div class="stat ${cls}"><small>${l}</small><b${warna ? ` style="color:${warna}"` : ''}>${v}</b>${ket ? `<span class="small muted stat-sub">${ket}</span>` : ''}</div>`;
@@ -52,8 +51,8 @@
             ${r.saldo_akhir !== null ? stat('rk-c3', 'Saldo akhir', rp(r.saldo_akhir), `selisih ${selisih >= 0 ? '+' : '−'} ${rp(Math.abs(selisih))}`) : stat('rk-c3', 'Selisih', (selisih >= 0 ? '+ ' : '− ') + rp(Math.abs(selisih)), 'masuk − keluar')}</div>`;
         const filter = `<div class="card bar-satu no-print">
             <div class="bs-filter bs-multi">
-                <label class="f" for="kDr">Dari</label><input type="date" id="kDr" value="${esc(KS.dari)}" data-change="kasFilter">
-                <label class="f" for="kSm">Sampai</label><input type="date" id="kSm" value="${esc(KS.sampai)}" max="${App.today()}" data-change="kasFilter">
+                ${App.htmlDPick({ id: 'kDr', label: 'Dari', value: KS.dari, change: 'kasFilter', required: true })}
+                ${App.htmlDPick({ id: 'kSm', label: 'Sampai', value: KS.sampai, max: App.today(), change: 'kasFilter', required: true })}
                 <label class="f" for="kSb">Sumber</label><select id="kSb" data-change="kasFilter">${sumberSel}</select>
             </div>
             <div class="bs-pager">${pg.bar}</div></div>`;
@@ -168,7 +167,9 @@
     };
 
     App.changes.kasFilter = async () => {
-        KS.dari = $('#kDr').value; KS.sampai = $('#kSm').value; KS.sumber = $('#kSb').value;
+        KS.dari = App.dPickVal('kDr') || KS.dari;
+        KS.sampai = App.dPickVal('kSm') || KS.sampai;
+        KS.sumber = $('#kSb').value;
         await muat();
     };
 })();

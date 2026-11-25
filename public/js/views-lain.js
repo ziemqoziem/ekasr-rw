@@ -242,7 +242,7 @@
             <h3>${e ? 'Ubah pengeluaran' : 'Catat pengeluaran'}</h3>
             <form data-form="pengeluaran" data-id="${e ? esc(e.id) : ''}">
                 <div class="form-grid">
-                    <div><label class="f" for="pgTgl">Tanggal</label><input type="date" id="pgTgl" name="tanggal" value="${esc(App.ymd(v.tanggal))}" max="${App.today()}" required></div>
+                    <div>${App.htmlDPick({ id: 'pgTgl', name: 'tanggal', label: 'Tanggal', value: App.ymd(v.tanggal), max: App.today(), required: true })}</div>
                     <div><label class="f" for="pgKat">Kategori</label><select id="pgKat" name="kategori">${kat.map((k) => `<option ${k === v.kategori ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select></div>
                     <div class="full"><label class="f" for="pgUr">Uraian</label><input id="pgUr" name="uraian" value="${esc(v.uraian)}" required minlength="3" maxlength="255" placeholder="mis. Santunan warga sakit"></div>
                     <div class="full"><label class="f">Diambil dari dana</label>

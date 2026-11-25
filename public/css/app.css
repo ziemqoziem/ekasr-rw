@@ -1589,6 +1589,93 @@ dialog h3 {
     .k-pick-drop { max-height: min(280px, 42vh); }
 }
 
+/* Date picker modern (dd-mm-yyyy) */
+.d-pick { position: relative; min-width: 0; }
+.d-pick > .f { display: block; margin-bottom: 6px; }
+.d-pick-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    min-height: 44px; padding: 8px 12px; text-align: left;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel-2); color: var(--text); cursor: pointer;
+    transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), background 180ms var(--ease);
+}
+.d-pick-btn:hover { border-color: var(--border-hover); background: var(--panel-hover); }
+.d-pick.open .d-pick-btn {
+    border-color: rgba(13, 148, 136, 0.65);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+.d-pick-ico {
+    width: 28px; height: 28px; flex: none; border-radius: 8px;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, #0d9488, #0891b2);
+}
+.d-pick-ico svg { width: 15px; height: 15px; }
+.d-pick-val { flex: 1; min-width: 0; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.2px; }
+.d-pick-val.kosong { font-weight: 500; color: var(--text-muted); }
+.d-pick-chev {
+    flex: none; width: 16px; height: 16px; position: relative;
+    transition: transform 220ms var(--ease);
+}
+.d-pick-chev::before {
+    content: ''; position: absolute; inset: 3px;
+    border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg);
+}
+.d-pick.open .d-pick-chev { transform: rotate(180deg); }
+.d-pick-drop {
+    position: absolute; left: 0; top: calc(100% + 8px); z-index: 45;
+    width: min(300px, calc(100vw - 32px));
+    padding: 12px; border-radius: 16px;
+    border: 1px solid var(--border-hover); background: var(--panel-solid);
+    box-shadow: var(--shadow-xl);
+    transform-origin: top left;
+    animation: dPickIn 180ms var(--ease);
+}
+.d-pick-drop[hidden] { display: none; }
+@keyframes dPickIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.d-pick-nav {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 10px;
+}
+.d-pick-nav b { font-size: 0.92rem; letter-spacing: -0.2px; }
+.d-pick-nav-btn {
+    width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text); font-size: 1.1rem; cursor: pointer;
+    transition: background 140ms var(--ease), border-color 140ms var(--ease);
+}
+.d-pick-nav-btn:hover { background: var(--panel-hover); border-color: var(--border-hover); }
+.d-pick-week {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    margin-bottom: 4px; text-align: center;
+    font-size: 0.68rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.3px;
+}
+.d-pick-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+}
+.d-pick-empty { aspect-ratio: 1; }
+.d-pick-day {
+    aspect-ratio: 1; border: 0; border-radius: 10px;
+    background: transparent; color: var(--text); font-weight: 600; font-size: 0.84rem;
+    cursor: pointer; transition: background 120ms var(--ease), color 120ms var(--ease), transform 120ms var(--ease);
+}
+button.d-pick-day:hover { background: var(--panel-hover); transform: scale(1.06); }
+.d-pick-day.today { box-shadow: inset 0 0 0 1.5px rgba(13, 148, 136, 0.7); }
+.d-pick-day.on {
+    background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+.d-pick-day.off { opacity: 0.28; cursor: default; }
+.d-pick-foot {
+    display: flex; justify-content: space-between; gap: 8px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+}
+.filters .d-pick { min-width: 160px; }
+.form-grid .d-pick { width: 100%; }
+.bar-satu .d-pick > .f { display: none; }
+
 /* Dialog ubah / tambah warga */
 dialog:has(.dlg-warga) { width: min(560px, calc(100% - 24px)); padding: 22px 22px 18px; }
 .dlg-warga-head {

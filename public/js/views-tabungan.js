@@ -5,8 +5,7 @@
     const App = window.App;
     const { esc, rp, $ } = App;
 
-    const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const tgl = (t) => `${Number(t.slice(8, 10))} ${BULAN[Number(t.slice(5, 7)) - 1]} ${t.slice(0, 4)}`;
+    const tgl = (t) => App.tglId(t);
     const TS = (App.stTabungan = { periode: '', rt: '', status: '', q: '', tanggal: '', data: null, nominal: new Map(), tab: 'papan', urut: 'saldo_desc' });
     const RTS = ['007', '008', '009'];
     const DEF = 5000;                                   // nominal isian cepat (seperti setor jimpitan)
@@ -33,7 +32,7 @@
                     <div><label class="f" for="tSt">Status</label><select id="tSt" data-change="tabunganFilter">
                         ${[['', 'Semua'], ['belum', 'Belum menabung'], ['sudah', 'Sudah menabung']].map(([v, l]) => `<option value="${v}" ${TS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div><label class="f" for="tCari">Cari nama</label><input id="tCari" placeholder="Ketik nama…" value="${esc(TS.q)}" data-input="tabunganCari" maxlength="60"></div>
-                    ${tulis ? `<div><label class="f" for="tTgl">Tanggal setor</label><input type="date" id="tTgl" value="${esc(TS.tanggal)}" max="${App.today()}" data-change="tabunganTgl"></div>` : ''}
+                    ${tulis ? `<div>${App.htmlDPick({ id: 'tTgl', label: 'Tanggal setor', value: TS.tanggal, max: App.today(), change: 'tabunganTgl', required: true })}</div>` : ''}
                 </div>
                 <div class="savebar savebar-atas tb-bar" id="tBar"></div>
                 <div id="tPg"></div>
@@ -183,7 +182,7 @@
         if ($('#tSt')) TS.status = $('#tSt').value;
         await muat();
     };
-    App.changes.tabunganTgl = () => { TS.tanggal = $('#tTgl').value || App.today(); };
+    App.changes.tabunganTgl = () => { TS.tanggal = App.dPickVal('tTgl') || App.today(); };
     App.changes.tabunganCari = () => { TS.q = $('#tCari').value; App.pgReset('tabungan'); tampil(); };
 
     const cari = (id) => TS.data.warga.find((x) => x.id === Number(id));
@@ -294,8 +293,7 @@
             <form data-form="tabunganTarik" data-id="${esc(el.dataset.id)}">
                 <label class="f" for="ttNom">Nominal penarikan (Rp)</label>
                 <input id="ttNom" name="nominal" type="number" inputmode="numeric" min="1" max="${saldo}" step="1" required value="${saldo}">
-                <label class="f" for="ttTgl">Tanggal</label>
-                <input id="ttTgl" name="tanggal" type="date" required value="${esc(App.today())}" max="${App.today()}">
+                ${App.htmlDPick({ id: 'ttTgl', name: 'tanggal', label: 'Tanggal', value: App.today(), max: App.today(), required: true })}
                 <label class="f" for="ttCat">Catatan (opsional)</label>
                 <input id="ttCat" name="catatan" maxlength="255" placeholder="mis. untuk keperluan sekolah">
                 <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Kembali</button><button type="submit" class="btn primary">Tarik</button></div>

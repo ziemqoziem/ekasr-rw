@@ -27,7 +27,7 @@
 
     const jenisBadge = (j) => `<span class="badge blue">${esc(j)}</span>`;
 
-    const tglPendek = (t) => (t ? `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}` : '-');
+    const tglPendek = (t) => App.tglId(t);
 
     // Lencana status saldo satu warga
     function lencanaSaldo(w) {
@@ -60,7 +60,7 @@
             ${tabsSetoran()}
             <div class="card">
                 <div class="filters">
-                    <div><label class="f" for="sTgl">Tanggal setor</label><input type="date" id="sTgl" value="${esc(SS.tanggal)}" max="${App.today()}" data-change="setoranFilter"></div>
+                    <div>${App.htmlDPick({ id: 'sTgl', label: 'Tanggal setor', value: SS.tanggal, max: App.today(), change: 'setoranFilter', required: true })}</div>
                     <div><label class="f" for="sRt">RT</label><select id="sRt" data-change="setoranFilter" ${App.rtKunci() ? 'disabled' : ''}>${optRt(SS.rt)}</select></div>
                     <div><label class="f" for="sCari">Cari nama</label><input id="sCari" placeholder="Ketik nama…" data-input="setoranCari" maxlength="60"></div>
                 </div>
@@ -170,7 +170,7 @@
     }
 
     App.changes.setoranFilter = async () => {
-        SS.tanggal = $('#sTgl').value || App.today();
+        SS.tanggal = App.dPickVal('sTgl') || App.today();
         if (!App.rtKunci()) SS.rt = $('#sRt').value;
         await loadSetoran();
     };
@@ -502,8 +502,7 @@
                 <div class="form-grid">
                     <div><label class="f" for="bkNom">Nominal (Rp) — bebas, isian awal = kekurangan</label>
                     <input type="number" id="bkNom" name="nominal" min="1" step="1" inputmode="numeric" value="${esc(el.dataset.kurang)}" required></div>
-                    <div><label class="f" for="bkTgl">Tanggal diterima</label>
-                    <input type="date" id="bkTgl" name="tanggal" value="${App.today()}" max="${App.today()}" required></div>
+                    <div>${App.htmlDPick({ id: 'bkTgl', name: 'tanggal', label: 'Tanggal diterima', value: App.today(), max: App.today(), required: true })}</div>
                 </div>
                 <div class="dlg-actions">
                     <button type="button" class="btn" data-act="closeDialog">Batal</button>
@@ -616,7 +615,7 @@
                             <div><label class="f" for="fwRt">RT</label><select id="fwRt" name="rt">${optRt(v.rt, false)}</select></div>
                             <div><label class="f" for="fwJenis">Jenis setoran</label><select id="fwJenis" name="jenis">${JENIS.map((j) => `<option value="${j}" ${v.jenis === j ? 'selected' : ''}>${j}</option>`).join('')}</select></div>
                             <div><label class="f" for="fwHp">No HP / WhatsApp</label><input id="fwHp" name="no_hp" value="${esc(v.no_hp || '')}" inputmode="tel" maxlength="20" placeholder="08xxxxxxxxxx"></div>
-                            <div><label class="f" for="fwMulai">Mulai iuran</label><input type="date" id="fwMulai" name="mulai_iuran" value="${esc(App.ymd(v.mulai_iuran))}"></div>
+                            <div>${App.htmlDPick({ id: 'fwMulai', name: 'mulai_iuran', label: 'Mulai iuran', value: App.ymd(v.mulai_iuran) })}</div>
                             <div class="full"><label class="f" for="fwAlamat">Alamat</label><input id="fwAlamat" name="alamat" value="${esc(v.alamat || '')}" maxlength="200"></div>
                             <div class="full"><label class="f" for="fwCat">Catatan</label><input id="fwCat" name="catatan" value="${esc(v.catatan || '')}" maxlength="255"></div>
                         </div>
@@ -629,16 +628,14 @@
                                 <span class="chk-card-b"><b>Jimpitan</b><small>Iuran harian / mingguan / bulanan</small></span>
                             </label>
                             <div class="chk-extra" id="fwJBox" ${v.ikut_jimpitan === 0 ? '' : 'hidden'}>
-                                <label class="f" for="fwJB">Wajib sampai tanggal</label>
-                                <input type="date" id="fwJB" name="jimpitan_berhenti" value="${esc(App.ymd(v.jimpitan_berhenti))}">
+                                ${App.htmlDPick({ id: 'fwJB', name: 'jimpitan_berhenti', label: 'Wajib sampai tanggal', value: App.ymd(v.jimpitan_berhenti) })}
                             </div>
                             <label class="chk-card">
                                 <input type="checkbox" id="fwII" name="ikut_iuran" data-change="wargaIkut" ${cek(v.ikut_iuran !== 0)}>
                                 <span class="chk-card-b"><b>Iuran kas</b><small>Per kumpulan RW</small></span>
                             </label>
                             <div class="chk-extra" id="fwIBox" ${v.ikut_iuran === 0 ? '' : 'hidden'}>
-                                <label class="f" for="fwIB">Wajib sampai tanggal</label>
-                                <input type="date" id="fwIB" name="iuran_berhenti" value="${esc(App.ymd(v.iuran_berhenti))}">
+                                ${App.htmlDPick({ id: 'fwIB', name: 'iuran_berhenti', label: 'Wajib sampai tanggal', value: App.ymd(v.iuran_berhenti) })}
                             </div>
                             <label class="chk-card">
                                 <input type="checkbox" id="fwIT" name="ikut_tabungan" ${cek(!!v.ikut_tabungan)}>
