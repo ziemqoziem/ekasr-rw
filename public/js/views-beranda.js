@@ -228,33 +228,24 @@
     const lbIuran = { lunas: '<span class="badge green">lunas</span>', sebagian: '<span class="badge amber">sebagian</span>', belum: '<span class="badge red">belum</span>' };
     App.actions.riwayatIuranPublik = async (el) => {
         RIW = await App.api('/api/riwayat-iuran-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
-        tampilRiwayatIuran(el.dataset.tab);
+        tampilRiwayatIuran();
     };
-    function tampilRiwayatIuran(tab) {
+    function tampilRiwayatIuran() {
         const r = RIW;
         const status = r.tagihan_berjalan > 0
             ? `<div class="rw-status bad"><span class="rw-ic">!</span><div><small>Kekurangan</small><b>${rp(r.tagihan_berjalan)}</b><em>${r.periode_kurang ? `${r.periode_kurang} kumpulan sudah lewat belum lunas (${rp(r.kurang)}) · ` : ''}iuran ${rp(r.nominal)}/kumpulan</em></div></div>`
             : `<div class="rw-status good"><span class="rw-ic">${r.lebih > 0 ? '+' : '✓'}</span><div><small>${r.lebih > 0 ? 'Kelebihan (titipan)' : 'Status'}</small><b>${r.lebih > 0 ? rp(r.lebih) : 'Lunas'}</b><em>${r.lebih > 0 ? `Menutup ±${r.periode_lebih} kumpulan berikutnya · ` : ''}iuran ${rp(r.nominal)}/kumpulan</em></div></div>`;
         const pc = r.kewajiban > 0 ? Math.min(100, Math.round((r.terbayar / r.kewajiban) * 100)) : 100;
         const prog = `<div class="rw-prog"><div class="rw-prog-t"><span>Terbayar ${rp(r.terbayar)}</span><span>dari ${rp(r.kewajiban)} · <b>${pc}%</b></span></div><div class="rw-bar ${pc >= 100 ? 'ok' : ''}"><i style="width:${pc}%"></i></div></div>`;
-        const kump = r.periode.length ? `<div class="rw-kump rw-kump-btn">${r.periode.map((x) => `<button type="button" class="rw-k ${x.status}" data-act="riwayatIuranK" data-no="${x.no}" title="Kumpulan ${tglP(x.mulai)}: ${x.status}"><b>K${x.no}</b><span>${x.status === 'lunas' ? 'Lunas' : x.status === 'sebagian' ? rp(x.dibayar) + '/' + rp(x.nominal) : 'Belum'}</span></button>`).join('')}</div>
-            <div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>Kumpulan</th><th class="r">Iuran</th><th class="r">Dibayar</th><th>Status</th><th></th></tr></thead><tbody>
-            ${r.periode.map((x) => `<tr class="rw-klik" data-act="riwayatIuranK" data-no="${x.no}"><td style="white-space:nowrap"><b>K${x.no}</b> <span class="small muted">${tglP(x.mulai)}${x.selesai ? '' : ' · berjalan'}</span></td><td class="r num">${rp(x.nominal)}</td><td class="r num">${x.dibayar ? rp(x.dibayar) : '-'}</td><td>${lbIuran[x.status] || ''}</td><td class="r small muted">Rincian ›</td></tr>`).join('')}
-            </tbody></table></div><p class="small muted" style="margin-top:8px">Klik kode kumpulan (K1, K2, …) untuk melihat rinciannya. Pembayaran dialokasikan ke kumpulan tertua lebih dulu. Menampilkan ${r.periode.length} kumpulan terbaru.</p>` : '<div class="empty">Belum ada kumpulan yang ditagih.</div>';
-        const trx = r.transaksi.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
-            ${r.transaksi.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin-top:8px">${r.transaksi.length} pembayaran terakhir.</p>` : '<div class="empty">Belum ada pembayaran iuran wajib.</div>';
-        const tabK = tab !== 't';
+        const kump = r.periode.length ? `<h4 class="rw-sub">Status per kumpulan <small>klik K1, K2, … untuk rincian</small></h4>
+            <div class="rw-kump rw-kump-btn">${r.periode.map((x) => `<button type="button" class="rw-k ${x.status}" data-act="riwayatIuranK" data-no="${x.no}" title="Kumpulan ${tglP(x.mulai)}: ${x.status}"><b>K${x.no}</b><span>${x.status === 'lunas' ? 'Lunas' : x.status === 'sebagian' ? rp(x.dibayar) + '/' + rp(x.nominal) : 'Belum'}</span></button>`).join('')}</div>` : '';
+        const trx = r.transaksi.length ? `<h4 class="rw-sub">Riwayat pembayaran <small>${r.transaksi.length} terakhir</small></h4><div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
+            ${r.transaksi.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div>` : '<h4 class="rw-sub">Riwayat pembayaran</h4><div class="empty">Belum ada pembayaran iuran wajib.</div>';
         App.dialog(`
             <div class="rw-dlg">
                 <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
                     <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · riwayat pembayaran iuran wajib (kas RW)</div></div></div>
-                ${status}${prog}
-                <div class="subtabs rw-tabs">
-                    <button type="button" class="tab ${tabK ? 'active' : ''}" data-act="riwTab" data-nilai="k">Per kumpulan</button>
-                    <button type="button" class="tab ${tabK ? '' : 'active'}" data-act="riwTab" data-nilai="t">Semua pembayaran</button>
-                </div>
-                <div class="rw-pane" data-pane="k" ${tabK ? '' : 'hidden'}>${kump}</div>
-                <div class="rw-pane" data-pane="t" ${tabK ? 'hidden' : ''}>${trx}</div>
+                ${status}${prog}${kump}${trx}
                 <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>
             </div>`);
     }
@@ -286,7 +277,7 @@
                 <div class="dlg-actions"><button class="btn" data-act="riwayatIuranKembali">‹ Kembali</button><button class="btn" data-act="closeDialog">Tutup</button></div>
             </div>`);
     };
-    App.actions.riwayatIuranKembali = () => { if (RIW) tampilRiwayatIuran('k'); };
+    App.actions.riwayatIuranKembali = () => { if (RIW) tampilRiwayatIuran(); };
 
     // Reset pencarian: kosongkan nama, RT, dan hasil
     App.actions.cekReset = () => {
