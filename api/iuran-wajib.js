@@ -3,7 +3,21 @@ const { route, fail, str, int, oneOf, scopeRt, cekRtWarga, RT_LIST, butuh } = re
 const { catat } = require('./_lib/util');
 const I = require('./_lib/iuran');
 const P = require('./_lib/periode');
+const L = require('./_lib/laporan');
 const { pastikanTerbuka } = require('./_lib/tutupbuku');
+
+// Nomor K global sama dengan filter Laporan / Rekap (K1 = LAPORAN_MULAI)
+const hariKe = (tgl) => Math.round(P.parse(tgl).getTime() / 86400000);
+const noKumpulan = (mulai) => Math.round((hariKe(mulai) - hariKe(L.LAPORAN_MULAI)) / 35) + 1;
+function daftarPeriodeIuran(today) {
+  return L.daftarPeriode(today).map((x) => {
+    const p = I.periodeDari(x.tanggal);
+    return {
+      mulai: p.mulai, akhir: p.akhir, tanggal: x.tanggal, weton: x.weton,
+      no: x.no, berjalan: !!(x.berjalan || x.hari_ini), hari_ini: !!x.hari_ini
+    };
+  });
+}
 
 async function ambilWarga(id) {
   const w = (await db.query('SELECT id, nama, rt, jenis, aktif, mulai_iuran, berhenti_pada, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti FROM warga WHERE id = ?', [id])).rows[0];
@@ -25,27 +39,21 @@ module.exports = route({
       const q = req.query || {};
       const ctx = await I.bangunKonteksIuran();
       const sekarang = I.periodeDari(ctx.today);
+      // Samakan daftar & nomor K dengan Laporan (K1…K11 termasuk kumpulan berikutnya yang berjalan)
+      const daftarPeriode = daftarPeriodeIuran(ctx.today);
       let periode = sekarang;
       if (q.periode) {
         if (!P.validDate(String(q.periode))) throw fail(400, 'Periode tidak valid.');
-        periode = I.periodeDari(String(q.periode));
-        if (periode.mulai > sekarang.mulai) periode = sekarang;
+        const pilih = I.periodeDari(String(q.periode));
+        if (daftarPeriode.some((x) => x.mulai === pilih.mulai)) periode = pilih;
+        else periode = sekarang;
       }
-      // Pilihan periode: dari periode penagihan pertama sampai berjalan (maks. 40), terbaru di atas
       const awalTagih = ctx.iuranMulai ? I.periodePertama(ctx.iuranMulai).mulai : null;
-      const daftarPeriode = [];
-      for (let p = sekarang; daftarPeriode.length < 40; p = I.periodeSebelum(p)) {
-        if (awalTagih && p.mulai < awalTagih && daftarPeriode.length >= 3) break;
-        daftarPeriode.push({ ...p, weton: I.weton(p.mulai), berjalan: p.mulai === sekarang.mulai });
-        if (!awalTagih && daftarPeriode.length >= 8) break;
-      }
-      // K1 = tertua … Kn = terbaru (daftar terbaru di atas)
-      const nPer = daftarPeriode.length;
-      daftarPeriode.forEach((p, i) => { p.no = nPer - i; });
+      const meta = daftarPeriode.find((x) => x.mulai === periode.mulai);
       const info = {
         mulai: periode.mulai, akhir: periode.akhir, weton: I.weton(periode.mulai),
-        berjalan: periode.mulai === sekarang.mulai,
-        no: (daftarPeriode.find((x) => x.mulai === periode.mulai) || {}).no || null
+        berjalan: !!(meta && meta.berjalan) || periode.mulai === sekarang.mulai,
+        no: meta ? meta.no : noKumpulan(periode.mulai)
       };
       if (!ctx.aktif) {
         return { aktif: false, pesan: 'Iuran wajib belum diaktifkan. Admin perlu mengisi nominal iuran dan tanggal mulai penagihan di Pengaturan → Iuran Wajib.', periode: info, periode_daftar: daftarPeriode, warga: [] };
@@ -111,7 +119,7 @@ module.exports = route({
       return {
         aktif: true, periode: info, periode_daftar: daftarPeriode, nominal: nominalPeriode, nominal_sekarang: ctx.nominalNow,
         ringkasan: { total_warga: rows.length, ...cnt, total_masuk: masukPeriode, total_kurang: totalKurang },
-        kolom: enam.map((e, i) => ({ mulai: e.mulai, akhir: e.akhir, no: i + 1, terpilih: e.mulai === periode.mulai })),
+        kolom: enam.map((e) => ({ mulai: e.mulai, akhir: e.akhir, no: noKumpulan(e.mulai), terpilih: e.mulai === periode.mulai })),
         warga: rows
       };
     }

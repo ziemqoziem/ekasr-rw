@@ -22,8 +22,8 @@
             <div id="iRingkas"></div>
             ${App.rtKunci() || !App.has('iuran.tulis') ? `<p class="small hint-rt">${App.rtKunci() ? `<b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b> ` : ''}${App.has('iuran.tulis') ? '' : '<b>Anda hanya dapat melihat.</b> Pencatatan iuran wajib dilakukan Pengurus RT.'}</p>` : ''}
             <div class="card">
-                <div class="filters">
-                    <div class="full-m"><label class="f" for="iPer">Kumpulan RW (tanggal)</label><select id="iPer" data-change="iuranFilter"></select></div>
+                <div class="filters" id="iFilters">
+                    <div class="full-m" id="iPerWrap"></div>
                     <div><label class="f" for="iSt">Status</label><select id="iSt" data-change="iuranFilter">
                         ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${IS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                     <div><label class="f" for="iCari">Cari nama</label><input id="iCari" placeholder="Ketik nama…" value="${esc(IS.q)}" data-input="iuranCari" maxlength="60"></div>
@@ -58,7 +58,13 @@
         const r = await App.api('/api/iuran-wajib?' + App.qs({ periode: IS.periode, rt: IS.rt }));
         IS.data = r;
         IS.periode = r.periode.mulai;
-        $('#iPer').innerHTML = r.periode_daftar.map((p) => `<option value="${p.mulai}" ${p.mulai === IS.periode ? 'selected' : ''}>${esc(App.labelKumpulan(p.no, p.mulai, { berjalan: p.berjalan }))}</option>`).join('');
+        const wrap = $('#iPerWrap');
+        if (wrap) {
+            wrap.innerHTML = App.htmlKPick({
+                id: 'iPer', label: 'Kumpulan RW', change: 'iuranFilter',
+                value: IS.periode, items: App.kPickItems(r.periode_daftar, 'mulai')
+            });
+        }
         App.pgReset('iuran');
         tampil();
     }
@@ -180,7 +186,8 @@
         }, 200);
     });
     App.changes.iuranFilter = async () => {
-        IS.periode = $('#iPer').value; IS.status = $('#iSt').value;
+        IS.periode = App.kPickVal('iPer') || IS.periode;
+        IS.status = ($('#iSt') && $('#iSt').value) || IS.status;
         await muat();
     };
     App.changes.iuranTgl = () => { IS.tanggal = $('#iTgl').value || App.today(); };
@@ -330,10 +337,12 @@
         el.innerHTML = `
             <div class="card">
                 <div class="filters">
-                    <div class="grow"><label class="f" for="rkiPer">Kumpulan RW</label><select id="rkiPer" data-change="rekapIuranPeriode">
-                        ${r.daftar_periode.map((x) => `<option value="${esc(x.mulai)}" ${x.mulai === p.mulai ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.mulai, { berjalan: x.berjalan }))}</option>`).join('')}</select></div>
+                    <div class="grow">${App.htmlKPick({
+                        id: 'rkiPer', label: 'Kumpulan RW', change: 'rekapIuranPeriode',
+                        value: p.mulai, items: App.kPickItems(r.daftar_periode, 'mulai')
+                    })}</div>
                 </div>
-                <p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (kumpulan ke-${p.no}).</p>
+                <p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (${esc(App.labelKumpulan(p.no, p.mulai))}).</p>
             </div>
             <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Total pemasukan iuran</small><b>${rp(t.total)}</b>
@@ -355,7 +364,7 @@
             </div>`;
     }
     App.actions.rekapIuranUrut = (el) => { RKI.urut = el.dataset.nilai; gambarRekap(); };
-    App.changes.rekapIuranPeriode = async (el) => { RKI.periode = el.value; await muatRekap(); };
+    App.changes.rekapIuranPeriode = async (el) => { RKI.periode = el.value || App.kPickVal('rkiPer'); await muatRekap(); };
     App.changes.rekapIuranCari = (inp) => {
         RKI.cari = inp.value;
         gambarRekap();

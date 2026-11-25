@@ -55,6 +55,93 @@
         else if (opt && opt.belum_tiba) s += ' · belum tiba';
         return s;
     };
+
+    /* ---------- Picker kumpulan modern (ganti <select>) ---------- */
+    App.kPickItems = (daftar, tglKey) => (daftar || []).map((x) => {
+        const tgl = x[tglKey] || x.mulai || x.tanggal;
+        return { value: tgl, no: x.no, tgl, berjalan: !!(x.berjalan || x.hari_ini), hari_ini: !!x.hari_ini, belum_tiba: !!(x.berjalan && !x.hari_ini) };
+    });
+    App.kPickVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? (el.dataset.nilai || '') : '';
+    };
+    App.htmlKPick = (cfg) => {
+        const id = cfg.id, change = cfg.change, label = cfg.label || 'Kumpulan RW';
+        let items = (cfg.items || []).slice();
+        if (cfg.allLabel) items.unshift({ value: '', no: 'Σ', all: true, judul: cfg.allLabel });
+        const cur = items.find((x) => x.value === cfg.value) || items[0] || { value: '', no: '–', tgl: '' };
+        const tag = (x) => (x.hari_ini ? '<i>hari ini</i>' : x.berjalan || x.belum_tiba ? '<i>berjalan</i>' : '');
+        const meta = (x) => x.all
+            ? `<span class="k-pick-meta"><b>${App.esc(x.judul || 'Semua periode')}</b></span>`
+            : `<span class="k-pick-meta"><b>${App.esc(App.tglPanjang(x.tgl))}</b>${tag(x)}</span>`;
+        const badge = (x) => x.all
+            ? `<span class="k-pick-badge k-pick-all">Σ</span>`
+            : `<span class="k-pick-badge">K${App.esc(x.no)}</span>`;
+        return `<div class="k-pick" id="${App.esc(id)}" data-kpick data-nilai="${App.esc(cur.value)}" data-change="${App.esc(change)}">
+            <span class="f" id="${App.esc(id)}L">${App.esc(label)}</span>
+            <button type="button" class="k-pick-btn" data-act="kPickToggle" aria-expanded="false" aria-haspopup="listbox" aria-labelledby="${App.esc(id)}L">
+                ${badge(cur)}${meta(cur)}
+                <span class="k-pick-chev" aria-hidden="true"></span>
+            </button>
+            <div class="k-pick-drop" role="listbox" hidden>
+                ${items.map((x) => `<button type="button" role="option" class="k-pick-opt${x.value === cur.value ? ' on' : ''}${x.berjalan || x.hari_ini ? ' walk' : ''}${x.all ? ' all' : ''}" data-act="kPickOpt" data-nilai="${App.esc(x.value)}" aria-selected="${x.value === cur.value ? 'true' : 'false'}">
+                    ${badge(x)}${meta(x)}
+                </button>`).join('')}
+            </div>
+        </div>`;
+    };
+    const tutupKPick = (pick) => {
+        if (!pick) return;
+        pick.classList.remove('open');
+        const drop = pick.querySelector('.k-pick-drop');
+        const btn = pick.querySelector('.k-pick-btn');
+        if (drop) drop.hidden = true;
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    };
+    App.actions.kPickToggle = (btn) => {
+        const pick = btn.closest('[data-kpick]');
+        if (!pick) return;
+        const akanBuka = !pick.classList.contains('open');
+        document.querySelectorAll('[data-kpick].open').forEach((p) => { if (p !== pick) tutupKPick(p); });
+        if (!akanBuka) { tutupKPick(pick); return; }
+        pick.classList.add('open');
+        const drop = pick.querySelector('.k-pick-drop');
+        if (drop) {
+            drop.hidden = false;
+            const on = drop.querySelector('.k-pick-opt.on');
+            if (on) requestAnimationFrame(() => on.scrollIntoView({ block: 'nearest' }));
+        }
+        btn.setAttribute('aria-expanded', 'true');
+    };
+    App.actions.kPickOpt = (btn) => {
+        const pick = btn.closest('[data-kpick]');
+        if (!pick) return;
+        const val = btn.dataset.nilai;
+        pick.dataset.nilai = val;
+        const btnMain = pick.querySelector('.k-pick-btn');
+        const b1 = btnMain && btnMain.querySelector('.k-pick-badge');
+        const m1 = btnMain && btnMain.querySelector('.k-pick-meta');
+        const b2 = btn.querySelector('.k-pick-badge');
+        const m2 = btn.querySelector('.k-pick-meta');
+        if (b1 && b2) b1.innerHTML = b2.innerHTML;
+        if (m1 && m2) m1.innerHTML = m2.innerHTML;
+        pick.querySelectorAll('.k-pick-opt').forEach((o) => {
+            const on = o === btn;
+            o.classList.toggle('on', on);
+            o.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        tutupKPick(pick);
+        const fn = App.changes[pick.dataset.change];
+        if (fn) Promise.resolve(fn({ value: val }, null)).catch(App.fail);
+    };
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-kpick]')) return;
+        document.querySelectorAll('[data-kpick].open').forEach(tutupKPick);
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        document.querySelectorAll('[data-kpick].open').forEach(tutupKPick);
+    });
     App.loading = (t) => `<div class="loading"><span class="small muted">${App.esc(t || 'Memuat data…')}</span></div>`;
     App.can = (...roles) => !!App.user && roles.includes(App.user.role);
     // Izin dikirim server (api/_lib/izin.js) → menu & tombol mengikuti aturan yang sama dengan API

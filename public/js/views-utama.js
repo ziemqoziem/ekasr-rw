@@ -307,10 +307,12 @@
         $('#rkOut').innerHTML = `
             <div class="card">
                 <div class="filters">
-                    <div class="grow"><label class="f" for="rkPer">Kumpulan RW</label><select id="rkPer" data-change="rekapPeriode">
-                        ${r.daftar_periode.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === p.tanggal ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.tanggal, { hari_ini: x.hari_ini }))}</option>`).join('')}</select></div>
+                    <div class="grow">${App.htmlKPick({
+                        id: 'rkPer', label: 'Kumpulan RW', change: 'rekapPeriode',
+                        value: p.tanggal, items: App.kPickItems(r.daftar_periode, 'tanggal')
+                    })}</div>
                 </div>
-                <p class="small muted mt-sm">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
+                <p class="small muted mt-sm">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off ${esc(App.labelKumpulan(p.no, p.tanggal))}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>
             <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Total pemasukan jimpitan</small><b>${rp(t.total)}</b>
@@ -331,7 +333,7 @@
             </div>`;
     }
 
-    App.changes.rekapPeriode = async (el) => { RK.periode = el.value; await muatRekap(); };
+    App.changes.rekapPeriode = async (el) => { RK.periode = el.value || App.kPickVal('rkPer'); await muatRekap(); };
     App.changes.rekapCari = (inp) => {
         RK.cari = inp.value;
         gambarRekap();

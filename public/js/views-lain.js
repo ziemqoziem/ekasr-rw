@@ -13,7 +13,7 @@
             <h2 class="title no-print">Laporan per Kumpulan RW</h2>
             <div class="card no-print">
                 <div class="filters">
-                    <div class="grow"><label class="f" for="lPer">Kumpulan RW (Selasa Kliwon, malam Rabu Legi)</label><select id="lPer" data-change="laporanPilihPer"></select></div>
+                    <div class="grow" id="lPerWrap"></div>
                 </div>
                 <div class="row">
                     <button class="btn primary sm" data-act="laporanPdf">Unduh PDF</button>
@@ -35,8 +35,13 @@
     async function loadLaporan() {
         const r = await App.api('/api/laporan?' + App.qs({ periode: LS.periode }));
         LS.periode = r.laporan.periode.tanggal;
-        $('#lPer').innerHTML = r.daftar_periode.map((p) =>
-            `<option value="${esc(p.tanggal)}" ${p.tanggal === LS.periode ? 'selected' : ''}>${esc(App.labelKumpulan(p.no, p.tanggal, { hari_ini: p.hari_ini, belum_tiba: !p.hari_ini && p.berjalan }))}</option>`).join('');
+        const wrap = $('#lPerWrap');
+        if (wrap) {
+            wrap.innerHTML = App.htmlKPick({
+                id: 'lPer', label: 'Kumpulan RW', change: 'laporanPilihPer',
+                value: LS.periode, items: App.kPickItems(r.daftar_periode, 'tanggal')
+            });
+        }
         tampilLaporan(r);
     }
 
@@ -131,7 +136,7 @@
         return res.blob();
     }
     const namaPdf = () => `laporan-kumpulan-${LS.periode}.pdf`;
-    App.changes.laporanPilihPer = async (el) => { LS.periode = el.value; await loadLaporan(); };
+    App.changes.laporanPilihPer = async (el) => { LS.periode = el.value || App.kPickVal('lPer'); await loadLaporan(); };
     App.actions.laporanPdf = async (btn) => {
         btn.disabled = true;
         try { await App.download('/api/laporan?' + App.qs({ periode: LS.periode, format: 'pdf' }), namaPdf()); }
@@ -207,9 +212,11 @@
         const pg = App.paginate('pengeluaran', data, { selalu: true });
         // Filter kumpulan RW + kontrol halaman digabung dalam satu baris
         $('#pFilter').innerHTML = `<div class="card bar-satu">
-            <div class="bs-filter"><label class="f" for="pPer">Kumpulan RW</label><select id="pPer" data-change="pengeluaranPeriode" title="Pengeluaran sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off)">
-                <option value="">Semua periode</option>
-                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.tanggal, { hari_ini: x.hari_ini }))}</option>`).join('')}</select></div>
+            <div class="bs-filter">${App.htmlKPick({
+                id: 'pPer', label: 'Kumpulan RW', change: 'pengeluaranPeriode',
+                value: PG.periode || '', allLabel: 'Semua periode',
+                items: App.kPickItems(PG.daftar, 'tanggal')
+            })}</div>
             <div class="bs-pager">${pg.bar}</div></div>`;
         $('#pKartu').innerHTML = kartu;
         $('#pList').innerHTML = `
@@ -225,7 +232,7 @@
             : '<div class="card empty">Belum ada pengeluaran.</div>'}`;
     }
 
-    App.changes.pengeluaranPeriode = async (el) => { PG.periode = el.value; await loadPengeluaran(); };
+    App.changes.pengeluaranPeriode = async (el) => { PG.periode = el.value !== undefined ? el.value : App.kPickVal('pPer'); await loadPengeluaran(); };
 
     App.actions.pengeluaranForm = (el) => {
         const e = el && el.dataset && el.dataset.id ? PG.data.find((x) => x.id === el.dataset.id) : null;

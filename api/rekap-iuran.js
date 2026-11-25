@@ -2,6 +2,7 @@ const db = require('./db');
 const { route, fail, scopeRt, butuh } = require('./_lib/http');
 const I = require('./_lib/iuran');
 const P = require('./_lib/periode');
+const L = require('./_lib/laporan');
 
 const num = (v) => Number(v || 0);
 
@@ -9,6 +10,7 @@ const num = (v) => Number(v || 0);
  * REKAP IURAN WAJIB per kumpulan RW.
  *   GET ?periode=YYYY-MM-DD   tanggal mulai periode/kumpulan (bawaan: periode berjalan)
  * Isi: total pemasukan iuran bertanggal di periode itu, rincian per RT, rincian per warga.
+ * Nomor K disamakan dengan Laporan (K1…Kn).
  */
 module.exports = route({
   GET: {
@@ -17,23 +19,26 @@ module.exports = route({
       const q = req.query || {};
       const ctx = await I.bangunKonteksIuran();
       const sekarang = I.periodeDari(ctx.today);
+      const daftar = L.daftarPeriode(ctx.today).map((x) => {
+        const p = I.periodeDari(x.tanggal);
+        return {
+          mulai: p.mulai, akhir: p.akhir, no: x.no, weton: x.weton,
+          berjalan: !!(x.berjalan || x.hari_ini), hari_ini: !!x.hari_ini
+        };
+      });
       let periode = sekarang;
       if (q.periode) {
         if (!P.validDate(String(q.periode))) throw fail(400, 'Periode tidak valid.');
-        periode = I.periodeDari(String(q.periode));
-        if (periode.mulai > sekarang.mulai) periode = sekarang;
+        const pilih = I.periodeDari(String(q.periode));
+        if (daftar.some((x) => x.mulai === pilih.mulai)) periode = pilih;
       }
-      const awalTagih = ctx.iuranMulai ? I.periodePertama(ctx.iuranMulai).mulai : null;
-      const urut = [];
-      for (let p = sekarang; urut.length < 60; p = I.periodeSebelum(p)) {
-        if (awalTagih && p.mulai < awalTagih && urut.length >= 3) break;
-        urut.unshift(p);
-        if (!awalTagih && urut.length >= 8) break;
-      }
-      const daftar = urut.map((p, i) => ({ mulai: p.mulai, akhir: p.akhir, no: i + 1, weton: I.weton(p.mulai), berjalan: p.mulai === sekarang.mulai })).reverse();
       const nomor = daftar.find((x) => x.mulai === periode.mulai);
       const sampai = periode.akhir < ctx.today ? periode.akhir : ctx.today;
-      const info = { mulai: periode.mulai, akhir: periode.akhir, sampai, no: nomor ? nomor.no : null, weton: I.weton(periode.mulai), berjalan: periode.mulai === sekarang.mulai };
+      const info = {
+        mulai: periode.mulai, akhir: periode.akhir, sampai,
+        no: nomor ? nomor.no : null, weton: I.weton(periode.mulai),
+        berjalan: !!(nomor && nomor.berjalan) || periode.mulai === sekarang.mulai
+      };
       if (!ctx.aktif) return { aktif: false, periode: info, daftar_periode: daftar, total: { total: 0, warga: 0, menyetor: 0 }, rt: [], warga: [] };
 
       const rt = scopeRt(user, null);
