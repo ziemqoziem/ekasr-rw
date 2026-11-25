@@ -57,8 +57,8 @@ const BAWAAN = {
     batas_rt: 0, dana_pengeluaran: 'jimpitan', izin: ['jimpitan.lihat', 'jimpitan.tulis', 'pengeluaran.lihat', 'pengeluaran.tulis', 'laporan.lihat', 'dashboard.lihat']
   },
   pengurus_rt: {
-    nama: 'Pengurus RT', keterangan: 'Mencatat iuran wajib & melihat warga di RT-nya saja',
-    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'warga.lihat']
+    nama: 'Pengurus RT', keterangan: 'Mencatat iuran wajib & melihat warga di RT-nya saja; melihat dashboard RT',
+    batas_rt: 1, izin: ['iuran.lihat', 'iuran.tulis', 'warga.lihat', 'dashboard.lihat']
   }
 };
 const PERAN_SISTEM = Object.keys(BAWAAN);

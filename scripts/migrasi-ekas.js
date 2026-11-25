@@ -113,6 +113,18 @@ if (process.env.DB_SOCKET) { cfg.socketPath = process.env.DB_SOCKET; delete cfg.
     log.push('revisi v4: Bendahara Jimpitan mencatat pengeluaran dari dana jimpitan; Bendahara RW dari dana iuran wajib');
   }
 
+  // 2h) Revisi v5: Pengurus RT juga melihat dashboard (beranda lengkap, dibatasi RT); setelah login semua peran ke beranda
+  const [sudahV5] = await db.query("SELECT 1 FROM pengaturan WHERE kunci = 'migrasi_peran_v5'");
+  if (!sudahV5.length) {
+    await db.query("INSERT IGNORE INTO peran_izin (peran, izin) VALUES ('pengurus_rt', 'dashboard.lihat')");
+    for (const peran of ['bendahara_rw', 'bendahara_jimpitan']) {
+      await db.query("INSERT IGNORE INTO peran_izin (peran, izin) VALUES (?, 'dashboard.lihat')", [peran]);
+    }
+    await db.query("UPDATE peran SET keterangan = 'Mencatat iuran wajib & melihat warga di RT-nya saja; melihat dashboard RT' WHERE kode = 'pengurus_rt'");
+    await db.query("INSERT INTO pengaturan (kunci, nilai) VALUES ('migrasi_peran_v5', '1')");
+    log.push('revisi v5: Pengurus RT + bendahara mendapat dashboard.lihat (halaman awal setelah login)');
+  }
+
   // 2d) Warga: pilihan program iuran (jimpitan / iuran kas); semua warga bawaan wajib keduanya
   const kolW = [['ikut_jimpitan', 'TINYINT(1) NOT NULL DEFAULT 1'], ['jimpitan_berhenti', 'DATE NULL'], ['ikut_iuran', 'TINYINT(1) NOT NULL DEFAULT 1'], ['iuran_berhenti', 'DATE NULL']];
   for (const [nama, def] of kolW) {

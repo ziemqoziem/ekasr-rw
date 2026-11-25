@@ -349,9 +349,8 @@
             store('set', 'jimpitan_token', r.token);
             App.closeDialog();
             App.toast(`Selamat datang, ${r.user.nama}.`);
-            const iz = (i) => (r.user.izin || []).includes(i);
-            App.tab = iz('dashboard.lihat') ? (iz('jimpitan.tulis') ? 'setoran' : 'beranda')
-                : iz('jimpitan.tulis') ? 'setoran' : iz('iuran.lihat') ? 'iuran' : iz('sewa.lihat') ? 'pemasukanlain' : 'beranda';
+            // Semua peran (admin, bendahara, RT) langsung ke Beranda/Dashboard setelah login.
+            App.tab = 'beranda';
             App.render();
         } catch (e) {
             App.fail(e);
