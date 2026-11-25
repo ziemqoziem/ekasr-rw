@@ -47,7 +47,7 @@
         $('#swFilter').innerHTML = `<div class="card bar-satu">
             <div class="bs-filter"><label class="f" for="swPer">Kumpulan RW</label><select id="swPer" data-change="pemasukanPeriode" title="Pemasukan sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off)">
                 <option value="">Semua periode</option>
-                ${SS.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === SS.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div>
+                ${SS.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === SS.periode ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.tanggal, { hari_ini: x.hari_ini }))}</option>`).join('')}</select></div>
             <div class="bs-pager">${pg.bar}</div></div>`;
         $('#swList').innerHTML = data.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table class="tbl-peng"><thead><tr><th>Tanggal</th><th>Uraian</th><th>Jenis</th><th class="r">Nominal</th>${tulis ? '<th></th>' : ''}</tr></thead><tbody>
                 ${pg.items.map((x) => `<tr class="${x.status === 'batal' ? 'opacity-dim' : ''}">

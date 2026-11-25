@@ -37,9 +37,23 @@
     App.rp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
     App.today = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
     App.ymd = (v) => String(v || '').slice(0, 10);
+    App.BULAN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     App.tglId = (s) => {
         const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
         return m ? `${m[3]}/${m[2]}/${m[1]}` : '-';
+    };
+    // Tanggal panjang: 13-Januari-2026
+    App.tglPanjang = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''));
+        return m ? `${m[3]}-${App.BULAN_ID[Number(m[2]) - 1]}-${m[1]}` : '-';
+    };
+    // Label filter kumpulan seragam: K1 - 13-Januari-2026
+    App.labelKumpulan = (no, tgl, opt) => {
+        let s = `K${no} - ${App.tglPanjang(tgl)}`;
+        if (opt && opt.hari_ini) s += ' · hari ini';
+        else if (opt && opt.berjalan) s += ' · berjalan';
+        else if (opt && opt.belum_tiba) s += ' · belum tiba';
+        return s;
     };
     App.loading = (t) => `<div class="loading"><span class="small muted">${App.esc(t || 'Memuat data…')}</span></div>`;
     App.can = (...roles) => !!App.user && roles.includes(App.user.role);

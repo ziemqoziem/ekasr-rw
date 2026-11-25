@@ -39,7 +39,14 @@ module.exports = route({
         daftarPeriode.push({ ...p, weton: I.weton(p.mulai), berjalan: p.mulai === sekarang.mulai });
         if (!awalTagih && daftarPeriode.length >= 8) break;
       }
-      const info = { mulai: periode.mulai, akhir: periode.akhir, weton: I.weton(periode.mulai), berjalan: periode.mulai === sekarang.mulai };
+      // K1 = tertua … Kn = terbaru (daftar terbaru di atas)
+      const nPer = daftarPeriode.length;
+      daftarPeriode.forEach((p, i) => { p.no = nPer - i; });
+      const info = {
+        mulai: periode.mulai, akhir: periode.akhir, weton: I.weton(periode.mulai),
+        berjalan: periode.mulai === sekarang.mulai,
+        no: (daftarPeriode.find((x) => x.mulai === periode.mulai) || {}).no || null
+      };
       if (!ctx.aktif) {
         return { aktif: false, pesan: 'Iuran wajib belum diaktifkan. Admin perlu mengisi nominal iuran dan tanggal mulai penagihan di Pengaturan → Iuran Wajib.', periode: info, periode_daftar: daftarPeriode, warga: [] };
       }

@@ -308,7 +308,7 @@
             <div class="card">
                 <div class="filters">
                     <div class="grow"><label class="f" for="rkPer">Kumpulan RW</label><select id="rkPer" data-change="rekapPeriode">
-                        ${r.daftar_periode.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === p.tanggal ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)} ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div>
+                        ${r.daftar_periode.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === p.tanggal ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.tanggal, { hari_ini: x.hari_ini }))}</option>`).join('')}</select></div>
                 </div>
                 <p class="small muted mt-sm">Setoran jimpitan bertanggal <b>${App.tglId(p.dari)}</b> s.d. <b>${App.tglId(p.sampai)}</b> (cut off kumpulan ke-${p.no}).${p.hari_ini ? ' Hari ini kumpulan RW; dihitung sampai hari ini.' : ''}</p>
             </div>

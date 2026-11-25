@@ -36,7 +36,7 @@
         const r = await App.api('/api/laporan?' + App.qs({ periode: LS.periode }));
         LS.periode = r.laporan.periode.tanggal;
         $('#lPer').innerHTML = r.daftar_periode.map((p) =>
-            `<option value="${esc(p.tanggal)}" ${p.tanggal === LS.periode ? 'selected' : ''}>Kumpulan ke-${p.no} · ${esc(p.weton)} ${App.tglId(p.tanggal)}${p.hari_ini ? ' · hari ini' : p.berjalan ? ' · belum tiba' : ''}</option>`).join('');
+            `<option value="${esc(p.tanggal)}" ${p.tanggal === LS.periode ? 'selected' : ''}>${esc(App.labelKumpulan(p.no, p.tanggal, { hari_ini: p.hari_ini, belum_tiba: !p.hari_ini && p.berjalan }))}</option>`).join('');
         tampilLaporan(r);
     }
 
@@ -209,7 +209,7 @@
         $('#pFilter').innerHTML = `<div class="card bar-satu">
             <div class="bs-filter"><label class="f" for="pPer">Kumpulan RW</label><select id="pPer" data-change="pengeluaranPeriode" title="Pengeluaran sejak kumpulan sebelumnya sampai tanggal kumpulan terpilih (cut off)">
                 <option value="">Semua periode</option>
-                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${App.tglId(x.tanggal)}${x.hari_ini ? ' · hari ini' : ''}</option>`).join('')}</select></div>
+                ${PG.daftar.map((x) => `<option value="${esc(x.tanggal)}" ${x.tanggal === PG.periode ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.tanggal, { hari_ini: x.hari_ini }))}</option>`).join('')}</select></div>
             <div class="bs-pager">${pg.bar}</div></div>`;
         $('#pKartu').innerHTML = kartu;
         $('#pList').innerHTML = `

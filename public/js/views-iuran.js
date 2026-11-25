@@ -58,7 +58,7 @@
         const r = await App.api('/api/iuran-wajib?' + App.qs({ periode: IS.periode, rt: IS.rt }));
         IS.data = r;
         IS.periode = r.periode.mulai;
-        $('#iPer').innerHTML = r.periode_daftar.map((p) => `<option value="${p.mulai}" ${p.mulai === IS.periode ? 'selected' : ''}>${esc(p.weton)}, ${tgl(p.mulai)}${p.berjalan ? ' (berjalan)' : ''}</option>`).join('');
+        $('#iPer').innerHTML = r.periode_daftar.map((p) => `<option value="${p.mulai}" ${p.mulai === IS.periode ? 'selected' : ''}>${esc(App.labelKumpulan(p.no, p.mulai, { berjalan: p.berjalan }))}</option>`).join('');
         App.pgReset('iuran');
         tampil();
     }
@@ -331,7 +331,7 @@
             <div class="card">
                 <div class="filters">
                     <div class="grow"><label class="f" for="rkiPer">Kumpulan RW</label><select id="rkiPer" data-change="rekapIuranPeriode">
-                        ${r.daftar_periode.map((x) => `<option value="${esc(x.mulai)}" ${x.mulai === p.mulai ? 'selected' : ''}>Kumpulan ke-${x.no} · ${esc(x.weton)}, ${tgl(x.mulai)}${x.berjalan ? ' (berjalan)' : ''}</option>`).join('')}</select></div>
+                        ${r.daftar_periode.map((x) => `<option value="${esc(x.mulai)}" ${x.mulai === p.mulai ? 'selected' : ''}>${esc(App.labelKumpulan(x.no, x.mulai, { berjalan: x.berjalan }))}</option>`).join('')}</select></div>
                 </div>
                 <p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (kumpulan ke-${p.no}).</p>
             </div>
