@@ -3159,3 +3159,10 @@ dialog:has(.rw-dlg) { overflow-x: hidden; }
 .tbl-tb-riw tr.tb-batal td { opacity: 0.6; }
 .tb-dlg .tbl-wrap { max-height: 46vh; overflow: auto; }
 @media (max-width: 640px) { .tbl-tb-riw { font-size: 0.78rem; } .tbl-tb-riw td, .tbl-tb-riw th { padding: 7px 4px; } .tb-dlg .rk-baris { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* Beranda publik: kartu Tabungan Warga di bawah Kas Jimpitan */
+.bk-hijau { --kc: 16, 185, 129; }
+.bk-tabungan .bk-rt { display: flex; gap: 8px; flex-wrap: wrap; }
+.bk-tabungan .bk-rt span { flex: 1 1 0; min-width: 72px; padding: 6px 10px; border-radius: 10px; background: rgba(var(--kc), 0.1); display: flex; flex-direction: column; line-height: 1.2; }
+.bk-tabungan .bk-rt small { font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.bk-tabungan .bk-rt b { font-size: 0.9rem; font-variant-numeric: tabular-nums; }

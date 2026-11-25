@@ -6,6 +6,7 @@ const { createKasMemo } = require('./_lib/kas');
 const { getPublik, setPublik } = require('./_lib/cache-publik');
 const L = require('./_lib/laporan');
 const I = require('./_lib/iuran');
+const T = require('./_lib/tabungan');
 
 const num = (v) => Number(v || 0);
 const pad = (n) => String(n).padStart(2, '0');
@@ -158,8 +159,31 @@ module.exports = route({
         }
       } catch (_) { /* tabel iuran belum dimigrasi */ }
 
+      /* ---- Tabungan warga (titipan di luar kas RW): agregat tanpa nama ---- */
+      let tabungan = { aktif: false };
+      try {
+        await T.siapTabel();
+        const pr = I.periodeDari(today);
+        const tr = await db.query(
+          `SELECT w.rt AS rt, COUNT(DISTINCT CASE WHEN t.jenis = 'setor' THEN t.warga_id END) AS penabung,
+                  SUM(CASE WHEN t.jenis = 'setor' THEN t.nominal ELSE 0 END) AS setor, SUM(CASE WHEN t.jenis = 'tarik' THEN t.nominal ELSE 0 END) AS tarik,
+                  SUM(CASE WHEN t.jenis = 'setor' AND t.tanggal BETWEEN ? AND ? THEN t.nominal ELSE 0 END) AS setor_periode
+           FROM tabungan t JOIN warga w ON w.id = t.warga_id WHERE t.status = 'sah' GROUP BY w.rt ORDER BY w.rt`, [pr.mulai, pr.akhir]
+        );
+        const jml = num((await db.query("SELECT COUNT(*) AS n FROM warga WHERE aktif = 1 AND ikut_tabungan = 1")).rows[0].n);
+        const perRt = tr.rows.map((x) => ({ rt: x.rt, saldo: num(x.setor) - num(x.tarik), penabung: num(x.penabung) }));
+        tabungan = {
+          aktif: jml > 0 || perRt.length > 0, warga_ikut: jml,
+          penabung: perRt.reduce((a, x) => a + x.penabung, 0),
+          setor: tr.rows.reduce((a, x) => a + num(x.setor), 0), tarik: tr.rows.reduce((a, x) => a + num(x.tarik), 0),
+          saldo: tr.rows.reduce((a, x) => a + num(x.setor) - num(x.tarik), 0),
+          setor_periode: tr.rows.reduce((a, x) => a + num(x.setor_periode), 0),
+          periode: { mulai: pr.mulai, akhir: pr.akhir }, rt: perRt
+        };
+      } catch (_) { /* tabel tabungan belum tersedia */ }
+
       const payload = {
-        tanggal: today,
+        tanggal: today, tabungan,
         kas, iuran, jimpitan_hari_ini: { total: num(hariIni.n), warga: num(hariIni.w) },
         bulan,
         nama_web: pengaturan.nama_web || 'RW 03 DUKUH PENCIL, MUNGGUNG, KARANGDOWO',
