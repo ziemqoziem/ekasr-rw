@@ -2941,3 +2941,6 @@ dialog:has(.rw-dlg) { overflow-x: hidden; }
 .btn-ico.ico-edit:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.5); }
 .btn-ico.ico-batal:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.5); }
 .btn-ico.ico-hapus:hover { color: #f43f5e; background: rgba(244, 63, 94, 0.14); border-color: rgba(244, 63, 94, 0.5); }
+
+/* Picker kumpulan terbuka harus tampil di atas kartu/tabel di bawahnya (kartu ber-backdrop-filter membuat tumpukan sendiri) */
+.card:has(.k-pick.open), .card:has(.k-pick-drop:not([hidden])) { position: relative; z-index: 60; }

@@ -116,7 +116,7 @@
             $('#tList').innerHTML = rows.length ? `<div class="iu-m">
                 ${tulis ? `<label class="iu-all"><input type="checkbox" data-change="tabunganCekSemua" ${semuaDipilih ? 'checked' : ''} ${bisaPilih.length ? '' : 'disabled'}> Centang semua yang belum menabung (${bisaPilih.length})</label>` : ''}
                 ${kartu}<p class="small muted pad-sm">K = kumpulan RW. ✓ menabung · – belum menabung. Warna menyala = kumpulan terpilih. Ketuk saldo untuk riwayat.</p></div>`
-                : '<div class="card empty">Tidak ada warga yang cocok. Aktifkan "Tabungan" pada data warga (menu Warga).</div>';
+                : vKosong();
             barSimpan();
             return;
         }
@@ -141,8 +141,14 @@
             <th class="c-nama">Nama (RT)</th>${kepalaPer}<th class="r c-sum">Saldo</th>${tulis ? '<th class="c-nom r">Setoran (Rp)</th>' : ''}</tr></thead>
             <tbody>${baris}</tbody></table></div>
             <p class="small muted pad-note">K = kumpulan RW. ✓ menabung · – belum menabung. Kolom berwarna = kumpulan terpilih. Klik angka di kolom “Saldo” untuk riwayat, pembatalan, atau penarikan.</p></div>`
-            : '<div class="card empty">Tidak ada warga yang cocok. Aktifkan "Tabungan" pada data warga (menu Warga).</div>';
+            : vKosong();
         barSimpan();
+    }
+
+    // Kosong: belum ada warga yang ikut tabungan (atau filter tidak cocok)
+    function vKosong() {
+        const ada = TS.data && TS.data.warga.length;
+        return `<div class="card empty">${ada ? 'Tidak ada warga yang cocok dengan filter.' : 'Belum ada warga yang ikut tabungan.<br><span class="small">Centang “Tabungan” pada data warga untuk memasukkannya ke papan ini.</span>'}${!ada && App.has('warga.lihat') ? '<br><button class="btn primary mt-md" data-act="go" data-tab="warga">Buka menu Warga</button>' : ''}</div>`;
     }
 
     function barSimpan() {
