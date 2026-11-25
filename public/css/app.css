@@ -2803,3 +2803,14 @@ dialog:has(.rw-dlg) { overflow-x: hidden; }
     .card { padding: var(--space-3) var(--space-3); }
     .btn-3d { padding-right: 14px; font-size: 0.88rem; }
 }
+
+/* Tombol aksi berikon (ubah / batalkan / hapus) */
+.aksi-ico { display: inline-flex; gap: 6px; justify-content: flex-end; }
+.btn-ico { width: 34px; height: 34px; padding: 0; display: inline-grid; place-items: center; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text-muted); cursor: pointer; transition: transform 0.12s, background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s; }
+.btn-ico svg { width: 17px; height: 17px; }
+.btn-ico:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18); }
+.btn-ico:active { transform: translateY(0); box-shadow: none; }
+.btn-ico:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.btn-ico.ico-edit:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.5); }
+.btn-ico.ico-batal:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.5); }
+.btn-ico.ico-hapus:hover { color: #f43f5e; background: rgba(244, 63, 94, 0.14); border-color: rgba(244, 63, 94, 0.5); }

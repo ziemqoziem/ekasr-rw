@@ -55,32 +55,40 @@
                     <td class="wrap-normal min-col"><b>${esc(x.uraian)}</b>${x.status === 'batal' ? `<div class="small"><span class="badge red">batal: ${esc(x.alasan_batal || '')}</span></div>` : ''}</td>
                     <td><span class="badge">${esc(JENIS[x.jenis] || 'Lainnya')}</span></td>
                     <td class="r num"><b>${rp(x.nominal)}</b></td>
-                    ${tulis ? `<td class="r nowrap">${x.status === 'sah' ? `<button class="btn sm danger" data-act="sewaBatal" data-id="${esc(x.id)}">Batalkan</button>` : ''}</td>` : ''}</tr>`).join('')}
+                    ${tulis ? `<td class="r nowrap"><div class="aksi-ico">${x.status === 'sah' ? `<button type="button" class="btn-ico ico-edit" data-act="pemasukanForm" data-id="${esc(x.id)}" title="Ubah" aria-label="Ubah pemasukan">${App.icon('edit')}</button><button type="button" class="btn-ico ico-batal" data-act="sewaBatal" data-id="${esc(x.id)}" title="Batalkan" aria-label="Batalkan pemasukan">${App.icon('ban')}</button>` : ''}<button type="button" class="btn-ico ico-hapus" data-act="sewaHapus" data-id="${esc(x.id)}" title="Hapus permanen" aria-label="Hapus pemasukan">${App.icon('trash')}</button></div></td>` : ''}</tr>`).join('')}
                 </tbody><tfoot><tr><td colspan="3"><b>Total halaman ini</b></td><td class="r num"><b>${rp(pg.items.filter((x) => x.status === 'sah').reduce((a, x) => a + x.nominal, 0))}</b></td>${tulis ? '<td></td>' : ''}</tr></tfoot></table></div></div>`
             : '<div class="card empty">Belum ada pemasukan lainnya.</div>';
     }
 
     App.changes.pemasukanPeriode = async (el) => { SS.periode = el.value; await muat(); };
 
-    // Form pencatatan (dialog): tanggal, jenis, uraian, nominal
-    App.actions.pemasukanForm = () => {
+    // Form pencatatan / perubahan (dialog): tanggal, jenis, uraian, nominal
+    App.actions.pemasukanForm = (el) => {
+        const e = el && el.dataset && el.dataset.id ? SS.data.find((x) => x.id === el.dataset.id) : null;
+        const v = e || { tanggal: App.today(), jenis: 'hasil_sewa', uraian: '', nominal: '' };
         App.dialog(`
-            <h3>Catat pemasukan lainnya</h3>
-            <form data-form="pemasukanlain">
+            <h3>${e ? 'Ubah pemasukan lainnya' : 'Catat pemasukan lainnya'}</h3>
+            <form data-form="pemasukanlain" data-id="${e ? esc(e.id) : ''}">
                 <div class="form-grid">
-                    <div><label class="f" for="swTgl">Tanggal</label><input type="date" id="swTgl" name="tanggal" value="${App.today()}" max="${App.today()}" required></div>
-                    <div><label class="f" for="swJenis">Jenis</label><select id="swJenis" name="jenis">${Object.entries(JENIS).map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
-                    <div class="full"><label class="f" for="swUr">Uraian</label><input id="swUr" name="uraian" required minlength="3" maxlength="200" placeholder="mis. Sewa tenda & kursi / Donasi warga"></div>
-                    <div><label class="f" for="swNom">Nominal (Rp)</label><input type="number" id="swNom" name="nominal" min="1" required inputmode="numeric"></div>
+                    <div><label class="f" for="swTgl">Tanggal</label><input type="date" id="swTgl" name="tanggal" value="${esc(v.tanggal)}" max="${App.today()}" required></div>
+                    <div><label class="f" for="swJenis">Jenis</label><select id="swJenis" name="jenis">${Object.entries(JENIS).map(([k, l]) => `<option value="${k}" ${v.jenis === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+                    <div class="full"><label class="f" for="swUr">Uraian</label><input id="swUr" name="uraian" value="${esc(v.uraian)}" required minlength="3" maxlength="200" placeholder="mis. Sewa tenda & kursi / Donasi warga"></div>
+                    <div><label class="f" for="swNom">Nominal (Rp)</label><input type="number" id="swNom" name="nominal" value="${esc(v.nominal)}" min="1" required inputmode="numeric"></div>
                 </div>
-                <p class="small muted mt-sm">Cukup catat uang yang <b>diterima</b>, tanpa data penyewa/pemberi.${SS.batas_rt ? ` Dicatat untuk RT ${esc(SS.batas_rt)}.` : ''}</p>
-                <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Batal</button><button type="submit" class="btn primary">Simpan</button></div>
+                <p class="small muted" style="margin-top:8px">Cukup catat uang yang <b>diterima</b>, tanpa data penyewa/pemberi.${SS.batas_rt ? ` Dicatat untuk RT ${esc(SS.batas_rt)}.` : ''}</p>
+                <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Batal</button><button type="submit" class="btn primary">${e ? 'Simpan perubahan' : 'Simpan'}</button></div>
             </form>`);
     };
     App.forms.pemasukanlain = async (f) => {
-        await App.api('/api/pemasukan-lain', { method: 'POST', body: { tanggal: f.tanggal.value, jenis: f.jenis.value, uraian: f.uraian.value, nominal: Number(f.nominal.value) } });
+        const body = { tanggal: f.tanggal.value, jenis: f.jenis.value, uraian: f.uraian.value, nominal: Number(f.nominal.value) };
+        if (f.dataset.id) {
+            await App.api('/api/pemasukan-lain', { method: 'PUT', body: { ...body, aksi: 'ubah', id: f.dataset.id } });
+            App.toast('Pemasukan lainnya diperbarui.');
+        } else {
+            await App.api('/api/pemasukan-lain', { method: 'POST', body });
+            App.toast('Pemasukan lainnya tercatat.');
+        }
         App.closeDialog();
-        App.toast('Pemasukan lainnya tercatat.');
         await muat();
     };
     App.actions.sewaBatal = (el) => {
@@ -96,6 +104,24 @@
         await App.api('/api/pemasukan-lain', { method: 'PUT', body: { id: f.dataset.id, alasan: f.alasan.value } });
         App.closeDialog();
         App.toast('Pemasukan dibatalkan.');
+        await muat();
+    };
+    App.actions.sewaHapus = (el) => {
+        const x = SS.data.find((d) => d.id === el.dataset.id);
+        App.dialog(`
+            <h3>Hapus pemasukan lainnya</h3>
+            ${x ? `<p class="small muted" style="margin-bottom:8px"><b>${esc(x.uraian)}</b> · ${rp(x.nominal)} · ${App.tglId(x.tanggal)}</p>` : ''}
+            <p class="small">Data dihapus <b>permanen</b> dan tidak ikut dihitung di kas. Isinya tetap tersimpan di log aktivitas. Bila hanya salah catat, gunakan <b>Batalkan</b> agar jejaknya tetap terlihat.</p>
+            <form data-form="sewaHapus" data-id="${esc(el.dataset.id)}">
+                <label class="f" for="shAlasan">Alasan penghapusan</label>
+                <input id="shAlasan" name="alasan" required minlength="3" maxlength="255" placeholder="mis. input ganda">
+                <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Kembali</button><button type="submit" class="btn danger">Hapus permanen</button></div>
+            </form>`);
+    };
+    App.forms.sewaHapus = async (f) => {
+        await App.api('/api/pemasukan-lain?' + App.qs({ id: f.dataset.id, alasan: f.alasan.value }), { method: 'DELETE' });
+        App.closeDialog();
+        App.toast('Pemasukan dihapus.');
         await muat();
     };
 })();
