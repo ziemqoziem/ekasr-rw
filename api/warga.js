@@ -6,6 +6,13 @@ const P = require('./_lib/periode');
 
 const COLS = 'id, nama, rt, jenis, no_hp, alamat, mulai_iuran, berhenti_pada, aktif, ikut_jimpitan, jimpitan_berhenti, ikut_iuran, iuran_berhenti, ikut_tabungan, catatan';
 
+// Kolom `ikut_tabungan` ditambahkan otomatis bila belum ada (tanpa perlu menjalankan migrasi manual)
+let kolomSiap = null;
+const pastikanKolom = () => kolomSiap || (kolomSiap = (async () => {
+  const r = await db.query("SELECT 1 AS ada FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'warga' AND COLUMN_NAME = 'ikut_tabungan'");
+  if (!r.rows.length) await db.query('ALTER TABLE warga ADD COLUMN ikut_tabungan TINYINT(1) NOT NULL DEFAULT 0');
+})().catch((e) => { kolomSiap = null; throw e; }));
+
 function bacaBool(b, key, curDefault) {
   const asBool = (v) => v === true || v === 1 || v === '1' || v === 'true';
   if (b[key] !== undefined) return asBool(b[key]) ? 1 : 0;
@@ -38,6 +45,7 @@ module.exports = route({
     // (id, nama, RT, jenis) agar dapat memilih warga di Kalender — tanpa no HP, alamat, atau catatan.
     auth: butuh('warga.lihat', 'jimpitan.lihat', 'iuran.lihat'),
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const q = req.query || {};
       const rt = scopeRt(user, q.rt ? oneOf(String(q.rt), 'RT', RT_LIST) : null);
       const where = [];
@@ -63,6 +71,7 @@ module.exports = route({
     auth: butuh('warga.kelola'),
     status: 201,
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const b = req.body || {};
       const nama = str(b.nama, 'Nama', { min: 2, max: 150, required: true }).toUpperCase();
       const rt = oneOf(b.rt, 'RT', RT_LIST);
@@ -88,6 +97,7 @@ module.exports = route({
   PUT: {
     auth: butuh('warga.kelola'),
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const b = req.body || {};
       const id = int(b.id, 'ID', { min: 1 });
       const cur = (await db.query(`SELECT ${COLS} FROM warga WHERE id = ?`, [id])).rows[0];
