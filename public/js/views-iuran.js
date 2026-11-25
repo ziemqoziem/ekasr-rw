@@ -341,7 +341,7 @@
                         value: p.mulai, items: App.kPickItems(r.daftar_periode, 'mulai')
                     })}</div>
                 </div>
-                <p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (${esc(App.labelKumpulan(p.no, p.mulai))}).</p>
+                ${App.rtKunci() ? `<p class="small hint-rt"><b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b></p>` : ''}<p class="small muted mt-sm">Iuran diterima bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.sampai)}</b> (${esc(App.labelKumpulan(p.no, p.mulai))}).</p>
             </div>
             <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Total pemasukan iuran</small><b>${rp(t.total)}</b>

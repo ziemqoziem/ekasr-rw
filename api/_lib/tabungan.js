@@ -42,8 +42,11 @@ const siapTabel = () => siap || (siap = (async () => {
   // Peran khusus "Pengurus Tabungan" (mencatat tabungan): dibuat sekali bila belum ada
   const ada2 = await db.query("SELECT (SELECT COUNT(*) FROM peran) AS n, (SELECT COUNT(*) FROM peran WHERE kode = 'pengurus_tabungan') AS ada");
   if (Number(ada2.rows[0].n) > 0 && !Number(ada2.rows[0].ada)) {
-    await db.query("INSERT INTO peran (kode, nama, keterangan, sistem, batas_rt, dana_pengeluaran) VALUES ('pengurus_tabungan', 'Pengurus Tabungan', 'Mencatat tabungan warga (setor, tarik, batalkan) untuk semua RT; hanya menu Tabungan', 1, 0, 'umum')");
+    await db.query("INSERT INTO peran (kode, nama, keterangan, sistem, batas_rt, dana_pengeluaran) VALUES ('pengurus_tabungan', 'Pengurus Tabungan', 'Mencatat tabungan warga (setor, tarik, batalkan) di RT yang diampu; hanya menu Tabungan', 1, 1, 'umum')");
     for (const i of ['tabungan.lihat', 'tabungan.tulis']) await db.query("INSERT IGNORE INTO peran_izin (peran, izin) VALUES ('pengurus_tabungan', ?)", [i]);
+  } else if (Number(ada2.rows[0].ada)) {
+    // Peran versi awal (semua RT, belum diubah admin) → dibatasi per RT yang diampu
+    await db.query("UPDATE peran SET batas_rt = 1, keterangan = 'Mencatat tabungan warga (setor, tarik, batalkan) di RT yang diampu; hanya menu Tabungan' WHERE kode = 'pengurus_tabungan' AND batas_rt = 0 AND keterangan = 'Mencatat tabungan warga (setor, tarik, batalkan) untuk semua RT; hanya menu Tabungan'");
   }
 })().catch((e) => { siap = null; throw e; }));
 

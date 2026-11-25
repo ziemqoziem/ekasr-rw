@@ -59,8 +59,8 @@ const BAWAAN = {
     batas_rt: 0, dana_pengeluaran: 'jimpitan', izin: ['jimpitan.lihat', 'jimpitan.tulis', 'pengeluaran.lihat', 'pengeluaran.tulis', 'laporan.lihat', 'dashboard.lihat']
   },
   pengurus_tabungan: {
-    nama: 'Pengurus Tabungan', keterangan: 'Mencatat tabungan warga (setor, tarik, batalkan) untuk semua RT; hanya menu Tabungan',
-    batas_rt: 0, izin: ['tabungan.lihat', 'tabungan.tulis']
+    nama: 'Pengurus Tabungan', keterangan: 'Mencatat tabungan warga (setor, tarik, batalkan) di RT yang diampu; hanya menu Tabungan',
+    batas_rt: 1, izin: ['tabungan.lihat', 'tabungan.tulis']
   },
   pengurus_rt: {
     nama: 'Pengurus RT', keterangan: 'Mencatat iuran wajib & melihat warga di RT-nya saja; melihat dashboard RT',

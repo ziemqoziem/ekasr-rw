@@ -353,7 +353,7 @@
         el.innerHTML = `
             <div class="card">
                 <div class="filters"><div class="grow">${App.htmlKPick({ id: 'tkPer', label: 'Kumpulan RW', change: 'tabunganFilter', value: p.mulai, items: App.kPickItems(r.periode_daftar, 'mulai') })}</div></div>
-                <p class="small muted mt-sm">Setoran bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.akhir)}</b> (${esc(App.labelKumpulan(p.no, p.mulai))}).</p>
+                ${App.rtKunci() ? `<p class="small hint-rt"><b>Menampilkan warga RT ${esc(App.user.rt || '')} saja.</b></p>` : ''}<p class="small muted mt-sm">Setoran bertanggal <b>${tgl(p.mulai)}</b> s.d. <b>${tgl(p.akhir)}</b> (${esc(App.labelKumpulan(p.no, p.mulai))}).</p>
             </div>
             <div class="rk-baris spaced">
                 <div class="stat rk-c0"><small>Disetor kumpulan ini</small><b>${rp(s.setor_periode)}</b><span class="small muted stat-sub">${s.sudah} / ${s.total_warga} warga menabung · tarik ${rp(s.tarik_periode)}</span></div>
