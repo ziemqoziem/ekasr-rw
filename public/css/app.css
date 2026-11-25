@@ -2612,3 +2612,8 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 .rw-kump-btn .rw-k:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 .rw-klik { cursor: pointer; }
 .rw-klik:hover td { background: var(--panel-2); }
+
+/* Kotak status kumpulan (hanya tampilan, tidak dapat diklik) */
+.rw-kump-btn .rw-k { cursor: default; min-width: 52px; padding: 7px 12px; }
+.rw-kump-btn .rw-k:hover { transform: none; }
+.rw-kump-btn .rw-k b { font-size: 0.85rem; }
