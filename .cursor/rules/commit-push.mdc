@@ -1,0 +1,13 @@
+---
+description: Setelah perubahan kode, selalu commit dan push ke GitHub
+alwaysApply: true
+---
+
+# Commit & push setelah perubahan kode
+
+Setiap kali selesai membuat atau mengubah kode di repo ini (fitur, perbaikan, refactor), **langsung commit lalu push ke GitHub** tanpa menunggu diminta ulang.
+
+- Ikuti protokol git aman (jangan force-push main, jangan commit secret, pesan commit singkat fokus "why").
+- Push ke branch yang sedang aktif (`origin` / GitHub).
+- Jika hanya ada perubahan non-kode yang tidak relevan (mis. catatan sementara), jangan commit kosong.
+- Sertakan file rule/konfigurasi proyek yang ikut diubah bersama pekerjaan tersebut bila relevan.

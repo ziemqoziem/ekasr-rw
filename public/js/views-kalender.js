@@ -80,8 +80,11 @@
     }
     App.actions.kalMode = (el) => { KS.mode = el.dataset.nilai; return App.render(); };
 
-    /* ================= RIWAYAT IURAN (per tab RT) ================= */
+    /* ================= RIWAYAT IURAN: matriks nama × K1/K2/K3… ================= */
     const RI = (App.stRiwayatIuran = { rt: '', q: '', status: '', data: null });
+    const RI_LABEL = { lunas: 'Lunas', sebagian: 'Sebagian', belum: 'Belum bayar', luar: 'Belum ditagih' };
+    const RI_SIM = { lunas: '✓', sebagian: '◐', belum: '✕', luar: '–' };
+    const riTgl = (t) => App.tglId(t);
 
     async function tampilRiwayat(root) {
         if (App.rtKunci()) RI.rt = App.user.rt || '';
@@ -93,7 +96,7 @@
     }
 
     async function muatRiwayat() {
-        const r = await App.api('/api/riwayat-iuran?' + App.qs({ rt: RI.rt, status: RI.status }));
+        const r = await App.api('/api/iuran-wajib?' + App.qs({ rt: RI.rt }));
         RI.data = r;
         App.pgReset('riwayatiuran');
         gambarRiwayat();
@@ -104,37 +107,84 @@
         if (!r || !$('#riOut')) return;
         App.pgRedraw.riwayatiuran = gambarRiwayat;
         const kunci = App.rtKunci();
-        const totalRt = new Map(r.per_rt.map((x) => [x.rt, x]));
-        const semuaTot = r.per_rt.reduce((a, x) => a + x.total, 0);
         const tabRt = (kunci ? [[RI.rt, 'RT ' + RI.rt]] : [['', 'Semua RT'], ...RTS.map((x) => [x, 'RT ' + x])])
             .map(([v, l]) => `<button class="tab ${RI.rt === v ? 'active' : ''}" data-act="riwRt" data-nilai="${v}">${l}</button>`).join('');
+
+        if (!r.aktif) {
+            $('#riOut').innerHTML = `<div class="subtabs">${tabRt}</div>
+                <div class="card empty">${esc(r.pesan || 'Iuran wajib belum diaktifkan.')}</div>`;
+            return;
+        }
+
         const cari = RI.q.trim().toLowerCase();
-        const rows = r.riwayat.filter((x) => !cari || x.nama.toLowerCase().includes(cari));
+        const rows = r.warga.filter((w) => (!cari || w.nama.toLowerCase().includes(cari)) && (!RI.status || w.status === RI.status));
         const pg = App.paginate('riwayatiuran', rows);
-        const sah = rows.filter((x) => x.status === 'sah');
-        const total = sah.reduce((a, x) => a + x.nominal, 0);
-        const ringRt = kunci ? '' : `<p class="small muted" style="margin:-4px 0 10px">Total iuran sah: ${[...totalRt.values()].map((x) => `RT ${esc(x.rt)} <b>${rp(x.total)}</b>`).join(' · ')} · Semua <b>${rp(semuaTot)}</b></p>`;
+        const s = r.ringkasan || {};
+        const kolomSemua = r.kolom || [];
+        const hp = window.innerWidth <= 640;
+        RI.ukuranKey = hp ? 'm' : Math.floor(window.innerWidth / 40);
+
+        let badan = '';
+        if (!rows.length) {
+            badan = '<div class="card empty">Tidak ada warga yang cocok.</div>';
+        } else if (hp) {
+            badan = `<div class="iu-m">${pg.items.map((w) => {
+                const chip = w.riwayat.map((h, i) => {
+                    const k = kolomSemua[i];
+                    return `<span class="iu-k rw-${h.status}${k && k.terpilih ? ' sel' : ''}" title="${esc(riTgl(h.mulai))}: ${esc(RI_LABEL[h.status] || '')}">K${k ? k.no : i + 1} ${RI_SIM[h.status] || '–'}</span>`;
+                }).join('');
+                return `<div class="iu-card st-${w.status}">
+                    <div class="iu-top">
+                        <div class="iu-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span>
+                            <div class="small muted">${esc(RI_LABEL[w.status] || w.status)}${w.kurang > 0 ? ` · kurang ${rp(w.kurang)}` : w.lebih > 0 ? ` · titipan ${rp(w.lebih)}` : ''}</div></div>
+                        <button class="link-setor iu-sum" data-act="riwDetail" data-id="${w.id}"><small>Iuran</small>${rp(w.total_setor)}</button>
+                    </div>
+                    <div class="iu-riw">${chip}</div></div>`;
+            }).join('')}
+            <p class="small muted pad-sm">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum · – belum ditagih. Warna menyala = kumpulan berjalan.</p></div>`;
+        } else {
+            const lebar = ($('#riOut') && $('#riOut').clientWidth) || window.innerWidth;
+            const maxK = Math.max(lebar < 600 ? 2 : 4, Math.floor((lebar - 250) / 34));
+            const nK = Math.min(kolomSemua.length, maxK);
+            const iSel = Math.max(0, kolomSemua.findIndex((k) => k.terpilih));
+            const mulaiK = Math.max(0, Math.min(kolomSemua.length - nK, iSel - Math.floor(nK * 0.3)));
+            const kolom = kolomSemua.slice(mulaiK, mulaiK + nK);
+            const riw = (w) => w.riwayat.slice(mulaiK, mulaiK + nK);
+            const kepala = kolom.map((k) => `<th class="c-per${k.terpilih ? ' sel' : ''}" title="Kumpulan ke-${k.no} · ${esc(riTgl(k.mulai))}">K${k.no}</th>`).join('');
+            const baris = pg.items.map((w) => {
+                const sel = riw(w).map((h, i) => `<td class="c-per${kolom[i] && kolom[i].terpilih ? ' sel' : ''}"><span class="rw rw-${h.status}" title="K${kolom[i] ? kolom[i].no : ''} · ${esc(riTgl(h.mulai))}: ${esc(RI_LABEL[h.status] || '')}">${RI_SIM[h.status] || '–'}</span></td>`).join('');
+                return `<tr class="st-${w.status}"><td class="c-nama"><b>${esc(w.nama)}</b> <span class="badge">RT ${esc(w.rt)}</span></td>
+                    ${sel}
+                    <td class="r num c-sum"><button class="link-setor" data-act="riwDetail" data-id="${w.id}" title="Rincian setoran">${rp(w.total_setor)}</button></td></tr>`;
+            }).join('');
+            const ketK = nK < kolomSemua.length ? ` Menampilkan K${kolom[0].no}–K${kolom[kolom.length - 1].no} dari ${kolomSemua.length} kumpulan.` : '';
+            badan = `<div class="card tbl-card"><div class="tbl-wrap tbl-satu"><table class="tbl-iuran"><thead><tr>
+                <th class="c-nama">Nama (RT)</th>${kepala}<th class="r c-sum">Iuran</th></tr></thead>
+                <tbody>${baris}</tbody></table></div>
+                <p class="small muted pad-note">K = kumpulan RW. ✓ lunas · ◐ sebagian · ✕ belum bayar · – belum ditagih. Kolom berwarna = kumpulan berjalan. Klik angka iuran untuk rincian setoran.${ketK}</p></div>`;
+        }
+
         $('#riOut').innerHTML = `
             <div class="subtabs">${tabRt}</div>
-            ${ringRt}
+            <div class="grid cols-4 grid-stats">
+                <div class="stat good"><small>Lunas</small><b>${s.lunas || 0}</b></div>
+                <div class="stat warn"><small>Sebagian</small><b>${s.sebagian || 0}</b></div>
+                <div class="stat bad"><small>Belum bayar</small><b>${s.belum || 0}</b></div>
+                <div class="stat"><small>Iuran / kumpulan</small><b>${rp(r.nominal || 0)}</b></div></div>
             <div class="card">
+                <p class="small mb-md">Status tiap kumpulan RW (K1, K2, K3, …) per warga. Alokasi pembayaran ke kumpulan tertua lebih dulu.</p>
                 <div class="filters">
                     <div class="grow"><label class="f" for="riCari">Cari nama</label><input id="riCari" placeholder="Ketik nama…" value="${esc(RI.q)}" data-input="riwCari" maxlength="60"></div>
-                    <div><label class="f" for="riSt">Status</label><select id="riSt" data-change="riwStatus">
-                        ${[['', 'Semua'], ['sah', 'Sah'], ['batal', 'Dibatalkan']].map(([v, l]) => `<option value="${v}" ${RI.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+                    <div><label class="f" for="riSt">Status kumpulan berjalan</label><select id="riSt" data-change="riwStatus">
+                        ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${RI.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                 </div>
-                <p class="small muted mt-sm">${sah.length} pembayaran sah · total <b>${rp(total)}</b>${rows.length - sah.length ? ` · ${rows.length - sah.length} dibatalkan` : ''}${r.terpotong ? ' · menampilkan 1.000 terbaru' : ''}</p>
             </div>
             ${pg.bar}
-            ${rows.length ? `<div class="card tbl-card"><div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>Nama (RT)</th><th class="r">Nominal</th><th>Petugas</th><th>Status</th></tr></thead><tbody>
-                ${pg.items.map((x) => `<tr class="${x.status === 'batal' ? 'opacity-dim' : ''}"><td>${App.tglId(x.tanggal)}</td><td><b>${esc(x.nama)}</b> <span class="badge">RT ${esc(x.rt)}</span></td>
-                    <td class="r num">${rp(x.nominal)}</td><td>${esc(x.petugas)}</td>
-                    <td>${x.status === 'sah' ? '<span class="badge green">sah</span>' : `<span class="badge red" title="${esc(x.alasan_batal || '')}">batal${x.alasan_batal ? ': ' + esc(x.alasan_batal) : ''}</span>`}</td></tr>`).join('')}
-                </tbody></table></div></div>` : '<div class="card empty">Belum ada riwayat iuran.</div>'}`;
+            ${badan}`;
     }
 
     App.actions.riwRt = (el) => { RI.rt = el.dataset.nilai; return muatRiwayat(); };
-    App.changes.riwStatus = (el) => { RI.status = el.value; return muatRiwayat(); };
+    App.changes.riwStatus = (el) => { RI.status = el.value; App.pgReset('riwayatiuran'); gambarRiwayat(); };
     App.changes.riwCari = (inp) => {
         RI.q = inp.value;
         App.pgReset('riwayatiuran');
@@ -142,6 +192,26 @@
         const e = $('#riCari');
         if (e) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
     };
+    App.actions.riwDetail = (el) => {
+        const w = RI.data && RI.data.warga.find((x) => x.id === Number(el.dataset.id));
+        if (!w) return;
+        const baris = (w.setoran_semua || []).map((x) => `<tr><td>${esc(riTgl(x.tanggal))}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('');
+        App.dialog(`
+            <h3>Setoran iuran — ${esc(w.nama)} (RT ${esc(w.rt)})</h3>
+            <p class="small muted mb-md">Total iuran <b>${rp(w.total_setor)}</b>${w.kurang > 0 ? ` · tunggakan <b>${rp(w.kurang)}</b>` : w.lebih > 0 ? ` · titipan <b>${rp(w.lebih)}</b>` : ''}.</p>
+            <div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
+            ${baris || '<tr><td colspan="2" class="muted">Belum ada setoran.</td></tr>'}</tbody></table></div>
+            <div class="dlg-actions"><button type="button" class="btn" data-act="closeDialog">Tutup</button></div>`);
+    };
+    let riUkuran = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(riUkuran);
+        riUkuran = setTimeout(() => {
+            const key = window.innerWidth <= 640 ? 'm' : Math.floor(window.innerWidth / 40);
+            const mengetik = document.activeElement && document.activeElement.matches && document.activeElement.matches('input');
+            if (KS.mode === 'iuran' && RI.data && $('#riOut') && key !== RI.ukuranKey && !mengetik) gambarRiwayat();
+        }, 200);
+    });
 
     function isiPilihan() {
         const q = KS.q.trim().toLowerCase();
