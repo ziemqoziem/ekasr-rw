@@ -22,14 +22,21 @@
         const kantong = k.kantong.filter((x) => x.kode !== 'umum' || x.saldo !== 0);
         const positif = kantong.filter((x) => x.saldo > 0).reduce((a, x) => a + x.saldo, 0);
         const WARNA_KANTONG = { jimpitan: 'bk-biru', bendahara_rw: 'bk-ungu', umum: 'bk-merah' };
-        // Tabungan warga (titipan, di luar kas RW): kartu di bawah Kas Jimpitan
+        // Tabungan warga (titipan, di luar kas RW): bagian tersendiri, terpisah dari kartu Kas RW
         const tb = d.tabungan || { aktif: false };
-        const kartuTabungan = !tb.aktif ? '' : `<div class="bk-kantong bk-hijau bk-tabungan">
-                <div class="bk-k-head"><span>Tabungan Warga</span><em>${tb.penabung} penabung</em></div>
-                <div class="bk-k-val">${rp(tb.saldo)}</div>
-                ${tb.rt.length ? `<div class="bk-rt">${tb.rt.map((x) => `<span><small>RT ${esc(x.rt)}</small><b>${compact(x.saldo)}</b></span>`).join('')}</div>` : ''}
-                <div class="bk-k-sub">Setor kumpulan ini ${compact(tb.setor_periode)} · total setor ${compact(tb.setor)} · tarik ${compact(tb.tarik)}</div>
-                <div class="bk-k-sub muted">Titipan warga, tidak termasuk saldo kas RW</div></div>`;
+        const tabunganSec = !tb.aktif ? '' : `<h3 class="sec-title">Tabungan Warga</h3>
+            <section class="card tb-pub">
+                <div class="tb-pub-utama">
+                    <div class="tb-pub-saldo"><small>Saldo tabungan warga</small><b>${rp(tb.saldo)}</b><span class="badge green">${tb.penabung} penabung</span></div>
+                    <ul class="tb-pub-stat">
+                        <li><small>Disetor kumpulan ini</small><b>${rp(tb.setor_periode)}</b></li>
+                        <li><small>Total setoran</small><b>${rp(tb.setor)}</b></li>
+                        <li><small>Total penarikan</small><b>${rp(tb.tarik)}</b></li>
+                    </ul>
+                </div>
+                ${tb.rt.length ? `<div class="tb-pub-rt">${tb.rt.map((x) => `<div><small>RT ${esc(x.rt)} · ${x.penabung} penabung</small><b>${rp(x.saldo)}</b></div>`).join('')}</div>` : ''}
+                <p class="small muted mt-md">Tabungan adalah titipan warga dan tidak termasuk saldo kas RW. Hanya angka ringkasan yang ditampilkan.</p>
+            </section>`;
         const kartuKantong = kantong.map((x) => {
             const bagian = positif > 0 && x.saldo > 0 ? Math.round((x.saldo / positif) * 100) : 0;
             const ket = x.kode === 'umum' ? 'Pengeluaran yang tidak dikaitkan ke satu sumber dana'
@@ -38,7 +45,7 @@
                 <div class="bk-k-head"><span>${esc(x.nama)}</span>${x.kode === 'umum' ? '' : `<em>${bagian}%</em>`}</div>
                 <div class="bk-k-val">${rp(x.saldo)}</div>
                 ${x.kode === 'umum' ? '' : `<div class="bk-bar"><i style="width:${bagian}%"></i></div>`}
-                <div class="bk-k-sub">${ket}</div></div>${x.kode === 'jimpitan' ? kartuTabungan : ''}`;
+                <div class="bk-k-sub">${ket}</div></div>`;
         }).join('');
         // Rumus: saldo awal + pemasukan − pengeluaran = saldo kas (jumlah seluruh kantong)
         const awalTotal = k.kantong.reduce((t, x) => t + (x.awal || 0), 0);
@@ -113,6 +120,8 @@
 
             <h3 class="sec-title">Saldo Kas RW</h3>
             ${saldoKas}
+
+            ${tabunganSec}
 
             <h3 class="sec-title">Kas per periode kumpulan RW</h3>
             ${tabelPeriode}
