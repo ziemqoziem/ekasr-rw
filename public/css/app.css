@@ -2605,3 +2605,10 @@ dialog:has(.rw-dlg) { width: min(640px, calc(100% - 24px)); }
 .cek-aksi-dua { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
 .cek-aksi-dua .cek-aksi { margin-top: 0; padding-left: 8px; padding-right: 8px; }
 @media (max-width: 420px) { .cek-aksi-dua { grid-template-columns: 1fr; } }
+
+/* Riwayat iuran publik: satu tombol, kumpulan K1..Kn dapat diklik */
+.cek-aksi-dua.satu { grid-template-columns: 1fr; }
+.rw-kump-btn .rw-k { font: inherit; cursor: pointer; background-clip: padding-box; }
+.rw-kump-btn .rw-k:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.rw-klik { cursor: pointer; }
+.rw-klik:hover td { background: var(--panel-2); }

@@ -179,7 +179,7 @@
         const dt = `data-nama="${esc(h.nama)}" data-rt="${esc(h.rt)}" data-jenis="${esc(h.jenis)}"`;
         const tombol = h.jimpitan_wajib === false ? '' : `<div class="cek-aksi-dua"><button class="btn sm cek-aksi" data-act="riwayatPublik" data-tab="${h.jenis === 'harian' ? 'b' : 't'}" ${dt}>${App.icon('book')} Riwayat</button><button class="btn sm cek-aksi" data-act="riwayatPublik" data-tab="b" ${dt}>${App.icon('chart')} Riwayat bulanan</button></div>`;
         const pj = panelJimpitan(h).replace('class="cek-panel ', 'class="cek-panel cek-jimpitan ').replace(/<\/div>$/, tombol + '</div>');
-        const tombolI = h.iuran && !h.iuran.bebas ? `<div class="cek-aksi-dua"><button class="btn sm cek-aksi" data-act="riwayatIuranPublik" data-tab="k" ${dt}>${App.icon('book')} Riwayat iuran</button><button class="btn sm cek-aksi" data-act="riwayatIuranPublik" data-tab="t" ${dt}>${App.icon('cash')} Pembayaran</button></div>` : '';
+        const tombolI = h.iuran && !h.iuran.bebas ? `<div class="cek-aksi-dua satu"><button class="btn sm cek-aksi" data-act="riwayatIuranPublik" data-tab="k" ${dt}>${App.icon('book')} Riwayat pembayaran</button></div>` : '';
         const pi = panelIuran(h).replace('class="cek-panel ', 'class="cek-panel cek-iuran ').replace(/<\/div>$/, tombolI + '</div>');
         return `<article class="cek-result ${ok ? 'ok' : 'warn'}">
             <div class="row between">
@@ -223,35 +223,70 @@
             </div>`);
     };
 
-    // Riwayat iuran wajib publik: tab Per kumpulan (status tiap kumpulan RW) dan Pembayaran
+    // Riwayat pembayaran iuran wajib publik: daftar per kumpulan (K1, K2, ...) → klik baris untuk rincian satu kumpulan
+    let RIW = null;
+    const lbIuran = { lunas: '<span class="badge green">lunas</span>', sebagian: '<span class="badge amber">sebagian</span>', belum: '<span class="badge red">belum</span>' };
     App.actions.riwayatIuranPublik = async (el) => {
-        const r = await App.api('/api/riwayat-iuran-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
+        RIW = await App.api('/api/riwayat-iuran-publik?' + App.qs({ nama: el.dataset.nama, rt: el.dataset.rt }));
+        tampilRiwayatIuran(el.dataset.tab);
+    };
+    function tampilRiwayatIuran(tab) {
+        const r = RIW;
         const status = r.tagihan_berjalan > 0
             ? `<div class="rw-status bad"><span class="rw-ic">!</span><div><small>Kekurangan</small><b>${rp(r.tagihan_berjalan)}</b><em>${r.periode_kurang ? `${r.periode_kurang} kumpulan sudah lewat belum lunas (${rp(r.kurang)}) · ` : ''}iuran ${rp(r.nominal)}/kumpulan</em></div></div>`
             : `<div class="rw-status good"><span class="rw-ic">${r.lebih > 0 ? '+' : '✓'}</span><div><small>${r.lebih > 0 ? 'Kelebihan (titipan)' : 'Status'}</small><b>${r.lebih > 0 ? rp(r.lebih) : 'Lunas'}</b><em>${r.lebih > 0 ? `Menutup ±${r.periode_lebih} kumpulan berikutnya · ` : ''}iuran ${rp(r.nominal)}/kumpulan</em></div></div>`;
         const pc = r.kewajiban > 0 ? Math.min(100, Math.round((r.terbayar / r.kewajiban) * 100)) : 100;
         const prog = `<div class="rw-prog"><div class="rw-prog-t"><span>Terbayar ${rp(r.terbayar)}</span><span>dari ${rp(r.kewajiban)} · <b>${pc}%</b></span></div><div class="rw-bar ${pc >= 100 ? 'ok' : ''}"><i style="width:${pc}%"></i></div></div>`;
-        const lb = { lunas: '<span class="badge green">lunas</span>', sebagian: '<span class="badge amber">sebagian</span>', belum: '<span class="badge red">belum</span>' };
-        const kump = r.periode.length ? `<div class="tbl-wrap"><table><thead><tr><th>Kumpulan</th><th class="r">Iuran</th><th class="r">Dibayar</th><th>Status</th></tr></thead><tbody>
-            ${r.periode.map((x) => `<tr><td style="white-space:nowrap"><b>K${x.no}</b> <span class="small muted">${tglP(x.mulai)}${x.selesai ? '' : ' · berjalan'}</span></td><td class="r num">${rp(x.nominal)}</td><td class="r num">${x.dibayar ? rp(x.dibayar) : '-'}</td><td>${lb[x.status] || ''}</td></tr>`).join('')}
-            </tbody></table></div><p class="small muted" style="margin-top:8px">Pembayaran dialokasikan ke kumpulan tertua lebih dulu. Menampilkan ${r.periode.length} kumpulan terbaru.</p>` : '<div class="empty">Belum ada kumpulan yang ditagih.</div>';
+        const kump = r.periode.length ? `<div class="rw-kump rw-kump-btn">${r.periode.map((x) => `<button type="button" class="rw-k ${x.status}" data-act="riwayatIuranK" data-no="${x.no}" title="Kumpulan ${tglP(x.mulai)}: ${x.status}"><b>K${x.no}</b><span>${x.status === 'lunas' ? 'Lunas' : x.status === 'sebagian' ? rp(x.dibayar) + '/' + rp(x.nominal) : 'Belum'}</span></button>`).join('')}</div>
+            <div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>Kumpulan</th><th class="r">Iuran</th><th class="r">Dibayar</th><th>Status</th><th></th></tr></thead><tbody>
+            ${r.periode.map((x) => `<tr class="rw-klik" data-act="riwayatIuranK" data-no="${x.no}"><td style="white-space:nowrap"><b>K${x.no}</b> <span class="small muted">${tglP(x.mulai)}${x.selesai ? '' : ' · berjalan'}</span></td><td class="r num">${rp(x.nominal)}</td><td class="r num">${x.dibayar ? rp(x.dibayar) : '-'}</td><td>${lbIuran[x.status] || ''}</td><td class="r small muted">Rincian ›</td></tr>`).join('')}
+            </tbody></table></div><p class="small muted" style="margin-top:8px">Klik kode kumpulan (K1, K2, …) untuk melihat rinciannya. Pembayaran dialokasikan ke kumpulan tertua lebih dulu. Menampilkan ${r.periode.length} kumpulan terbaru.</p>` : '<div class="empty">Belum ada kumpulan yang ditagih.</div>';
         const trx = r.transaksi.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>
-            ${r.transaksi.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin-top:8px">30 pembayaran terakhir.</p>` : '<div class="empty">Belum ada pembayaran iuran wajib.</div>';
-        const tabK = el.dataset.tab !== 't';
+            ${r.transaksi.map((x) => `<tr><td>${tglP(x.tanggal)}</td><td class="r num">${rp(x.nominal)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin-top:8px">${r.transaksi.length} pembayaran terakhir.</p>` : '<div class="empty">Belum ada pembayaran iuran wajib.</div>';
+        const tabK = tab !== 't';
         App.dialog(`
             <div class="rw-dlg">
                 <div class="rw-head"><div class="rw-ava">${esc((r.warga.nama || '?').trim().charAt(0).toUpperCase())}</div>
-                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · iuran wajib (kas RW)</div></div></div>
+                    <div><h3>${esc(r.warga.nama)}</h3><div class="small muted">RT ${esc(r.warga.rt)} · riwayat pembayaran iuran wajib (kas RW)</div></div></div>
                 ${status}${prog}
                 <div class="subtabs rw-tabs">
                     <button type="button" class="tab ${tabK ? 'active' : ''}" data-act="riwTab" data-nilai="k">Per kumpulan</button>
-                    <button type="button" class="tab ${tabK ? '' : 'active'}" data-act="riwTab" data-nilai="t">Pembayaran</button>
+                    <button type="button" class="tab ${tabK ? '' : 'active'}" data-act="riwTab" data-nilai="t">Semua pembayaran</button>
                 </div>
                 <div class="rw-pane" data-pane="k" ${tabK ? '' : 'hidden'}>${kump}</div>
                 <div class="rw-pane" data-pane="t" ${tabK ? 'hidden' : ''}>${trx}</div>
                 <div class="dlg-actions"><button class="btn" data-act="closeDialog">Tutup</button></div>
             </div>`);
+    }
+    // Rincian satu kumpulan: iuran, dialokasikan, status, dan pembayaran yang diterima pada rentang tanggal kumpulan itu
+    App.actions.riwayatIuranK = (el) => {
+        if (!RIW) return;
+        const x = RIW.periode.find((p) => p.no === Number(el.dataset.no));
+        if (!x) return;
+        const masuk = RIW.transaksi.filter((t) => t.tanggal >= x.mulai && t.tanggal <= x.akhir);
+        const totalMasuk = masuk.reduce((a, t) => a + t.nominal, 0);
+        const sisa = Math.max(0, x.nominal - x.dibayar);
+        const pc = x.nominal > 0 ? Math.min(100, Math.round((x.dibayar / x.nominal) * 100)) : 100;
+        const tone = x.status === 'lunas' ? 'good' : x.status === 'sebagian' ? 'warn' : 'bad';
+        App.dialog(`
+            <div class="rw-dlg">
+                <div class="rw-head"><div class="rw-ava">K${x.no}</div>
+                    <div><h3>Kumpulan K${x.no}</h3><div class="small muted">${esc(RIW.warga.nama)} · RT ${esc(RIW.warga.rt)}</div></div></div>
+                <div class="rw-status ${tone}"><span class="rw-ic">${x.status === 'lunas' ? '✓' : x.status === 'sebagian' ? '◐' : '!'}</span><div><small>Status kumpulan</small><b>${x.status === 'lunas' ? 'Lunas' : x.status === 'sebagian' ? 'Dibayar sebagian' : (x.selesai ? 'Belum dibayar' : 'Belum dibayar (berjalan)')}</b><em>${x.status === 'lunas' ? 'Iuran kumpulan ini sudah tertutup.' : `Kurang ${rp(sisa)} dari iuran ${rp(x.nominal)}.`}</em></div></div>
+                <div class="rw-prog"><div class="rw-prog-t"><span>Dialokasikan ${rp(x.dibayar)}</span><span>dari ${rp(x.nominal)} · <b>${pc}%</b></span></div><div class="rw-bar ${pc >= 100 ? 'ok' : ''}"><i style="width:${pc}%"></i></div></div>
+                <dl class="rw-rumus">
+                    <div><dt>Rentang kumpulan</dt><dd>${tglP(x.mulai)} – ${tglP(x.akhir)}</dd></div>
+                    <div><dt>Iuran kumpulan</dt><dd>${rp(x.nominal)}</dd></div>
+                    <div><dt>Dialokasikan ke kumpulan ini</dt><dd>${rp(x.dibayar)}</dd></div>
+                    <div class="hasil ${sisa > 0 ? 'bad' : 'good'}"><dt>${sisa > 0 ? 'Kurang' : 'Terbayar penuh'}</dt><dd>${sisa > 0 ? rp(sisa) : '✓'}</dd></div>
+                </dl>
+                <h4 class="rw-sub">Pembayaran diterima pada rentang ini <small>${masuk.length}× · ${rp(totalMasuk)}</small></h4>
+                ${masuk.length ? `<div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th class="r">Nominal</th></tr></thead><tbody>${masuk.map((t) => `<tr><td>${tglP(t.tanggal)}</td><td class="r num">${rp(t.nominal)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Tidak ada pembayaran pada rentang tanggal ini.</div>'}
+                <p class="small muted" style="margin-top:8px">Pembayaran dialokasikan ke kumpulan tertua lebih dulu, sehingga jumlah yang dialokasikan bisa berbeda dari yang diterima pada rentang tanggal.</p>
+                <div class="dlg-actions"><button class="btn" data-act="riwayatIuranKembali">‹ Kembali</button><button class="btn" data-act="closeDialog">Tutup</button></div>
+            </div>`);
     };
+    App.actions.riwayatIuranKembali = () => { if (RIW) tampilRiwayatIuran('k'); };
 
     // Reset pencarian: kosongkan nama, RT, dan hasil
     App.actions.cekReset = () => {

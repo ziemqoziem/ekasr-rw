@@ -6,7 +6,7 @@ const I = require('./_lib/iuran');
 /**
  * Riwayat iuran wajib (kas RW) PUBLIK satu warga (nama + RT persis, dari hasil cek):
  *   periode   = status tiap kumpulan RW (lunas/sebagian/belum) + nominal dibayar, kumpulan terbaru di atas
- *   transaksi = 30 pembayaran sah terakhir (tanggal + nominal, tanpa petugas/catatan)
+ *   transaksi = 200 pembayaran sah terakhir (tanggal + nominal, tanpa petugas/catatan)
  * Dibatasi per IP dan ikut saklar cek_tunggakan_publik.
  */
 const WINDOW_MS = 10 * 60 * 1000;
@@ -45,7 +45,7 @@ module.exports = route({
       const h = I.hitungIuran([w], ctx).get(w.id);
       if (!h) throw fail(404, 'Data iuran tidak tersedia.');
       const trx = (await db.query(
-        "SELECT tanggal, nominal FROM iuran_wajib WHERE warga_id = ? AND status = 'sah' ORDER BY tanggal DESC, created_at DESC LIMIT 30", [w.id]
+        "SELECT tanggal, nominal FROM iuran_wajib WHERE warga_id = ? AND status = 'sah' ORDER BY tanggal DESC, created_at DESC LIMIT 200", [w.id]
       )).rows.map((x) => ({ tanggal: String(x.tanggal).slice(0, 10), nominal: Number(x.nominal) }));
       return {
         warga: { nama: w.nama, rt: w.rt, jenis: w.jenis },
