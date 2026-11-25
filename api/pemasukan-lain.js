@@ -93,20 +93,62 @@ module.exports = route({
     }
   },
 
+  // PUT {aksi:'ubah', id, tanggal, jenis, uraian, nominal} = ubah data; PUT {id, alasan} = batalkan (tidak dihapus, tercatat alasan)
   PUT: {
     auth: butuh('sewa.tulis'),
     fn: async (req, res, user) => {
+      await pastikanKolom();
       const b = req.body || {};
       const id = str(b.id, 'ID', { max: 40, required: true });
-      const alasan = str(b.alasan, 'Alasan pembatalan', { min: 3, max: 255, required: true });
-      const s = (await db.query('SELECT id, status, rt, tanggal, uraian, nominal FROM sewa_aset WHERE id = ?', [id])).rows[0];
+      const s = (await db.query('SELECT id, status, rt, jenis, tanggal, uraian, nominal FROM sewa_aset WHERE id = ?', [id])).rows[0];
       if (!s) throw fail(404, 'Data tidak ditemukan.');
-      if (s.status === 'batal') throw fail(400, 'Sudah dibatalkan.');
       if (terbatasRt(user) && s.rt !== user.rt) throw fail(403, 'Anda hanya dapat mengelola data RT Anda sendiri.');
-      await pastikanTerbuka(s.tanggal);
+      const tanggalLama = String(s.tanggal).slice(0, 10);
+
+      if (b.aksi === 'ubah') {
+        if (s.status === 'batal') throw fail(400, 'Data yang sudah dibatalkan tidak dapat diubah.');
+        const today = P.todayWIB();
+        const tanggal = b.tanggal !== undefined ? String(b.tanggal) : tanggalLama;
+        if (!P.validDate(tanggal)) throw fail(400, 'Tanggal tidak valid.');
+        if (tanggal > today) throw fail(400, 'Tanggal tidak boleh di masa depan.');
+        const jenis = b.jenis !== undefined ? oneOf(String(b.jenis), 'Jenis', JENIS) : s.jenis;
+        const uraian = b.uraian !== undefined ? str(b.uraian, 'Uraian', { min: 3, max: 200, required: true }) : s.uraian;
+        const nominal = b.nominal !== undefined ? int(b.nominal, 'Nominal', { min: 1, max: 1000000000 }) : Number(s.nominal);
+        await pastikanTerbuka(tanggalLama);   // data di buku yang sudah ditutup tidak boleh diubah
+        await pastikanTerbuka(tanggal);       // dan tidak boleh dipindah ke buku yang sudah ditutup
+        await db.query('UPDATE sewa_aset SET tanggal = ?, jenis = ?, uraian = ?, nominal = ? WHERE id = ?', [tanggal, jenis, uraian, nominal, id]);
+        require('./_lib/cache-publik').invalidatePublik();
+        await catat(user, 'UBAH_SEWA_ASET',
+          `Mengubah pemasukan lainnya ${id}: [${tanggalLama} | ${s.jenis} | ${s.uraian} | Rp ${s.nominal}] → [${tanggal} | ${jenis} | ${uraian} | Rp ${nominal}].`, req);
+        return { id };
+      }
+
+      const alasan = str(b.alasan, 'Alasan pembatalan', { min: 3, max: 255, required: true });
+      if (s.status === 'batal') throw fail(400, 'Sudah dibatalkan.');
+      await pastikanTerbuka(tanggalLama);
       await db.query("UPDATE sewa_aset SET status = 'batal', alasan_batal = ? WHERE id = ?", [alasan, id]);
       require('./_lib/cache-publik').invalidatePublik();
       await catat(user, 'BATAL_SEWA_ASET', `Membatalkan pemasukan lainnya ${id} ("${s.uraian}", Rp ${s.nominal}): ${alasan}`, req);
+      return { id };
+    }
+  },
+
+  // Hapus permanen (alasan wajib; isi lengkap tersimpan di log aktivitas)
+  DELETE: {
+    auth: butuh('sewa.tulis'),
+    fn: async (req, res, user) => {
+      const q = req.query || {};
+      const id = str(q.id, 'ID', { max: 40, required: true });
+      const alasan = str(q.alasan, 'Alasan penghapusan', { min: 3, max: 255, required: true });
+      const s = (await db.query('SELECT id, status, rt, jenis, tanggal, uraian, nominal, petugas, alasan_batal FROM sewa_aset WHERE id = ?', [id])).rows[0];
+      if (!s) throw fail(404, 'Data tidak ditemukan.');
+      if (terbatasRt(user) && s.rt !== user.rt) throw fail(403, 'Anda hanya dapat mengelola data RT Anda sendiri.');
+      const tanggal = String(s.tanggal).slice(0, 10);
+      await pastikanTerbuka(tanggal);
+      await db.query('DELETE FROM sewa_aset WHERE id = ?', [id]);
+      require('./_lib/cache-publik').invalidatePublik();
+      await catat(user, 'HAPUS_SEWA_ASET',
+        `Menghapus pemasukan lainnya ${id} [${tanggal} | ${s.jenis} | ${s.uraian} | Rp ${s.nominal} | RT ${s.rt || '-'} | dicatat ${s.petugas} | ${s.status}${s.alasan_batal ? ' (' + s.alasan_batal + ')' : ''}]: ${alasan}`, req);
       return { id };
     }
   }
