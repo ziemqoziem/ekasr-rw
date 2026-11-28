@@ -62,7 +62,7 @@
                     <span class="cal-key cal-hijau">Hijau</span> = sudah setor, <span class="cal-key cal-merah">Merah</span> = belum setor.</p>
                 <div class="filters">
                     <div><label class="f" for="kRt">RT</label><select id="kRt" data-change="kalenderRt" ${App.rtKunci() ? 'disabled' : ''}>${App.optRt(KS.rt)}</select></div>
-                    <div><label class="f" for="kCari">Cari nama</label><input id="kCari" placeholder="Ketik nama…" value="${esc(KS.q)}" data-input="kalenderCari" maxlength="60"></div>
+                    <div><label class="f" for="kCari">Cari nama</label><input id="kCari" placeholder="Nama" value="${esc(KS.q)}" data-input="kalenderCari" maxlength="60"></div>
                     <div><label class="f" for="kWarga">Warga</label><select id="kWarga" data-change="kalenderWarga"></select></div>
                 </div>
             </div>
@@ -174,7 +174,7 @@
             <div class="card">
                 <p class="small mb-md">Status tiap kumpulan RW (K1, K2, K3, …) per warga. Alokasi pembayaran ke kumpulan tertua lebih dulu.</p>
                 <div class="filters">
-                    <div class="grow"><label class="f" for="riCari">Cari nama</label><input id="riCari" placeholder="Ketik nama…" value="${esc(RI.q)}" data-input="riwCari" maxlength="60"></div>
+                    <div class="grow"><label class="f" for="riCari">Cari nama</label><input id="riCari" placeholder="Nama" value="${esc(RI.q)}" data-input="riwCari" maxlength="60"></div>
                     <div><label class="f" for="riSt">Status kumpulan berjalan</label><select id="riSt" data-change="riwStatus">
                         ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${RI.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
                 </div>

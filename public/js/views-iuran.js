@@ -25,7 +25,7 @@
                     <div class="full-m" id="iPerWrap"></div>
                     <div><label class="f" for="iSt">Status</label><select id="iSt" data-change="iuranFilter">
                         ${[['', 'Semua'], ['belum', 'Belum bayar'], ['sebagian', 'Sebagian'], ['lunas', 'Lunas']].map(([v, l]) => `<option value="${v}" ${IS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-                    <div><label class="f" for="iCari">Cari nama</label><input id="iCari" placeholder="Ketik nama…" value="${esc(IS.q)}" data-input="iuranCari" maxlength="60"></div>
+                    <div><label class="f" for="iCari">Cari nama</label><input id="iCari" placeholder="Nama" value="${esc(IS.q)}" data-input="iuranCari" maxlength="60"></div>
                     ${App.has('iuran.tulis') ? `<div>${App.htmlDPick({ id: 'iTgl', label: 'Tanggal diterima', value: IS.tanggal, max: App.today(), change: 'iuranTgl', required: true })}</div>` : ''}
                 </div>
             </div>
@@ -351,7 +351,7 @@
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
-                <div class="filters"><div class="grow"><label class="f" for="rkiCari">Cari nama</label><input id="rkiCari" placeholder="Ketik nama…" value="${esc(RKI.cari)}" data-input="rekapIuranCari" maxlength="60"></div>
+                <div class="filters"><div class="grow"><label class="f" for="rkiCari">Cari nama</label><input id="rkiCari" placeholder="Nama" value="${esc(RKI.cari)}" data-input="rekapIuranCari" maxlength="60"></div>
                     <div><label class="f">Urutkan</label><div class="rk-urut" role="group" aria-label="Urutkan rincian">${URUT.map(([v, l]) => `<button type="button" class="${RKI.urut === v ? 'aktif' : ''}" data-act="rekapIuranUrut" data-nilai="${v}">${l}</button>`).join('')}</div></div></div>
                 ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
                 ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, r.rt.findIndex((g) => g.rt === rt)) % 3) + 1}">

@@ -62,7 +62,7 @@
                 <div class="filters">
                     <div>${App.htmlDPick({ id: 'sTgl', label: 'Tanggal setor', value: SS.tanggal, max: App.today(), change: 'setoranFilter', required: true })}</div>
                     <div><label class="f" for="sRt">RT</label><select id="sRt" data-change="setoranFilter" ${App.rtKunci() ? 'disabled' : ''}>${optRt(SS.rt)}</select></div>
-                    <div><label class="f" for="sCari">Cari nama</label><input id="sCari" placeholder="Ketik nama…" data-input="setoranCari" maxlength="60"></div>
+                    <div><label class="f" for="sCari">Cari nama</label><input id="sCari" placeholder="Nama" data-input="setoranCari" maxlength="60"></div>
                 </div>
                 <div id="sRingkas" class="row small muted mt-sm"></div>
             </div>
@@ -322,7 +322,7 @@
             </div>
             <h3 class="sec-title">Rincian per warga</h3>
             <div class="card">
-                <div class="filters"><div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Ketik nama…" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div></div>
+                <div class="filters"><div class="grow"><label class="f" for="rkCari">Cari nama</label><input id="rkCari" placeholder="Nama" value="${esc(RK.cari)}" data-input="rekapCari" maxlength="60"></div></div>
                 ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
                 ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, r.rt.findIndex((g) => g.rt === rt)) % 3) + 1}">
                     <header><b>RT ${esc(rt)}</b><span>${rp(list.reduce((a, w) => a + w.total, 0))}</span></header>
@@ -436,7 +436,7 @@
                 <div class="filters">
                     <div><label class="f" for="tRt">RT</label><select id="tRt" data-change="tunggakanFilter" ${App.rtKunci() ? 'disabled' : ''}>${optRt(TS.rt)}</select></div>
                     <div><label class="f" for="tJenis">Pola setor</label><select id="tJenis" data-change="tunggakanFilter">${optJenis(TS.jenis)}</select></div>
-                    <div><label class="f" for="tQ">Cari nama</label><input id="tQ" value="${esc(TS.q)}" maxlength="60" placeholder="Ketik nama…" data-change="tunggakanFilter"></div>
+                    <div><label class="f" for="tQ">Cari nama</label><input id="tQ" value="${esc(TS.q)}" maxlength="60" placeholder="Nama" data-change="tunggakanFilter"></div>
                 </div>
                 <div id="tInfo" class="small muted"></div>
             </div>
@@ -543,7 +543,7 @@
                         <option value="1" ${WS.aktif === '1' ? 'selected' : ''}>Aktif</option><option value="0" ${WS.aktif === '0' ? 'selected' : ''}>Nonaktif</option><option value="all" ${WS.aktif === 'all' ? 'selected' : ''}>Semua</option></select></div>
                     <div><label class="f" for="wIu">Iuran kas</label><select id="wIu" data-change="wargaFilter">
                         <option value="" ${WS.iuran === '' ? 'selected' : ''}>Semua</option><option value="1" ${WS.iuran === '1' ? 'selected' : ''}>Wajib iuran kas</option><option value="0" ${WS.iuran === '0' ? 'selected' : ''}>Bebas iuran kas</option></select></div>
-                    <div><label class="f" for="wQ">Cari nama</label><input id="wQ" value="${esc(WS.q)}" maxlength="60" placeholder="Ketik nama…" data-change="wargaFilter"></div>
+                    <div><label class="f" for="wQ">Cari nama</label><input id="wQ" value="${esc(WS.q)}" maxlength="60" placeholder="Nama" data-change="wargaFilter"></div>
                 </div>
             </div>
             <div id="wKartu"></div>

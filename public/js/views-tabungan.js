@@ -31,7 +31,7 @@
                     <div class="full-m" id="tPerWrap"></div>
                     <div><label class="f" for="tSt">Status</label><select id="tSt" data-change="tabunganFilter">
                         ${[['', 'Semua'], ['belum', 'Belum menabung'], ['sudah', 'Sudah menabung']].map(([v, l]) => `<option value="${v}" ${TS.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-                    <div><label class="f" for="tCari">Cari nama</label><input id="tCari" placeholder="Ketik nama…" value="${esc(TS.q)}" data-input="tabunganCari" maxlength="60"></div>
+                    <div><label class="f" for="tCari">Cari nama</label><input id="tCari" placeholder="Nama" value="${esc(TS.q)}" data-input="tabunganCari" maxlength="60"></div>
                     ${tulis ? `<div>${App.htmlDPick({ id: 'tTgl', label: 'Tanggal setor', value: TS.tanggal, max: App.today(), change: 'tabunganTgl', required: true })}</div>` : ''}
                 </div>
                 <div class="savebar savebar-atas tb-bar" id="tBar"></div>
@@ -361,7 +361,7 @@
             </div>
             <h3 class="sec-title">Saldo per warga</h3>
             <div class="card">
-                <div class="filters"><div class="grow"><label class="f" for="tkCari">Cari nama</label><input id="tkCari" placeholder="Ketik nama…" value="${esc(TS.q)}" data-input="tabunganRekapCari" maxlength="60"></div>
+                <div class="filters"><div class="grow"><label class="f" for="tkCari">Cari nama</label><input id="tkCari" placeholder="Nama" value="${esc(TS.q)}" data-input="tabunganRekapCari" maxlength="60"></div>
                     <div><label class="f">Urutkan</label><div class="rk-urut" role="group" aria-label="Urutkan rincian">${URUT.map(([v, l]) => `<button type="button" class="${TS.urut === v ? 'aktif' : ''}" data-act="tabunganUrut" data-nilai="${v}">${l}</button>`).join('')}</div></div></div>
                 ${grup.size ? `<div class="rk-kolom" style="--n:${Math.min(3, grup.size)}">
                 ${[...grup.entries()].map(([rt, list]) => `<section class="rk-rtcol rk-c${(Math.max(0, rtList.findIndex((g) => g.rt === rt)) % 3) + 1}">
